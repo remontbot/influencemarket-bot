@@ -16,7 +16,9 @@ import db
 import handlers
 
 # Версия бота
-BOT_VERSION = "1.2.5 - AD CALLBACKS FIX"  # КРИТИЧНО: Добавлены глобальные обработчики для callbacks создания рекламы
+BOT_VERSION = "2.0.0 - INFLUENCEMARKET MVP"  # Адаптация для маркетплейса блогеров
+BOT_NAME = "InfluenceMarket"
+BOT_USERNAME = "@influencemarketplace_bot"
 
 # --- НАЧАЛО ИСПРАВЛЕННОГО БЛОКА ДЛЯ ИМПОРТА CONFIG.PY И ЗАГРУЗКИ ENV ---
 # Попытка импортировать config, если он есть рядом (локально)
