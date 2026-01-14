@@ -78,22 +78,22 @@ def main():
     db.init_db()
     db.migrate_add_portfolio_photos()  # Добавляем колонку если её нет
     # db.migrate_add_campaign_photos() удалено - функция не существует
-    db.migrate_add_currency_to_offers()  # Добавляем колонку currency в offers
+    db.migrate_add_currency_to_bids()  # Добавляем колонку currency в bids (offers)
     db.migrate_add_cascading_deletes()  # Добавляем cascading deletes для PostgreSQL
-    db.migrate_add_campaign_completion_tracking()  # Добавляем отслеживание завершения кампаний
+    db.migrate_add_order_completion_tracking()  # Добавляем отслеживание завершения заказов (campaigns)
     db.migrate_add_profile_photo()  # Добавляем поле для фото профиля блогера
     db.migrate_add_premium_features()  # Добавляем поля для premium функций (выключены по умолчанию)
     db.migrate_add_moderation()  # Добавляем поля для модерации и банов
-    db.migrate_add_regions_to_advertisers()  # Добавляем поле regions в таблицу advertisers
-    db.migrate_add_videos_to_campaigns()  # Добавляем поле videos в таблицу campaigns
+    db.migrate_add_regions_to_clients()  # Добавляем поле regions в таблицу clients (advertisers)
+    db.migrate_add_videos_to_orders()  # Добавляем поле videos в таблицу orders (campaigns)
     db.migrate_add_chat_system()  # Создаём таблицы для чата между рекламодателем и блогером
     db.migrate_add_transactions()  # Создаём таблицу для истории транзакций
     db.migrate_add_notification_settings()  # Добавляем настройки уведомлений для блогеров
     db.migrate_normalize_categories()  # ИСПРАВЛЕНИЕ: Нормализация категорий блогеров (точный поиск вместо LIKE)
-    db.migrate_normalize_campaign_categories()  # ИСПРАВЛЕНИЕ: Нормализация категорий кампаний (точный поиск вместо LIKE)
+    db.migrate_normalize_order_categories()  # ИСПРАВЛЕНИЕ: Нормализация категорий заказов (точный поиск вместо LIKE)
     db.migrate_add_ready_in_days_and_notifications()  # Добавляем ready_in_days в offers и blogger_notifications
     db.migrate_add_admin_and_ads()  # Добавляем систему админ-панели, broadcast и рекламы
-    db.migrate_add_blogger_cities()  # Добавляем таблицу для множественного выбора городов блогером
+    db.migrate_add_worker_cities()  # Добавляем таблицу для множественного выбора городов мастером (blogger)
     db.migrate_add_chat_message_notifications()  # Добавляем таблицу для агрегированных уведомлений о сообщениях в чате
     db.migrate_fix_portfolio_photos_size()  # ИСПРАВЛЕНИЕ: Увеличиваем размер portfolio_photos с VARCHAR(1000) на TEXT
 
