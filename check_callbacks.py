@@ -42,7 +42,7 @@ def extract_handlers_from_bot(bot_file: Path) -> Set[str]:
 def normalize_callback(callback: str) -> str:
     """
     Нормализует callback_data для сравнения.
-    Заменяет {id}, {order_id}, etc. на regex паттерны.
+    Заменяет {id}, {campaign_id}, etc. на regex паттерны.
     """
     # Заменяем placeholders на regex
     normalized = callback

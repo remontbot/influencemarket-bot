@@ -29,11 +29,11 @@ logger = logging.getLogger(__name__)
 # - В каждом регионе доступна опция "📍 Другой город в области"
 # - Позволяет указать город, не входящий в основной список
 # - Используется для:
-#   1. Регистрация мастера: мастер работает в указанном городе
+#   1. Регистрация блогера: блогер работает в указанном городе
 #   2. Регистрация клиента: город проживания клиента (для статистики)
-#   3. Создание заказа: заказ создаётся в указанном городе
-# - Мастера получают уведомления о заказах из своих городов
-# - Если город мастера совпадает с городом заказа - мастер видит заказ
+#   3. Создание кампанияа: кампания создаётся в указанном городе
+# - Блогера получают уведомления о кампанияах из своих городов
+# - Если город блогера совпадает с городом кампанияа - блогер видит кампания
 # - Полезно для небольших городов, посёлков и агрогородков
 #
 
@@ -89,11 +89,11 @@ WORK_CATEGORIES = {
             "Замки (вскрытие, ремонт)",
             "Аварийная сантехника",
             "Аварийная электрика",
-            "Мастер на час (срочно)"
+            "Блогер на час (срочно)"
         ]
     },
     "handyman": {
-        "name": "🔧 Мастер на час и мелкий бытовой ремонт",
+        "name": "🔧 Блогер на час и мелкий бытовой ремонт",
         "emoji": "🔧",
         "subcategories": [
             "Повесить/установить",
@@ -107,8 +107,8 @@ WORK_CATEGORIES = {
         "name": "🪑 Мебель: изготовление, сборка и установка",
         "emoji": "🪑",
         "subcategories": [
-            "Кухня на заказ",
-            "Корпусная мебель на заказ",
+            "Кухня на кампания",
+            "Корпусная мебель на кампания",
             "Сборка готовой мебели",
             "Сборка готовой кухни",
             "Ремонт и доработка мебели"
@@ -427,36 +427,36 @@ def validate_file_id(file_id):
 
 
 def _get_bids_word(count):
-    """Возвращает правильное склонение слова 'отклик'"""
+    """Возвращает правильное склонение слова 'предложение'"""
     if count % 10 == 1 and count % 100 != 11:
-        return "отклик"
+        return "предложение"
     elif count % 10 in (2, 3, 4) and count % 100 not in (12, 13, 14):
-        return "отклика"
+        return "предложениеа"
     else:
-        return "откликов"
+        return "предложениеов"
 
 (
     SELECTING_ROLE,
-    REGISTER_MASTER_NAME,
-    REGISTER_MASTER_PHONE,
-    REGISTER_MASTER_REGION_SELECT,
-    REGISTER_MASTER_CITY,
-    REGISTER_MASTER_CITY_SELECT,
-    REGISTER_MASTER_CITY_OTHER,
-    REGISTER_MASTER_CITIES_CONFIRM,
-    REGISTER_MASTER_MAIN_CATEGORY,
-    REGISTER_MASTER_SUBCATEGORY_SELECT,
-    REGISTER_MASTER_ASK_MORE_CATEGORIES,
-    REGISTER_MASTER_EXPERIENCE,
-    REGISTER_MASTER_DESCRIPTION,
-    REGISTER_MASTER_PHOTOS,
-    REGISTER_CLIENT_NAME,
-    REGISTER_CLIENT_PHONE,
-    REGISTER_CLIENT_REGION_SELECT,
-    REGISTER_CLIENT_CITY,
-    REGISTER_CLIENT_CITY_SELECT,
-    REGISTER_CLIENT_CITY_OTHER,
-    REGISTER_CLIENT_DESCRIPTION,
+    REGISTER_BLOGGER_NAME,
+    REGISTER_BLOGGER_PHONE,
+    REGISTER_BLOGGER_REGION_SELECT,
+    REGISTER_BLOGGER_CITY,
+    REGISTER_BLOGGER_CITY_SELECT,
+    REGISTER_BLOGGER_CITY_OTHER,
+    REGISTER_BLOGGER_CITIES_CONFIRM,
+    REGISTER_BLOGGER_MAIN_CATEGORY,
+    REGISTER_BLOGGER_SUBCATEGORY_SELECT,
+    REGISTER_BLOGGER_ASK_MORE_CATEGORIES,
+    REGISTER_BLOGGER_EXPERIENCE,
+    REGISTER_BLOGGER_DESCRIPTION,
+    REGISTER_BLOGGER_PHOTOS,
+    REGISTER_ADVERTISER_NAME,
+    REGISTER_ADVERTISER_PHONE,
+    REGISTER_ADVERTISER_REGION_SELECT,
+    REGISTER_ADVERTISER_CITY,
+    REGISTER_ADVERTISER_CITY_SELECT,
+    REGISTER_ADVERTISER_CITY_OTHER,
+    REGISTER_ADVERTISER_DESCRIPTION,
     # Новые состояния для редактирования профиля
     EDIT_PROFILE_MENU,
     EDIT_NAME,
@@ -470,18 +470,18 @@ def _get_bids_word(count):
     EDIT_DESCRIPTION,
     ADD_PHOTOS_MENU,
     ADD_PHOTOS_UPLOAD,
-    # Состояния для создания заказа
-    CREATE_ORDER_REGION_SELECT,
-    CREATE_ORDER_CITY,
-    CREATE_ORDER_MAIN_CATEGORY,
-    CREATE_ORDER_SUBCATEGORY_SELECT,
-    CREATE_ORDER_DESCRIPTION,
-    CREATE_ORDER_PHOTOS,
-    # Состояния для создания отклика
-    BID_ENTER_PRICE,
-    BID_SELECT_CURRENCY,
-    BID_SELECT_READY_DAYS,
-    BID_ENTER_COMMENT,
+    # Состояния для создания кампанияа
+    CREATE_CAMPAIGN_REGION_SELECT,
+    CREATE_CAMPAIGN_CITY,
+    CREATE_CAMPAIGN_MAIN_CATEGORY,
+    CREATE_CAMPAIGN_SUBCATEGORY_SELECT,
+    CREATE_CAMPAIGN_DESCRIPTION,
+    CREATE_CAMPAIGN_PHOTOS,
+    # Состояния для создания предложениеа
+    OFFER_ENTER_PRICE,
+    OFFER_SELECT_CURRENCY,
+    OFFER_SELECT_READY_DAYS,
+    OFFER_ENTER_COMMENT,
     # Состояния для оставления отзыва
     REVIEW_SELECT_RATING,
     REVIEW_ENTER_COMMENT,
@@ -532,37 +532,37 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         role = user_dict["role"]
         user_id = user_dict["id"]
         
-        # Проверяем есть ли профиль мастера
-        worker_profile = db.get_worker_profile(user_id)
+        # Проверяем есть ли профиль блогера
+        blogger_profile = db.get_worker_profile(user_id)
         # Проверяем есть ли профиль клиента
-        client_profile = db.get_client_profile(user_id)
+        advertiser_profile = db.get_client_profile(user_id)
         
-        has_worker = worker_profile is not None
-        has_client = client_profile is not None
+        has_worker = blogger_profile is not None
+        has_client = advertiser_profile is not None
         
         keyboard = []
         
         if has_worker:
-            keyboard.append([InlineKeyboardButton("🧰 Меню мастера", callback_data="show_worker_menu")])
+            keyboard.append([InlineKeyboardButton("🧰 Меню блогера", callback_data="show_blogger_menu")])
         
         if has_client:
-            keyboard.append([InlineKeyboardButton("🏠 Меню заказчика", callback_data="show_client_menu")])
+            keyboard.append([InlineKeyboardButton("🏠 Меню рекламодательа", callback_data="show_advertiser_menu")])
         
         # Кнопка для создания второго профиля
         if not has_worker:
-            keyboard.append([InlineKeyboardButton("➕ Стать мастером", callback_data="role_worker")])
+            keyboard.append([InlineKeyboardButton("➕ Стать блогером", callback_data="role_worker")])
         
         if not has_client:
-            keyboard.append([InlineKeyboardButton("➕ Стать заказчиком", callback_data="role_client")])
+            keyboard.append([InlineKeyboardButton("➕ Стать рекламодательом", callback_data="role_client")])
         
         message = "👋 Добро пожаловать!\n\n"
 
         if has_worker and has_client:
             message += "У вас есть оба профиля.\nВыберите какой использовать:"
         elif has_worker:
-            message += "Вы зарегистрированы как мастер.\n\nХотите также стать заказчиком?"
+            message += "Вы зарегистрированы как блогер.\n\nХотите также стать рекламодательом?"
         elif has_client:
-            message += "Вы зарегистрированы как заказчик.\n\nХотите также стать мастером?"
+            message += "Вы зарегистрированы как рекламодатель.\n\nХотите также стать блогером?"
 
         await update.message.reply_text(
             message,
@@ -571,19 +571,19 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         # Новый пользователь - выбор первой роли
         keyboard = [
-            [InlineKeyboardButton("🔧 Я мастер (ищу заказы)", callback_data="select_role_worker")],
-            [InlineKeyboardButton("🏠 Я заказчик (ищу мастера)", callback_data="select_role_client")],
+            [InlineKeyboardButton("🔧 Я блогер (ищу кампанияы)", callback_data="select_role_worker")],
+            [InlineKeyboardButton("🏠 Я рекламодатель (ищу блогера)", callback_data="select_role_client")],
         ]
         await update.message.reply_text(
-            "<b>РемонтHub</b> — удобный сервис для поиска мастеров и заказов по ремонту.\n\n"
-            "🔧 <b>Мастерам</b>\n"
+            "<b>РемонтHub</b> — удобный сервис для поиска блогеров и кампанияов по ремонту.\n\n"
+            "🔧 <b>Блогерам</b>\n"
             "Вам больше не нужно рекламировать себя и продвигаться.\n"
-            "Вы просто выполняете свою работу, берёте новые заказы, подтверждаете их и растёте в рейтинге —\n"
+            "Вы просто выполняете свою работу, берёте новые кампанияы, подтверждаете их и растёте в рейтинге —\n"
             "мы берём на себя вашу видимость и доверие к вам.\n\n"
-            "🏠 <b>Заказчикам</b>\n"
+            "🏠 <b>Рекламодательам</b>\n"
             "Больше не нужно перелопачивать объявления, искать знакомых и договариваться.\n"
-            "Вы отправляете заказ — мастера откликаются,\n"
-            "мы показываем вам мастеров с лучшими рейтингами и подходящим опытом,\n"
+            "Вы отправляете кампания — блогера предложениеаются,\n"
+            "мы показываем вам блогеров с лучшими рейтингами и подходящим опытом,\n"
             "а вы выбираете по цене, условиям и исполнителю.\n\n"
             "<b>Выберите, в роли кого вы хотите зарегистрироваться сегодня</b>",
             reply_markup=InlineKeyboardMarkup(keyboard),
@@ -598,19 +598,19 @@ async def select_role(update: Update, context: ContextTypes.DEFAULT_TYPE):
     role = query.data.split("_")[-1]
     context.user_data["selected_role"] = role
 
-    if role == "worker":
+    if role == "blogger":
         await query.edit_message_text(
-            "Отлично! Вы регистрируетесь как <b>мастер</b>.\n\n"
+            "Отлично! Вы регистрируетесь как <b>блогер</b>.\n\n"
             "Сейчас мы зададим несколько простых вопросов,\n"
             "чтобы клиенты могли быстро и удобно находить вас.\n\n"
             "🔹 Вам не нужно рекламировать себя или платить за продвижение.\n"
-            "🔹 Вы просто берёте заказы, выполняете работу и растёте в рейтинге.\n\n"
+            "🔹 Вы просто берёте кампанияы, выполняете работу и растёте в рейтинге.\n\n"
             "Чем выше качество работы, общение и соблюдение сроков —\n"
-            "тем лучше и чаще вам будут приходить заказы.\n\n"
+            "тем лучше и чаще вам будут приходить кампанияы.\n\n"
             "Сейчас самое время честно описать свой уровень и специализацию:\n"
             "кому-то важен максимальный профессионализм,\n"
             "кому-то — более доступная цена.\n"
-            "Это помогает системе подбирать подходящие заказы именно вам.\n\n"
+            "Это помогает системе подбирать подходящие кампанияы именно вам.\n\n"
             "✏️ <b>Введите ваше имя</b>\n"
             "(без ссылок, названий компаний и сайтов)\n\n"
             "<i>Примеры:</i>\n"
@@ -618,45 +618,45 @@ async def select_role(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Иван Петров",
             parse_mode="HTML",
         )
-        return REGISTER_MASTER_NAME
+        return REGISTER_BLOGGER_NAME
     else:
         await query.edit_message_text(
-            "Сейчас мы создадим для вас профиль заказчика.\n\n"
-            "Он нужен, чтобы мастера видели, с кем общаются, "
-            "а вы могли сохранять историю заказов и удобно выбирать исполнителей.\n\n"
+            "Сейчас мы создадим для вас профиль рекламодательа.\n\n"
+            "Он нужен, чтобы блогера видели, с кем общаются, "
+            "а вы могли сохранять историю кампанияов и удобно выбирать исполнителей.\n\n"
             "✏️ Введите ваше имя.",
             parse_mode="HTML",
         )
-        return REGISTER_CLIENT_NAME
+        return REGISTER_ADVERTISER_NAME
 
 
 # ------- РЕГИСТРАЦИЯ МАСТЕРА -------
 
-async def register_master_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_blogger_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     name = update.message.text.strip()
     if not is_valid_name(name):
         await update.message.reply_text(
             "Пожалуйста, укажите только ваше имя или имя и фамилию, без ссылок и рекламы.\n"
-            "Пример: «Александр», «Иван Петров», «Сергей (мастер по электрике)»."
+            "Пример: «Александр», «Иван Петров», «Сергей (блогер по электрике)»."
         )
-        return REGISTER_MASTER_NAME
+        return REGISTER_BLOGGER_NAME
     context.user_data["name"] = name
     await update.message.reply_text(
         "📱 Укажите номер телефона.\n"
         "Он необходим для регистрации и не будет виден всем подряд.\n\n"
         "Пример: +375 29 123 45 67"
     )
-    return REGISTER_MASTER_PHONE
+    return REGISTER_BLOGGER_PHONE
 
 
-async def register_master_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_blogger_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     phone = update.message.text.strip()
     if not is_valid_phone(phone):
         await update.message.reply_text(
             "Не могу распознать номер.\n"
             "Пожалуйста, укажите номер в формате: +375 29 123 45 67"
         )
-        return REGISTER_MASTER_PHONE
+        return REGISTER_BLOGGER_PHONE
 
     context.user_data["phone"] = phone
 
@@ -674,11 +674,11 @@ async def register_master_phone(update: Update, context: ContextTypes.DEFAULT_TY
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
-    return REGISTER_MASTER_REGION_SELECT
+    return REGISTER_BLOGGER_REGION_SELECT
 
 
-async def register_master_region_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка выбора региона мастером"""
+async def register_blogger_region_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка выбора региона блогером"""
     query = update.callback_query
     await query.answer()
 
@@ -687,7 +687,7 @@ async def register_master_region_select(update: Update, context: ContextTypes.DE
 
     if not region_data:
         await query.edit_message_text("❌ Ошибка выбора региона. Попробуйте снова.")
-        return REGISTER_MASTER_REGION_SELECT
+        return REGISTER_BLOGGER_REGION_SELECT
 
     context.user_data["region"] = region
 
@@ -728,8 +728,8 @@ async def register_master_region_select(update: Update, context: ContextTypes.DE
 
         # Добавляем кнопку "Другой город в области"
         # ЛОГИКА "ДРУГОЙ ГОРОД":
-        # - Мастер может указать любой город, не входящий в основной список
-        # - Заказы из этого города также будут видны мастеру
+        # - Блогер может указать любой город, не входящий в основной список
+        # - Кампанияы из этого города также будут видны блогеру
         # - Это полезно для небольших городов и посёлков
         keyboard.append([InlineKeyboardButton(
             f"📍 Другой город в области",
@@ -744,11 +744,11 @@ async def register_master_region_select(update: Update, context: ContextTypes.DE
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
-        return REGISTER_MASTER_CITY_SELECT
+        return REGISTER_BLOGGER_CITY_SELECT
 
 
-async def register_master_city_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка выбора города мастером после выбора региона"""
+async def register_blogger_city_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка выбора города блогером после выбора региона"""
     query = update.callback_query
     await query.answer()
 
@@ -770,7 +770,7 @@ async def register_master_city_select(update: Update, context: ContextTypes.DEFA
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
-        return REGISTER_MASTER_REGION_SELECT
+        return REGISTER_BLOGGER_REGION_SELECT
 
     if city == "other":
         region = context.user_data.get("region", "")
@@ -778,7 +778,7 @@ async def register_master_city_select(update: Update, context: ContextTypes.DEFA
             f"🏙 Напишите название города в регионе <b>{region}</b>:",
             parse_mode="HTML"
         )
-        return REGISTER_MASTER_CITY_OTHER
+        return REGISTER_BLOGGER_CITY_OTHER
     else:
         # Инициализируем список городов если его нет
         if "cities" not in context.user_data:
@@ -802,8 +802,8 @@ async def register_master_city_select(update: Update, context: ContextTypes.DEFA
         return await show_cities_confirmation(query, context)
 
 
-async def register_master_city_other(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Ввод другого города мастером вручную"""
+async def register_blogger_city_other(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Ввод другого города блогером вручную"""
     city = update.message.text.strip()
 
     # Инициализируем список городов если его нет
@@ -860,10 +860,10 @@ async def show_cities_confirmation(query, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-    return REGISTER_MASTER_CITIES_CONFIRM
+    return REGISTER_BLOGGER_CITIES_CONFIRM
 
 
-async def register_master_cities_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_blogger_cities_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора: добавить еще город или завершить"""
     query = update.callback_query
     await query.answer()
@@ -886,7 +886,7 @@ async def register_master_cities_confirm(update: Update, context: ContextTypes.D
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
-        return REGISTER_MASTER_REGION_SELECT
+        return REGISTER_BLOGGER_REGION_SELECT
 
     elif query.data == "finish_cities":
         # Завершаем выбор городов, переходим к категориям
@@ -906,10 +906,10 @@ async def register_master_cities_confirm(update: Update, context: ContextTypes.D
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-        return REGISTER_MASTER_MAIN_CATEGORY
+        return REGISTER_BLOGGER_MAIN_CATEGORY
 
 
-async def register_master_main_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_blogger_main_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора основной категории работ"""
     query = update.callback_query
     await query.answer()
@@ -952,10 +952,10 @@ async def register_master_main_category(update: Update, context: ContextTypes.DE
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
-    return REGISTER_MASTER_SUBCATEGORY_SELECT
+    return REGISTER_BLOGGER_SUBCATEGORY_SELECT
 
 
-async def register_master_subcategory_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_blogger_subcategory_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора подкатегорий с переключением галочек"""
     query = update.callback_query
     await query.answer()
@@ -966,7 +966,7 @@ async def register_master_subcategory_select(update: Update, context: ContextTyp
         # Проверяем что выбрана хотя бы одна подкатегория
         if not context.user_data.get("categories"):
             await query.answer("Выберите хотя бы одну подкатегорию!", show_alert=True)
-            return REGISTER_MASTER_SUBCATEGORY_SELECT
+            return REGISTER_BLOGGER_SUBCATEGORY_SELECT
 
         # Спрашиваем хочет ли добавить еще категории
         keyboard = [
@@ -982,7 +982,7 @@ async def register_master_subcategory_select(update: Update, context: ContextTyp
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-        return REGISTER_MASTER_ASK_MORE_CATEGORIES
+        return REGISTER_BLOGGER_ASK_MORE_CATEGORIES
 
     elif selected == "back":
         # Кнопка "Назад" - возвращаемся к выбору основной категории
@@ -1000,7 +1000,7 @@ async def register_master_subcategory_select(update: Update, context: ContextTyp
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-        return REGISTER_MASTER_MAIN_CATEGORY
+        return REGISTER_BLOGGER_MAIN_CATEGORY
 
     else:
         # Парсим cat_id:index из callback_data
@@ -1052,11 +1052,11 @@ async def register_master_subcategory_select(update: Update, context: ContextTyp
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
 
-        return REGISTER_MASTER_SUBCATEGORY_SELECT
+        return REGISTER_BLOGGER_SUBCATEGORY_SELECT
 
 
-async def register_master_ask_more_categories(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Спрашиваем хочет ли мастер добавить еще категории"""
+async def register_blogger_ask_more_categories(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Спрашиваем хочет ли блогер добавить еще категории"""
     query = update.callback_query
     await query.answer()
 
@@ -1081,13 +1081,13 @@ async def register_master_ask_more_categories(update: Update, context: ContextTy
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-        return REGISTER_MASTER_MAIN_CATEGORY
+        return REGISTER_BLOGGER_MAIN_CATEGORY
 
     else:
-        # Переходим к выбору уровня мастерства
+        # Переходим к выбору уровня блогерства
         keyboard = [
-            [InlineKeyboardButton("🌱 Начинающий мастер", callback_data="exp_Начинающий мастер")],
-            [InlineKeyboardButton("⚡ Опытный мастер", callback_data="exp_Опытный мастер")],
+            [InlineKeyboardButton("🌱 Начинающий блогер", callback_data="exp_Начинающий блогер")],
+            [InlineKeyboardButton("⚡ Опытный блогер", callback_data="exp_Опытный блогер")],
             [InlineKeyboardButton("⭐ Профессионал", callback_data="exp_Профессионал")],
         ]
 
@@ -1096,10 +1096,10 @@ async def register_master_ask_more_categories(update: Update, context: ContextTy
         await query.edit_message_text(
             f"✅ <b>Выбранные категории:</b>\n{categories_text}\n\n"
             "<b>Выберите ваш текущий уровень опыта</b>\n\n"
-            "Это важно для подбора заказов и ожиданий клиентов.\n"
+            "Это важно для подбора кампанияов и ожиданий клиентов.\n"
             "Пожалуйста, оценивайте себя честно — это выгодно в первую очередь вам.\n\n"
             "🔹 Если взять уровень выше своих навыков —\n"
-            "можно получить сложные заказы, низкие оценки и потерять рейтинг.\n\n"
+            "можно получить сложные кампанияы, низкие оценки и потерять рейтинг.\n\n"
             "🔹 Если начать с более низкого уровня —\n"
             "вы быстрее наберёте хорошие отзывы и сможете повысить уровень позже.\n\n"
             "Уровень можно изменить в настройках в любой момент,\n"
@@ -1108,10 +1108,10 @@ async def register_master_ask_more_categories(update: Update, context: ContextTy
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-        return REGISTER_MASTER_EXPERIENCE
+        return REGISTER_BLOGGER_EXPERIENCE
 
 
-async def register_master_experience(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_blogger_experience(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     
@@ -1121,7 +1121,7 @@ async def register_master_experience(update: Update, context: ContextTypes.DEFAU
     await query.edit_message_text(
         f"Уровень: {experience}\n\n"
         "📝 <b>Расскажите о своём опыте и выполненных проектах</b>\n\n"
-        "💡 Это описание увидят потенциальные заказчики. Укажите:\n\n"
+        "💡 Это описание увидят потенциальные рекламодательи. Укажите:\n\n"
         "✓ <b>Опыт работы:</b> Сколько лет в профессии, какие объекты выполняли\n"
         "✓ <b>Примеры проектов:</b> Что делали, какой сложности работы\n"
         "✓ <b>Специализация:</b> В чём вы особенно сильны\n"
@@ -1132,10 +1132,10 @@ async def register_master_experience(update: Update, context: ContextTypes.DEFAU
         "весь мусор убираю. Даю гарантию 2 года. Свой профессиональный инструмент.»",
         parse_mode="HTML"
     )
-    return REGISTER_MASTER_DESCRIPTION
+    return REGISTER_BLOGGER_DESCRIPTION
 
 
-async def register_master_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_blogger_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["description"] = update.message.text.strip()
     
     # НОВОЕ: Предлагаем добавить фото работ
@@ -1149,19 +1149,19 @@ async def register_master_description(update: Update, context: ContextTypes.DEFA
         "Добавьте фотографии, чтобы клиенты увидели качество ваших работ.\n\n"
         "⚠️ <b>ОЧЕНЬ ВАЖНО про первое фото:</b>\n"
         "🤵 Первая фотография <b>станет вашим фото профиля и должна быть с вашим лицом!</b>\n"
-        "Это повышает доверие клиентов и показывает, что вы реальный мастер.\n\n"
+        "Это повышает доверие клиентов и показывает, что вы реальный блогер.\n\n"
         "📋 Дальше добавьте <b>до 9 фотографий ваших работ:</b>\n"
         "• Завершённые объекты\n"
         "• Процесс работы\n"
         "• Примеры сложных проектов\n\n"
-        "💡 <i>Мастера с фото получают в 5 раз больше откликов!</i>",
+        "💡 <i>Блогера с фото получают в 5 раз больше предложениеов!</i>",
         reply_markup=InlineKeyboardMarkup(keyboard),
         parse_mode="HTML",
     )
-    return REGISTER_MASTER_PHOTOS
+    return REGISTER_BLOGGER_PHOTOS
 
 
-async def register_master_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_blogger_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора: добавлять фото или нет"""
     query = update.callback_query
     await query.answer()
@@ -1176,18 +1176,18 @@ async def register_master_photos(update: Update, context: ContextTypes.DEFAULT_T
             "• Фото на рабочем месте\n"
             "• Фото с инструментом\n"
             "• Фото на объекте\n\n"
-            "💡 Фото с лицом повышает доверие клиентов и увеличивает отклики в 5 раз!",
+            "💡 Фото с лицом повышает доверие клиентов и увеличивает предложениеи в 5 раз!",
             parse_mode="HTML",
         )
-        return REGISTER_MASTER_PHOTOS
+        return REGISTER_BLOGGER_PHOTOS
     else:
         # Пропускаем фото, завершаем регистрацию
         return await finalize_master_registration(update, context)
 
 
-async def handle_master_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_blogger_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка загруженных фотографий"""
-    logger.info(f"🔧 DEBUG: handle_master_photos вызван. Текст: {update.message.text if update.message.text else 'фото'}")
+    logger.info(f"🔧 DEBUG: handle_blogger_photos вызван. Текст: {update.message.text if update.message.text else 'фото'}")
 
     # КРИТИЧНО: Проверяем, не зарегистрирован ли уже пользователь
     telegram_id = update.effective_user.id
@@ -1203,7 +1203,7 @@ async def handle_master_photos(update: Update, context: ContextTypes.DEFAULT_TYP
             "Профиль → Добавить фото работ\n\n"
             "Или нажмите /start для возврата в главное меню.",
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("🏠 Главное меню", callback_data="show_worker_menu")
+                InlineKeyboardButton("🏠 Главное меню", callback_data="show_blogger_menu")
             ]])
         )
 
@@ -1220,7 +1220,7 @@ async def handle_master_photos(update: Update, context: ContextTypes.DEFAULT_TYP
             "• Напишите: готово",
             parse_mode="HTML"
         )
-        return REGISTER_MASTER_PHOTOS
+        return REGISTER_BLOGGER_PHOTOS
 
     # КРИТИЧНО: Проверка на документы (файлы)
     if update.message.document:
@@ -1238,7 +1238,7 @@ async def handle_master_photos(update: Update, context: ContextTypes.DEFAULT_TYP
                 "• Напишите: готово",
                 parse_mode="HTML"
             )
-            return REGISTER_MASTER_PHOTOS
+            return REGISTER_BLOGGER_PHOTOS
 
     # Проверяем текст сообщения
     if update.message.text:
@@ -1272,7 +1272,7 @@ async def handle_master_photos(update: Update, context: ContextTypes.DEFAULT_TYP
                 "Попробуйте отправить фото еще раз или используйте другое изображение.\n\n"
                 "Отправьте /done_photos для завершения регистрации без этого фото."
             )
-            return REGISTER_MASTER_PHOTOS
+            return REGISTER_BLOGGER_PHOTOS
 
         if len(context.user_data["portfolio_photos"]) < 10:
             context.user_data["portfolio_photos"].append(file_id)
@@ -1284,7 +1284,7 @@ async def handle_master_photos(update: Update, context: ContextTypes.DEFAULT_TYP
                 await update.message.reply_text(
                     "✅ <b>Фото #1 добавлено!</b>\n\n"
                     "💡 <b>РЕКОМЕНДАЦИЯ:</b> Первое фото желательно с вашим лицом!\n"
-                    "Это повышает доверие клиентов и увеличивает количество откликов.\n\n"
+                    "Это повышает доверие клиентов и увеличивает количество предложениеов.\n\n"
                     "📸 <b>Теперь добавьте фото ваших работ</b> (до 9 штук):\n\n"
                     "Отправьте фотографии завершённых проектов, которыми вы гордитесь.\n\n"
                     "Когда загрузите все фото, напишите:\n"
@@ -1312,7 +1312,7 @@ async def handle_master_photos(update: Update, context: ContextTypes.DEFAULT_TYP
                 "Отправьте /done_photos для завершения."
             )
 
-        return REGISTER_MASTER_PHOTOS
+        return REGISTER_BLOGGER_PHOTOS
     
     # Если пришло что-то другое
     logger.warning(f"Неожиданный ввод: {update.message.text}")
@@ -1322,12 +1322,12 @@ async def handle_master_photos(update: Update, context: ContextTypes.DEFAULT_TYP
         "• Команду /done_photos для завершения\n"
         "• Или напишите: готово"
     )
-    return REGISTER_MASTER_PHOTOS
+    return REGISTER_BLOGGER_PHOTOS
 
 
 async def finalize_master_registration(update, context):
     """
-    Финальное создание профиля мастера.
+    Финальное создание профиля блогера.
     ИСПРАВЛЕНО: Валидация обязательных полей перед созданием.
     """
     telegram_id = update.effective_user.id if update.message else update.callback_query.from_user.id
@@ -1363,7 +1363,7 @@ async def finalize_master_registration(update, context):
             user_id = existing_user['id']
             logger.info(f"Пользователь {telegram_id} уже существует, используем существующий ID: {user_id}")
         else:
-            user_id = db.create_user(telegram_id, "worker")
+            user_id = db.create_user(telegram_id, "blogger")
             user_created = True  # КРИТИЧНО: Отмечаем что создали нового пользователя
             logger.info(f"Создан новый пользователь {telegram_id} с ID: {user_id}")
 
@@ -1392,12 +1392,12 @@ async def finalize_master_registration(update, context):
             description=context.user_data["description"],
             portfolio_photos=photos_json,
             profile_photo=profile_photo,  # Устанавливаем первое фото как фото профиля
-            cities=context.user_data.get("cities"),  # Список всех городов мастера
+            cities=context.user_data.get("cities"),  # Список всех городов блогера
         )
 
     except ValueError as e:
         # Ошибки валидации (например, дубликат профиля из race condition protection)
-        logger.error(f"❌ Ошибка валидации при создании профиля мастера: {e}")
+        logger.error(f"❌ Ошибка валидации при создании профиля блогера: {e}")
 
         # КРИТИЧНО: Откатываем создание пользователя если создали его, но профиль не создался
         if user_created and user_id:
@@ -1422,7 +1422,7 @@ async def finalize_master_registration(update, context):
 
     except Exception as e:
         # Любые другие ошибки БД (connection, SQL syntax, etc)
-        logger.error(f"❌ Ошибка БД при создании профиля мастера: {e}", exc_info=True)
+        logger.error(f"❌ Ошибка БД при создании профиля блогера: {e}", exc_info=True)
 
         # КРИТИЧНО: Откатываем создание пользователя если создали его, но профиль не создался
         if user_created and user_id:
@@ -1445,17 +1445,17 @@ async def finalize_master_registration(update, context):
         context.user_data.clear()
         return ConversationHandler.END
 
-    keyboard = [[InlineKeyboardButton("Моё меню мастера", callback_data="show_worker_menu")]]
+    keyboard = [[InlineKeyboardButton("Моё меню блогера", callback_data="show_blogger_menu")]]
 
     # Используем валидные фото для точной статистики
     photos_count = len(valid_photos)
     photos_text = f"\n📸 Добавлено фотографий: {photos_count}" if photos_count > 0 else ""
 
     message_text = (
-        f"🥳 <b>Профиль мастера создан!</b>{photos_text}\n\n"
+        f"🥳 <b>Профиль блогера создан!</b>{photos_text}\n\n"
         "Теперь вы можете:\n"
         "• Посмотреть свой профиль\n"
-        "• Получать заказы от клиентов\n"
+        "• Получать кампанияы от клиентов\n"
         "• Добавить больше фото работ в любое время"
     )
 
@@ -1478,23 +1478,23 @@ async def finalize_master_registration(update, context):
 
 # ------- РЕГИСТРАЦИЯ ЗАКАЗЧИКА -------
 
-async def register_client_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_advertiser_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["name"] = update.message.text.strip()
     await update.message.reply_text(
         "📱 Укажите свой номер телефона (в формате: +375 29 123 45 67)\n\n"
         "Он необходим для регистрации и не будет виден всем подряд."
     )
-    return REGISTER_CLIENT_PHONE
+    return REGISTER_ADVERTISER_PHONE
 
 
-async def register_client_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_advertiser_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     phone = update.message.text.strip()
     if not is_valid_phone(phone):
         await update.message.reply_text(
             "Не могу распознать номер.\n"
             "Пожалуйста, укажите номер в формате: +375 29 123 45 67"
         )
-        return REGISTER_CLIENT_PHONE
+        return REGISTER_ADVERTISER_PHONE
 
     context.user_data["phone"] = phone
 
@@ -1512,10 +1512,10 @@ async def register_client_phone(update: Update, context: ContextTypes.DEFAULT_TY
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
-    return REGISTER_CLIENT_REGION_SELECT
+    return REGISTER_ADVERTISER_REGION_SELECT
 
 
-async def register_client_region_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_advertiser_region_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора региона клиентом"""
     query = update.callback_query
     await query.answer()
@@ -1525,7 +1525,7 @@ async def register_client_region_select(update: Update, context: ContextTypes.DE
 
     if not region_data:
         await query.edit_message_text("❌ Ошибка выбора региона. Попробуйте снова.")
-        return REGISTER_CLIENT_REGION_SELECT
+        return REGISTER_ADVERTISER_REGION_SELECT
 
     context.user_data["region"] = region
 
@@ -1554,7 +1554,7 @@ async def register_client_region_select(update: Update, context: ContextTypes.DE
                 user_id = existing_user["id"]
                 logger.info(f"Существующий user_id: {user_id}")
             else:
-                user_id = db.create_user(telegram_id, "client")
+                user_id = db.create_user(telegram_id, "advertiser")
                 user_created = True  # КРИТИЧНО: Отмечаем что создали нового пользователя
                 logger.info(f"Создан новый user_id: {user_id}")
 
@@ -1614,14 +1614,14 @@ async def register_client_region_select(update: Update, context: ContextTypes.DE
             context.user_data.clear()
             return ConversationHandler.END
 
-        keyboard = [[InlineKeyboardButton("🏠 Моё меню заказчика", callback_data="show_client_menu")]]
+        keyboard = [[InlineKeyboardButton("🏠 Моё меню рекламодательа", callback_data="show_advertiser_menu")]]
         await query.edit_message_text(
-            "🥳 <b>Профиль заказчика создан!</b>\n\n"
+            "🥳 <b>Профиль рекламодательа создан!</b>\n\n"
             "Теперь вы можете:\n"
-            "• 📝 Создавать заказы\n"
-            "• 🔍 Искать мастеров\n"
-            "• 💬 Общаться с мастерами\n\n"
-            "Детали о задаче вы опишете при создании заказа!",
+            "• 📝 Создавать кампанияы\n"
+            "• 🔍 Искать блогеров\n"
+            "• 💬 Общаться с блогерами\n\n"
+            "Детали о задаче вы опишете при создании кампанияа!",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
@@ -1660,10 +1660,10 @@ async def register_client_region_select(update: Update, context: ContextTypes.DE
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
-        return REGISTER_CLIENT_CITY_SELECT
+        return REGISTER_ADVERTISER_CITY_SELECT
 
 
-async def register_client_city_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_advertiser_city_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора города клиентом после выбора региона"""
     query = update.callback_query
     await query.answer()
@@ -1686,7 +1686,7 @@ async def register_client_city_select(update: Update, context: ContextTypes.DEFA
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
-        return REGISTER_CLIENT_REGION_SELECT
+        return REGISTER_ADVERTISER_REGION_SELECT
 
     if city == "other":
         region = context.user_data.get("region", "")
@@ -1694,7 +1694,7 @@ async def register_client_city_select(update: Update, context: ContextTypes.DEFA
             f"🏙 Напишите название города в регионе <b>{region}</b>:",
             parse_mode="HTML"
         )
-        return REGISTER_CLIENT_CITY_OTHER
+        return REGISTER_ADVERTISER_CITY_OTHER
     else:
         context.user_data["city"] = city
         region = context.user_data.get("region", city)
@@ -1721,7 +1721,7 @@ async def register_client_city_select(update: Update, context: ContextTypes.DEFA
                 user_id = existing_user["id"]
                 logger.info(f"Существующий user_id: {user_id}")
             else:
-                user_id = db.create_user(telegram_id, "client")
+                user_id = db.create_user(telegram_id, "advertiser")
                 user_created = True  # КРИТИЧНО: Отмечаем что создали нового пользователя
                 logger.info(f"Создан новый user_id: {user_id}")
 
@@ -1781,14 +1781,14 @@ async def register_client_city_select(update: Update, context: ContextTypes.DEFA
             context.user_data.clear()
             return ConversationHandler.END
 
-        keyboard = [[InlineKeyboardButton("🏠 Моё меню заказчика", callback_data="show_client_menu")]]
+        keyboard = [[InlineKeyboardButton("🏠 Моё меню рекламодательа", callback_data="show_advertiser_menu")]]
         await query.edit_message_text(
-            "🥳 <b>Профиль заказчика создан!</b>\n\n"
+            "🥳 <b>Профиль рекламодательа создан!</b>\n\n"
             "Теперь вы можете:\n"
-            "• 📝 Создавать заказы\n"
-            "• 🔍 Искать мастеров\n"
-            "• 💬 Общаться с мастерами\n\n"
-            "Детали о задаче вы опишете при создании заказа!",
+            "• 📝 Создавать кампанияы\n"
+            "• 🔍 Искать блогеров\n"
+            "• 💬 Общаться с блогерами\n\n"
+            "Детали о задаче вы опишете при создании кампанияа!",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
@@ -1798,7 +1798,7 @@ async def register_client_city_select(update: Update, context: ContextTypes.DEFA
         return ConversationHandler.END
 
 
-async def register_client_city_other(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_advertiser_city_other(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Ввод другого города клиентом вручную"""
     city = update.message.text.strip()
     context.user_data["city"] = city
@@ -1818,7 +1818,7 @@ async def register_client_city_other(update: Update, context: ContextTypes.DEFAU
         if existing_user:
             user_id = existing_user["id"]
         else:
-            user_id = db.create_user(telegram_id, "client")
+            user_id = db.create_user(telegram_id, "advertiser")
             user_created = True  # КРИТИЧНО: Отмечаем что создали нового пользователя
 
         db.create_client_profile(
@@ -1874,14 +1874,14 @@ async def register_client_city_other(update: Update, context: ContextTypes.DEFAU
         context.user_data.clear()
         return ConversationHandler.END
 
-    keyboard = [[InlineKeyboardButton("🏠 Моё меню заказчика", callback_data="show_client_menu")]]
+    keyboard = [[InlineKeyboardButton("🏠 Моё меню рекламодательа", callback_data="show_advertiser_menu")]]
     await update.message.reply_text(
-        "🥳 <b>Профиль заказчика создан!</b>\n\n"
+        "🥳 <b>Профиль рекламодательа создан!</b>\n\n"
         "Теперь вы можете:\n"
-        "• 📝 Создавать заказы\n"
-        "• 🔍 Искать мастеров\n"
-        "• 💬 Общаться с мастерами\n\n"
-        "Детали о задаче вы опишете при создании заказа!",
+        "• 📝 Создавать кампанияы\n"
+        "• 🔍 Искать блогеров\n"
+        "• 💬 Общаться с блогерами\n\n"
+        "Детали о задаче вы опишете при создании кампанияа!",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
@@ -1892,7 +1892,7 @@ async def register_client_city_other(update: Update, context: ContextTypes.DEFAU
 
 # ------- МЕНЮ -------
 
-async def show_worker_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def show_blogger_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
@@ -1905,7 +1905,7 @@ async def show_worker_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     notifications_enabled = db.are_notifications_enabled(user['id']) if user else True
     notification_status = "🔔 Вкл" if notifications_enabled else "🔕 Выкл"
 
-    # НОВОЕ: Получаем количество непрочитанных заказов
+    # НОВОЕ: Получаем количество непрочитанных кампанияов
     unread_orders_count = 0
     if user:
         notification = db.get_worker_notification(user['id'])
@@ -1913,20 +1913,20 @@ async def show_worker_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
             unread_orders_count = notification.get('available_orders_count', 0)
 
     # Формируем текст кнопки с бейджем
-    orders_button_text = "📋 Доступные заказы"
+    orders_button_text = "📋 Доступные кампанияы"
     if unread_orders_count > 0:
-        orders_button_text = f"📋 Доступные заказы 🔴 {unread_orders_count}"
+        orders_button_text = f"📋 Доступные кампанияы 🔴 {unread_orders_count}"
 
     # Проверяем наличие новых акций
     news_button_text = "🎯 Новости и акции"
-    if db.has_unviewed_ads(user['id'], 'menu_banner', user_role='worker'):
+    if db.has_unviewed_ads(user['id'], 'menu_banner', user_role='blogger'):
         news_button_text = "🎯 Новости и акции 🔴 НОВОЕ"
 
     keyboard = [
-        [InlineKeyboardButton(orders_button_text, callback_data="worker_view_orders")],
-        [InlineKeyboardButton("💼 Мои отклики", callback_data="worker_my_bids")],
-        [InlineKeyboardButton("📦 Мои заказы", callback_data="worker_my_orders")],
-        [InlineKeyboardButton("👤 Мой профиль", callback_data="worker_profile")],
+        [InlineKeyboardButton(orders_button_text, callback_data="blogger_view_orders")],
+        [InlineKeyboardButton("💼 Мои предложениеи", callback_data="blogger_my_bids")],
+        [InlineKeyboardButton("📦 Мои кампанияы", callback_data="blogger_my_orders")],
+        [InlineKeyboardButton("👤 Мой профиль", callback_data="blogger_profile")],
         [InlineKeyboardButton(f"{notification_status} Уведомления", callback_data="toggle_notifications")],
         [InlineKeyboardButton("💡 Предложения", callback_data="send_suggestion")],
         [InlineKeyboardButton(news_button_text, callback_data="show_news_and_ads")],  # НОВОЕ: Постоянная кнопка для рекламы с индикатором
@@ -1946,7 +1946,7 @@ async def show_worker_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await context.bot.send_message(
         chat_id=query.message.chat_id,
-        text="🧰 <b>Меню мастера</b>\n\n"
+        text="🧰 <b>Меню блогера</b>\n\n"
              "Выберите действие:",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard),
@@ -1954,7 +1954,7 @@ async def show_worker_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def toggle_notifications(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Переключает уведомления для мастера"""
+    """Переключает уведомления для блогера"""
     query = update.callback_query
     await query.answer()
 
@@ -1973,8 +1973,8 @@ async def toggle_notifications(update: Update, context: ContextTypes.DEFAULT_TYP
     status_text = "включены ✅" if new_status else "отключены ❌"
 
     # ИСПРАВЛЕНО: Вынесли текст в переменные (нельзя использовать \n внутри f-string expression)
-    notification_on_text = 'Вы будете получать уведомления о новых заказах в вашем городе и категориях.'
-    notification_off_text = 'Вы НЕ будете получать уведомления о новых заказах. Вы можете просматривать заказы вручную в разделе "Доступные заказы".'
+    notification_on_text = 'Вы будете получать уведомления о новых кампанияах в вашем городе и категориях.'
+    notification_off_text = 'Вы НЕ будете получать уведомления о новых кампанияах. Вы можете просматривать кампанияы вручную в разделе "Доступные кампанияы".'
 
     await query.edit_message_text(
         f"🔔 <b>Уведомления {status_text}</b>\n\n"
@@ -1983,9 +1983,9 @@ async def toggle_notifications(update: Update, context: ContextTypes.DEFAULT_TYP
         parse_mode="HTML"
     )
 
-    # Возвращаемся в меню мастера через 2 секунды
+    # Возвращаемся в меню блогера через 2 секунды
     await asyncio.sleep(2)
-    await show_worker_menu(update, context)
+    await show_blogger_menu(update, context)
 
 
 async def toggle_client_notifications(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -2007,8 +2007,8 @@ async def toggle_client_notifications(update: Update, context: ContextTypes.DEFA
 
     status_text = "включены ✅" if new_status else "отключены ❌"
 
-    notification_on_text = 'Вы будете получать уведомления о новых откликах на ваши заказы.'
-    notification_off_text = 'Вы НЕ будете получать уведомления об откликах. Вы можете проверять отклики вручную в разделе "Мои заказы".'
+    notification_on_text = 'Вы будете получать уведомления о новых предложениеах на ваши кампанияы.'
+    notification_off_text = 'Вы НЕ будете получать уведомления об предложениеах. Вы можете проверять предложениеи вручную в разделе "Мои кампанияы".'
 
     await query.edit_message_text(
         f"🔔 <b>Уведомления {status_text}</b>\n\n"
@@ -2019,11 +2019,11 @@ async def toggle_client_notifications(update: Update, context: ContextTypes.DEFA
 
     # Возвращаемся в меню клиента через 2 секунды
     await asyncio.sleep(2)
-    await show_client_menu(update, context)
+    await show_advertiser_menu(update, context)
 
 
-async def worker_my_bids(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Показывает только АКТИВНЫЕ отклики мастера (где мастера ещё не выбрали)"""
+async def blogger_my_bids(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Показывает только АКТИВНЫЕ предложениеи блогера (где блогера ещё не выбрали)"""
     query = update.callback_query
     await query.answer()
 
@@ -2032,72 +2032,72 @@ async def worker_my_bids(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text("❌ Пользователь не найден.")
         return
 
-    # Получаем профиль мастера
-    worker = db.get_worker_by_user_id(user['id'])
-    if not worker:
+    # Получаем профиль блогера
+    blogger = db.get_worker_by_user_id(user['id'])
+    if not blogger:
         await query.edit_message_text(
-            "❌ Профиль мастера не найден.\n\n"
-            "Возможно, вы зарегистрированы как заказчик."
+            "❌ Профиль блогера не найден.\n\n"
+            "Возможно, вы зарегистрированы как рекламодатель."
         )
         return
 
-    worker_dict = dict(worker)
+    blogger_dict = dict(blogger)
 
-    # Получаем все отклики мастера
-    all_bids = db.get_bids_for_worker(worker_dict['id'])
+    # Получаем все предложениеи блогера
+    all_bids = db.get_bids_for_worker(blogger_dict['id'])
 
     if not all_bids:
-        keyboard = [[InlineKeyboardButton("⬅️ Назад", callback_data="show_worker_menu")]]
+        keyboard = [[InlineKeyboardButton("⬅️ Назад", callback_data="show_blogger_menu")]]
         await query.edit_message_text(
-            "💼 <b>Мои отклики</b>\n\n"
-            "У вас пока нет откликов на заказы.\n\n"
-            "Перейдите в раздел \"Доступные заказы\" и откликнитесь на интересные вам заказы!",
+            "💼 <b>Мои предложениеи</b>\n\n"
+            "У вас пока нет предложениеов на кампанияы.\n\n"
+            "Перейдите в раздел \"Доступные кампанияы\" и предложениенитесь на интересные вам кампанияы!",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
         return
 
-    # ИСПРАВЛЕНО: Фильтруем только АКТИВНЫЕ отклики (active - ждём ответа клиента)
-    # Статус 'active' присваивается при создании отклика в db.create_bid()
-    active_bids = [dict(bid) for bid in all_bids if dict(bid)['status'] == 'active']
+    # ИСПРАВЛЕНО: Фильтруем только АКТИВНЫЕ предложениеи (active - ждём ответа клиента)
+    # Статус 'active' присваивается при создании предложениеа в db.create_bid()
+    active_bids = [dict(offer) for offer in all_bids if dict(offer)['status'] == 'active']
 
     if not active_bids:
-        keyboard = [[InlineKeyboardButton("⬅️ Назад", callback_data="show_worker_menu")]]
+        keyboard = [[InlineKeyboardButton("⬅️ Назад", callback_data="show_blogger_menu")]]
         await query.edit_message_text(
-            "💼 <b>Активные отклики</b>\n\n"
-            "У вас нет активных откликов, ожидающих ответа клиента.\n\n"
-            "Все ваши отклики либо были приняты (см. \"Мои заказы\"), либо отклонены.",
+            "💼 <b>Активные предложениеи</b>\n\n"
+            "У вас нет активных предложениеов, ожидающих ответа клиента.\n\n"
+            "Все ваши предложениеи либо были приняты (см. \"Мои кампанияы\"), либо отклонены.",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
         return
 
-    # Формируем текст с активными откликами
-    text = f"💼 <b>Активные отклики</b> ({len(active_bids)})\n\n"
+    # Формируем текст с активными предложениеами
+    text = f"💼 <b>Активные предложениеи</b> ({len(active_bids)})\n\n"
     text += "⏳ Ожидают ответа клиента:\n\n"
 
     keyboard = []
 
-    for i, bid in enumerate(active_bids[:10], 1):  # Показываем до 10 активных
-        order_id = bid['order_id']
-        order = db.get_order_by_id(order_id)
+    for i, offer in enumerate(active_bids[:10], 1):  # Показываем до 10 активных
+        campaign_id = offer['campaign_id']
+        campaign = db.get_order_by_id(campaign_id)
 
-        if order:
-            order_dict = dict(order)
-            category = order_dict.get('category', 'Без категории')
-            description = order_dict.get('description', '')
+        if campaign:
+            campaign_dict = dict(campaign)
+            category = campaign_dict.get('category', 'Без категории')
+            description = campaign_dict.get('description', '')
             if len(description) > 40:
                 description = description[:40] + "..."
 
-            text += f"{i}. <b>Заказ #{order_id}</b>\n"
+            text += f"{i}. <b>Кампания #{campaign_id}</b>\n"
             text += f"🔧 {category}\n"
             text += f"📝 {description}\n"
-            text += f"💰 Ваша цена: {bid['proposed_price']} {bid['currency']}\n"
+            text += f"💰 Ваша цена: {offer['proposed_price']} {offer['currency']}\n"
 
-            # Добавляем кнопку для просмотра заказа
+            # Добавляем кнопку для просмотра кампанияа
             keyboard.append([InlineKeyboardButton(
-                f"📋 Заказ #{order_id}",
-                callback_data=f"view_order_{order_id}"
+                f"📋 Кампания #{campaign_id}",
+                callback_data=f"view_campaign_{campaign_id}"
             )])
 
             text += "\n"
@@ -2105,9 +2105,9 @@ async def worker_my_bids(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(active_bids) > 10:
         text += f"... и ещё {len(active_bids) - 10}\n\n"
 
-    text += f"📊 <b>Всего активных откликов:</b> {len(active_bids)}"
+    text += f"📊 <b>Всего активных предложениеов:</b> {len(active_bids)}"
 
-    keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="show_worker_menu")])
+    keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="show_blogger_menu")])
 
     await query.edit_message_text(
         text,
@@ -2116,13 +2116,13 @@ async def worker_my_bids(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-async def worker_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Показывает выбор категории заказов мастера (в работе/завершённые)"""
+async def blogger_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Показывает выбор категории кампанияов блогера (в работе/завершённые)"""
     query = update.callback_query
     await query.answer()
 
     try:
-        # Получаем пользователя и профиль мастера
+        # Получаем пользователя и профиль блогера
         user = db.get_user(query.from_user.id)
         if not user:
             await safe_edit_message(query, "❌ Пользователь не найден.")
@@ -2130,63 +2130,63 @@ async def worker_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         user_dict = dict(user)
 
-        # Удаляем уведомление о новых сообщениях (пользователь открыл заказы)
+        # Удаляем уведомление о новых сообщениях (пользователь открыл кампанияы)
         db.delete_chat_message_notification(user_dict['id'])
 
-        worker_profile = db.get_worker_profile(user_dict["id"])
-        if not worker_profile:
+        blogger_profile = db.get_worker_profile(user_dict["id"])
+        if not blogger_profile:
             await safe_edit_message(
                 query,
-                "❌ Профиль мастера не найден.\n\n"
+                "❌ Профиль блогера не найден.\n\n"
                 "Возможно произошла ошибка при регистрации.\n"
                 "Нажмите /start и зарегистрируйтесь заново.",
                 parse_mode="HTML"
             )
             return
 
-        worker_dict = dict(worker_profile)
+        blogger_dict = dict(blogger_profile)
 
-        # Получаем все отклики мастера
-        bids = db.get_bids_for_worker(worker_dict['id'])
+        # Получаем все предложениеи блогера
+        offers = db.get_bids_for_worker(blogger_dict['id'])
 
-        # Подсчитываем заказы по статусам
+        # Подсчитываем кампанияы по статусам
         active_count = 0
         completed_count = 0
 
-        for bid in bids:
-            bid_dict = dict(bid)
-            if bid_dict['status'] == 'selected':
-                order = db.get_order_by_id(bid_dict['order_id'])
-                if order:
-                    order_dict = dict(order)
-                    if order_dict['status'] in ('master_selected', 'contact_shared', 'master_confirmed', 'waiting_master_confirmation'):
+        for offer in offers:
+            offer_dict = dict(offer)
+            if offer_dict['status'] == 'selected':
+                campaign = db.get_order_by_id(offer_dict['campaign_id'])
+                if campaign:
+                    campaign_dict = dict(campaign)
+                    if campaign_dict['status'] in ('master_selected', 'contact_shared', 'master_confirmed', 'waiting_master_confirmation'):
                         active_count += 1
-                    elif order_dict['status'] in ('done', 'completed', 'canceled', 'cancelled'):
+                    elif campaign_dict['status'] in ('done', 'completed', 'canceled', 'cancelled'):
                         completed_count += 1
 
         if active_count == 0 and completed_count == 0:
-            keyboard = [[InlineKeyboardButton("⬅️ Назад", callback_data="show_worker_menu")]]
+            keyboard = [[InlineKeyboardButton("⬅️ Назад", callback_data="show_blogger_menu")]]
             await safe_edit_message(
                 query,
-                "📦 <b>Мои заказы</b>\n\n"
-                "У вас пока нет заказов.\n\n"
-                "Когда клиент выберет ваш отклик, заказ появится здесь.",
+                "📦 <b>Мои кампанияы</b>\n\n"
+                "У вас пока нет кампанияов.\n\n"
+                "Когда клиент выберет ваш предложение, кампания появится здесь.",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
             return
 
         # Показываем меню выбора категории
-        text = "📦 <b>Мои заказы</b>\n\n"
-        text += f"Всего заказов: {active_count + completed_count}\n"
+        text = "📦 <b>Мои кампанияы</b>\n\n"
+        text += f"Всего кампанияов: {active_count + completed_count}\n"
         text += f"🔧 В работе: {active_count}\n"
         text += f"✅ Завершённые: {completed_count}\n\n"
         text += "Выберите категорию:"
 
         keyboard = [
-            [InlineKeyboardButton(f"🔧 Заказы в работе ({active_count})", callback_data="worker_active_orders")],
-            [InlineKeyboardButton(f"✅ Завершённые заказы ({completed_count})", callback_data="worker_completed_orders")],
-            [InlineKeyboardButton("⬅️ Назад", callback_data="show_worker_menu")]
+            [InlineKeyboardButton(f"🔧 Кампанияы в работе ({active_count})", callback_data="blogger_active_orders")],
+            [InlineKeyboardButton(f"✅ Завершённые кампанияы ({completed_count})", callback_data="blogger_completed_orders")],
+            [InlineKeyboardButton("⬅️ Назад", callback_data="show_blogger_menu")]
         ]
 
         await safe_edit_message(
@@ -2197,19 +2197,19 @@ async def worker_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     except Exception as e:
-        logger.error(f"Ошибка в worker_my_orders: {e}", exc_info=True)
+        logger.error(f"Ошибка в blogger_my_orders: {e}", exc_info=True)
         await safe_edit_message(
             query,
-            f"❌ Произошла ошибка при загрузке заказов:\n{str(e)}",
+            f"❌ Произошла ошибка при загрузке кампанияов:\n{str(e)}",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("⬅️ Назад", callback_data="show_worker_menu")
+                InlineKeyboardButton("⬅️ Назад", callback_data="show_blogger_menu")
             ]])
         )
 
 
-async def worker_active_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Показывает активные заказы мастера (в работе)"""
+async def blogger_active_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Показывает активные кампанияы блогера (в работе)"""
     query = update.callback_query
     await query.answer()
 
@@ -2220,82 +2220,82 @@ async def worker_active_orders(update: Update, context: ContextTypes.DEFAULT_TYP
             return
 
         user_dict = dict(user)
-        worker_profile = db.get_worker_profile(user_dict["id"])
-        if not worker_profile:
-            await safe_edit_message(query, "❌ Профиль мастера не найден.")
+        blogger_profile = db.get_worker_profile(user_dict["id"])
+        if not blogger_profile:
+            await safe_edit_message(query, "❌ Профиль блогера не найден.")
             return
 
-        worker_dict = dict(worker_profile)
+        blogger_dict = dict(blogger_profile)
 
-        # Получаем все отклики и фильтруем активные заказы
-        bids = db.get_bids_for_worker(worker_dict['id'])
+        # Получаем все предложениеи и фильтруем активные кампанияы
+        offers = db.get_bids_for_worker(blogger_dict['id'])
         active_orders = []
 
-        for bid in bids:
-            bid_dict = dict(bid)
-            if bid_dict['status'] == 'selected':
-                order = db.get_order_by_id(bid_dict['order_id'])
-                if order:
-                    order_dict = dict(order)
-                    if order_dict['status'] in ('master_selected', 'contact_shared', 'master_confirmed', 'waiting_master_confirmation'):
-                        bid_dict['order_status'] = order_dict['status']
-                        bid_dict['order_city'] = order_dict.get('city', 'Не указан')
-                        bid_dict['order_category'] = order_dict.get('category', 'Без категории')
-                        bid_dict['order_description'] = order_dict.get('description', '')
-                        active_orders.append(bid_dict)
+        for offer in offers:
+            offer_dict = dict(offer)
+            if offer_dict['status'] == 'selected':
+                campaign = db.get_order_by_id(offer_dict['campaign_id'])
+                if campaign:
+                    campaign_dict = dict(campaign)
+                    if campaign_dict['status'] in ('master_selected', 'contact_shared', 'master_confirmed', 'waiting_master_confirmation'):
+                        offer_dict['campaign_status'] = campaign_dict['status']
+                        offer_dict['campaign_city'] = campaign_dict.get('city', 'Не указан')
+                        offer_dict['campaign_category'] = campaign_dict.get('category', 'Без категории')
+                        offer_dict['campaign_description'] = campaign_dict.get('description', '')
+                        active_orders.append(offer_dict)
 
         if not active_orders:
-            keyboard = [[InlineKeyboardButton("⬅️ Назад к заказам", callback_data="worker_my_orders")]]
+            keyboard = [[InlineKeyboardButton("⬅️ Назад к кампанияам", callback_data="blogger_my_orders")]]
             await safe_edit_message(
                 query,
-                "🔧 <b>Заказы в работе</b>\n\nУ вас нет активных заказов.",
+                "🔧 <b>Кампанияы в работе</b>\n\nУ вас нет активных кампанияов.",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
             return
 
         # Формируем текст и кнопки
-        text = f"🔧 <b>Заказы в работе</b> ({len(active_orders)})\n\n"
+        text = f"🔧 <b>Кампанияы в работе</b> ({len(active_orders)})\n\n"
         keyboard = []
 
-        for i, order in enumerate(active_orders[:10], 1):
-            text += f"{i}. <b>Заказ #{order['order_id']}</b>\n"
-            text += f"🔧 {order.get('order_category', 'Без категории')}\n"
+        for i, campaign in enumerate(active_orders[:10], 1):
+            text += f"{i}. <b>Кампания #{campaign['campaign_id']}</b>\n"
+            text += f"🔧 {campaign.get('campaign_category', 'Без категории')}\n"
 
-            description = order.get('order_description', '')
+            description = campaign.get('campaign_description', '')
             if len(description) > 50:
                 description = description[:50] + "..."
             text += f"📝 {description}\n"
-            text += f"💰 {order['proposed_price']} {order['currency']}\n"
+            text += f"💰 {campaign['proposed_price']} {campaign['currency']}\n"
 
             # Кнопка чата
-            chat = db.get_chat_by_order(order['order_id'])
+            chat = db.get_chat_by_order(campaign['campaign_id'])
             if chat:
                 chat_dict = dict(chat)
                 keyboard.append([InlineKeyboardButton(
-                    f"💬 Чат (заказ #{order['order_id']})",
+                    f"💬 Чат (кампания #{campaign['campaign_id']})",
                     callback_data=f"open_chat_{chat_dict['id']}"
                 )])
 
             # Кнопка завершения
             keyboard.append([InlineKeyboardButton(
-                f"✅ Завершить заказ #{order['order_id']}",
-                callback_data=f"complete_order_{order['order_id']}"
+                f"✅ Завершить кампания #{campaign['campaign_id']}",
+                callback_data=f"complete_campaign_{campaign['campaign_id']}"
             )])
 
             text += "\n"
 
-        keyboard.append([InlineKeyboardButton("⬅️ Назад к заказам", callback_data="worker_my_orders")])
+        keyboard.append([InlineKeyboardButton("⬅️ Назад к кампанияам", callback_data="blogger_my_orders")])
 
         await safe_edit_message(query, text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(keyboard))
 
     except Exception as e:
-        logger.error(f"Ошибка в worker_active_orders: {e}", exc_info=True)
+        logger.error(f"Ошибка в blogger_active_orders: {e}", exc_info=True)
         await safe_edit_message(query, f"❌ Ошибка: {str(e)}")
 
 
-async def worker_completed_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Показывает завершённые заказы мастера"""
+async def blogger_completed_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Показывает завершённые кампанияы блогера"""
     query = update.callback_query
     await query.answer()
 
@@ -2306,97 +2306,97 @@ async def worker_completed_orders(update: Update, context: ContextTypes.DEFAULT_
             return
 
         user_dict = dict(user)
-        worker_profile = db.get_worker_profile(user_dict["id"])
-        if not worker_profile:
-            await safe_edit_message(query, "❌ Профиль мастера не найден.")
+        blogger_profile = db.get_worker_profile(user_dict["id"])
+        if not blogger_profile:
+            await safe_edit_message(query, "❌ Профиль блогера не найден.")
             return
 
-        worker_dict = dict(worker_profile)
+        blogger_dict = dict(blogger_profile)
 
-        # Получаем все отклики и фильтруем завершённые заказы
-        bids = db.get_bids_for_worker(worker_dict['id'])
+        # Получаем все предложениеи и фильтруем завершённые кампанияы
+        offers = db.get_bids_for_worker(blogger_dict['id'])
         completed_orders = []
 
-        for bid in bids:
-            bid_dict = dict(bid)
-            if bid_dict['status'] == 'selected':
-                order = db.get_order_by_id(bid_dict['order_id'])
-                if order:
-                    order_dict = dict(order)
-                    if order_dict['status'] in ('done', 'completed', 'canceled', 'cancelled'):
-                        bid_dict['order_status'] = order_dict['status']
-                        bid_dict['order_city'] = order_dict.get('city', 'Не указан')
-                        bid_dict['order_category'] = order_dict.get('category', 'Без категории')
-                        bid_dict['order_description'] = order_dict.get('description', '')
-                        completed_orders.append(bid_dict)
+        for offer in offers:
+            offer_dict = dict(offer)
+            if offer_dict['status'] == 'selected':
+                campaign = db.get_order_by_id(offer_dict['campaign_id'])
+                if campaign:
+                    campaign_dict = dict(campaign)
+                    if campaign_dict['status'] in ('done', 'completed', 'canceled', 'cancelled'):
+                        offer_dict['campaign_status'] = campaign_dict['status']
+                        offer_dict['campaign_city'] = campaign_dict.get('city', 'Не указан')
+                        offer_dict['campaign_category'] = campaign_dict.get('category', 'Без категории')
+                        offer_dict['campaign_description'] = campaign_dict.get('description', '')
+                        completed_orders.append(offer_dict)
 
         if not completed_orders:
-            keyboard = [[InlineKeyboardButton("⬅️ Назад к заказам", callback_data="worker_my_orders")]]
+            keyboard = [[InlineKeyboardButton("⬅️ Назад к кампанияам", callback_data="blogger_my_orders")]]
             await safe_edit_message(
                 query,
-                "✅ <b>Завершённые заказы</b>\n\nУ вас нет завершённых заказов.",
+                "✅ <b>Завершённые кампанияы</b>\n\nУ вас нет завершённых кампанияов.",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
             return
 
         # Формируем текст и кнопки
-        text = f"✅ <b>Завершённые заказы</b> ({len(completed_orders)})\n\n"
+        text = f"✅ <b>Завершённые кампанияы</b> ({len(completed_orders)})\n\n"
         keyboard = []
 
-        for i, order in enumerate(completed_orders[:10], 1):
+        for i, campaign in enumerate(completed_orders[:10], 1):
             status_emoji = {"done": "✅", "completed": "✅", "canceled": "❌"}
-            emoji = status_emoji.get(order.get('order_status', 'done'), "✅")
+            emoji = status_emoji.get(campaign.get('campaign_status', 'done'), "✅")
 
-            text += f"{i}. {emoji} <b>Заказ #{order['order_id']}</b>\n"
-            text += f"🔧 {order.get('order_category', 'Без категории')}\n"
+            text += f"{i}. {emoji} <b>Кампания #{campaign['campaign_id']}</b>\n"
+            text += f"🔧 {campaign.get('campaign_category', 'Без категории')}\n"
 
-            description = order.get('order_description', '')
+            description = campaign.get('campaign_description', '')
             if len(description) > 50:
                 description = description[:50] + "..."
             text += f"📝 {description}\n"
-            text += f"💰 {order['proposed_price']} {order['currency']}\n"
+            text += f"💰 {campaign['proposed_price']} {campaign['currency']}\n"
 
             # Кнопка чата для просмотра истории
-            chat = db.get_chat_by_order(order['order_id'])
+            chat = db.get_chat_by_order(campaign['campaign_id'])
             if chat:
                 chat_dict = dict(chat)
                 keyboard.append([InlineKeyboardButton(
-                    f"💬 Посмотреть чат (заказ #{order['order_id']})",
+                    f"💬 Посмотреть чат (кампания #{campaign['campaign_id']})",
                     callback_data=f"open_chat_{chat_dict['id']}"
                 )])
 
             # НОВОЕ: Кнопка для загрузки/добавления фото работы
             keyboard.append([InlineKeyboardButton(
-                f"📸 Добавить фото работы (заказ #{order['order_id']})",
-                callback_data=f"upload_work_photo_{order['order_id']}"
+                f"📸 Добавить фото работы (кампания #{campaign['campaign_id']})",
+                callback_data=f"upload_work_photo_{campaign['campaign_id']}"
             )])
 
             text += "\n"
 
-        keyboard.append([InlineKeyboardButton("⬅️ Назад к заказам", callback_data="worker_my_orders")])
+        keyboard.append([InlineKeyboardButton("⬅️ Назад к кампанияам", callback_data="blogger_my_orders")])
 
         await safe_edit_message(query, text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(keyboard))
 
     except Exception as e:
-        logger.error(f"Ошибка в worker_completed_orders: {e}", exc_info=True)
+        logger.error(f"Ошибка в blogger_completed_orders: {e}", exc_info=True)
         await safe_edit_message(query, f"❌ Ошибка: {str(e)}")
 
 
 def _get_order_status_text(status):
-    """Возвращает читаемый текст статуса заказа"""
+    """Возвращает читаемый текст статуса кампанияа"""
     status_map = {
         'open': '🟢 Открыт',
         'waiting_master_confirmation': '⏳ Ожидает подтверждения',
-        'master_confirmed': '✅ Мастер подтвердил',
-        'master_selected': '👤 Мастер выбран',
+        'master_confirmed': '✅ Блогер подтвердил',
+        'master_selected': '👤 Блогер выбран',
         'completed': '✅ Завершен',
         'cancelled': '❌ Отменён'
     }
     return status_map.get(status, status)
 
 
-async def show_client_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def show_advertiser_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
@@ -2409,7 +2409,7 @@ async def show_client_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     notifications_enabled = db.are_client_notifications_enabled(user['id']) if user else True
     notification_status = "🔔 Вкл" if notifications_enabled else "🔕 Выкл"
 
-    # НОВОЕ: Получаем количество непрочитанных откликов
+    # НОВОЕ: Получаем количество непрочитанных предложениеов
     unread_bids_count = 0
     if user:
         notification = db.get_client_notification(user['id'])
@@ -2417,19 +2417,19 @@ async def show_client_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
             unread_bids_count = notification.get('unread_bids_count', 0)
 
     # Формируем текст кнопки с бейджем
-    orders_button_text = "📂 Мои заказы"
+    orders_button_text = "📂 Мои кампанияы"
     if unread_bids_count > 0:
-        orders_button_text = f"📂 Мои заказы 🔴 {unread_bids_count}"
+        orders_button_text = f"📂 Мои кампанияы 🔴 {unread_bids_count}"
 
     # Проверяем наличие новых акций
     news_button_text = "🎯 Новости и акции"
-    if db.has_unviewed_ads(user['id'], 'menu_banner', user_role='client'):
+    if db.has_unviewed_ads(user['id'], 'menu_banner', user_role='advertiser'):
         news_button_text = "🎯 Новости и акции 🔴 НОВОЕ"
 
     keyboard = [
-        [InlineKeyboardButton("📝 Создать заказ", callback_data="client_create_order")],
-        [InlineKeyboardButton(orders_button_text, callback_data="client_my_orders")],
-        # [InlineKeyboardButton("💳 Мои платежи", callback_data="client_my_payments")],  # Скрыто до внедрения платной версии
+        [InlineKeyboardButton("📝 Создать кампания", callback_data="advertiser_create_order")],
+        [InlineKeyboardButton(orders_button_text, callback_data="advertiser_my_orders")],
+        # [InlineKeyboardButton("💳 Мои платежи", callback_data="advertiser_my_payments")],  # Скрыто до внедрения платной версии
         [InlineKeyboardButton(f"{notification_status} Уведомления", callback_data="toggle_client_notifications")],
         [InlineKeyboardButton("💡 Предложения", callback_data="send_suggestion")],
         [InlineKeyboardButton(news_button_text, callback_data="show_news_and_ads")],  # НОВОЕ: Постоянная кнопка для рекламы с индикатором
@@ -2449,14 +2449,14 @@ async def show_client_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await context.bot.send_message(
         chat_id=query.message.chat_id,
-        text="🏠 <b>Меню заказчика</b>\n\n"
-             "Создайте заказ - мастера увидят его и откликнутся!",
+        text="🏠 <b>Меню рекламодательа</b>\n\n"
+             "Создайте кампания - блогера увидят его и предложениенутся!",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
 
 
-async def client_my_payments(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def advertiser_my_payments(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает историю платежей клиента"""
     query = update.callback_query
     await query.answer()
@@ -2470,11 +2470,11 @@ async def client_my_payments(update: Update, context: ContextTypes.DEFAULT_TYPE)
     transactions = db.get_user_transactions(user['id'])
 
     if not transactions:
-        keyboard = [[InlineKeyboardButton("⬅️ Назад", callback_data="show_client_menu")]]
+        keyboard = [[InlineKeyboardButton("⬅️ Назад", callback_data="show_advertiser_menu")]]
         await query.edit_message_text(
             "💳 <b>Мои платежи</b>\n\n"
             "У вас пока нет платежей.\n\n"
-            "Когда вы выберете мастера для заказа и оплатите доступ к его контактам, "
+            "Когда вы выберете блогера для кампанияа и оплатите доступ к его контактам, "
             "платежи будут отображаться здесь.",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
@@ -2523,7 +2523,7 @@ async def client_my_payments(update: Update, context: ContextTypes.DEFAULT_TYPE)
     text += f"💰 <b>Всего потрачено:</b> {total_spent:.2f} BYN\n"
     text += f"📊 <b>Количество платежей:</b> {len(transactions)}"
 
-    keyboard = [[InlineKeyboardButton("⬅️ Назад", callback_data="show_client_menu")]]
+    keyboard = [[InlineKeyboardButton("⬅️ Назад", callback_data="show_advertiser_menu")]]
 
     await query.edit_message_text(
         text,
@@ -2534,8 +2534,8 @@ async def client_my_payments(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 # ------- ПРОФИЛЬ МАСТЕРА -------
 
-async def show_worker_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Показ профиля мастера с правильным доступом к базе данных"""
+async def show_blogger_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Показ профиля блогера с правильным доступом к базе данных"""
     query = update.callback_query
     await query.answer()
 
@@ -2543,7 +2543,7 @@ async def show_worker_profile(update: Update, context: ContextTypes.DEFAULT_TYPE
     context.user_data.clear()
 
     telegram_id = query.from_user.id
-    logger.info(f"Запрос профиля мастера для telegram_id: {telegram_id}")
+    logger.info(f"Запрос профиля блогера для telegram_id: {telegram_id}")
     
     try:
         user = db.get_user(telegram_id)
@@ -2563,28 +2563,28 @@ async def show_worker_profile(update: Update, context: ContextTypes.DEFAULT_TYPE
         
         logger.info(f"Найден пользователь: id={user_id}, role={role}")
         
-        if role != "worker":
-            logger.error(f"Пользователь не является мастером: role={role}")
+        if role != "blogger":
+            logger.error(f"Пользователь не является блогером: role={role}")
             await query.edit_message_text(
-                "❌ Вы не зарегистрированы как мастер.\n\n"
+                "❌ Вы не зарегистрированы как блогер.\n\n"
                 "Используйте /reset_profile для перерегистрации."
             )
             return
 
-        worker_profile = db.get_worker_profile(user_id)
+        blogger_profile = db.get_worker_profile(user_id)
 
-        if not worker_profile:
-            logger.error(f"Профиль мастера не найден для user_id={user_id}")
+        if not blogger_profile:
+            logger.error(f"Профиль блогера не найден для user_id={user_id}")
             await query.edit_message_text(
-                "❌ Профиль мастера не заполнен.\n\n"
+                "❌ Профиль блогера не заполнен.\n\n"
                 "Используйте /reset_profile и пройдите регистрацию заново."
             )
             return
 
-        logger.info(f"Профиль мастера найден для user_id={user_id}")
+        logger.info(f"Профиль блогера найден для user_id={user_id}")
 
         # ИСПРАВЛЕНО: Конвертируем в dict для безопасного доступа к sqlite3.Row
-        profile_dict = dict(worker_profile)
+        profile_dict = dict(blogger_profile)
         
         name = profile_dict.get("name") or "—"
         phone = profile_dict.get("phone") or "—"
@@ -2612,7 +2612,7 @@ async def show_worker_profile(update: Update, context: ContextTypes.DEFAULT_TYPE
         photos_text = f"📸 Фото работ: {photos_count}" if photos_count > 0 else "📸 Фото работ: не добавлено"
 
         text = (
-            "👤 <b>Ваш профиль мастера</b>\n\n"
+            "👤 <b>Ваш профиль блогера</b>\n\n"
             f"<b>Имя:</b> {name}\n"
             f"<b>Телефон:</b> {phone}\n"
             f"<b>Город:</b> {city}\n"
@@ -2637,7 +2637,7 @@ async def show_worker_profile(update: Update, context: ContextTypes.DEFAULT_TYPE
         if rating_count > 0:
             keyboard.append([InlineKeyboardButton(f"📊 Отзывы ({rating_count})", callback_data=f"show_reviews_worker_{user_id}")])
 
-        keyboard.append([InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_worker_menu")])
+        keyboard.append([InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_blogger_menu")])
 
         # Показываем фото профиля (лицо), если есть. Иначе - первое из портфолио
         photo_to_show = profile_photo if profile_photo else (portfolio_photos.split(",")[0] if portfolio_photos else None)
@@ -2670,7 +2670,7 @@ async def show_worker_profile(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 # ------- ДОБАВЛЕНИЕ ФОТО ПОСЛЕ РЕГИСТРАЦИИ (БЕЗ ConversationHandler) -------
 
-async def worker_add_photos_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_add_photos_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало добавления фото работ"""
     query = update.callback_query
     await query.answer()
@@ -2680,15 +2680,15 @@ async def worker_add_photos_start(update: Update, context: ContextTypes.DEFAULT_
     user_dict = dict(user)
     user_id = user_dict.get("id")
     
-    worker_profile = db.get_worker_profile(user_id)
-    profile_dict = dict(worker_profile)
+    blogger_profile = db.get_worker_profile(user_id)
+    profile_dict = dict(blogger_profile)
     current_photos = profile_dict.get("portfolio_photos") or ""
     
     # Подсчитываем текущие фото
     current_photos_list = [p for p in current_photos.split(",") if p] if current_photos else []
     current_count = len(current_photos_list)
 
-    # Динамический лимит на основе выполненных заказов
+    # Динамический лимит на основе выполненных кампанияов
     max_photos = db.calculate_photo_limit(user_id)
     completed_orders = db.get_worker_completed_orders_count(user_id)
     available_slots = max_photos - current_count
@@ -2699,7 +2699,7 @@ async def worker_add_photos_start(update: Update, context: ContextTypes.DEFAULT_
     context.user_data["new_photos"] = []
 
     logger.info(f"🔧 DEBUG: Флаг adding_photos установлен для user_id={user_id}, telegram_id={telegram_id}")
-    logger.info(f"📊 Лимит фото для мастера: {max_photos} (завершено заказов: {completed_orders})")
+    logger.info(f"📊 Лимит фото для блогера: {max_photos} (завершено кампанияов: {completed_orders})")
     logger.info(f"Запущен режим добавления фото для user_id={user_id}")
 
     if available_slots <= 0:
@@ -2709,14 +2709,14 @@ async def worker_add_photos_start(update: Update, context: ContextTypes.DEFAULT_
             "🗑 <b>Чтобы добавить новые фото:</b>\n"
             "Используйте кнопку «🗑 Управление фото» чтобы удалить старые.\n\n"
             "✨ <b>Хотите больше фото?</b>\n"
-            "Загружайте фото завершенных работ после каждого заказа!\n"
-            "• До 3 фото за заказ\n"
-            "• С подтверждением заказчика ✅\n"
+            "Загружайте фото завершенных работ после каждого кампанияа!\n"
+            "• До 3 фото за кампания\n"
+            "• С подтверждением рекламодательа ✅\n"
             "• До 90 подтвержденных фото в профиле",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("🗑 Управление фото", callback_data="manage_portfolio_photos")],
-                [InlineKeyboardButton("⬅️ Назад к профилю", callback_data="worker_profile")]
+                [InlineKeyboardButton("⬅️ Назад к профилю", callback_data="blogger_profile")]
             ])
         )
         context.user_data.clear()
@@ -2731,7 +2731,7 @@ async def worker_add_photos_start(update: Update, context: ContextTypes.DEFAULT_
         # Показываем прогресс
         hint_text = f"📊 Загружено: {current_count}/{max_photos}\n" \
                    f"Можно добавить ещё: {available_slots} фото/видео\n\n" \
-                   f"💡 Это портфолио (макс. 10 фото). После заказов загружайте подтвержденные фото работ!"
+                   f"💡 Это портфолио (макс. 10 фото). После кампанияов загружайте подтвержденные фото работ!"
 
     await query.edit_message_text(
         f"📸 <b>Добавление фото в портфолио</b>\n\n"
@@ -2745,11 +2745,11 @@ async def worker_add_photos_start(update: Update, context: ContextTypes.DEFAULT_
     )
 
 
-async def worker_add_photos_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_add_photos_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка загружаемых фото (photo или document)"""
 
     telegram_id = update.effective_user.id
-    logger.info(f"🔧 DEBUG: worker_add_photos_upload вызван для telegram_id={telegram_id}")
+    logger.info(f"🔧 DEBUG: blogger_add_photos_upload вызван для telegram_id={telegram_id}")
     logger.info(f"🔧 DEBUG: context.user_data = {context.user_data}")
     logger.info(f"🔧 DEBUG: uploading_profile_photo = {context.user_data.get('uploading_profile_photo')}")
     logger.info(f"🔧 DEBUG: adding_photos = {context.user_data.get('adding_photos')}")
@@ -2842,12 +2842,12 @@ async def worker_add_photos_upload(update: Update, context: ContextTypes.DEFAULT
     new_count = len(context.user_data.get("new_photos", []))
     total_count = existing_count + new_count
 
-    # Динамический лимит на основе выполненных заказов
+    # Динамический лимит на основе выполненных кампанияов
     max_photos = db.calculate_photo_limit(user_id) if user_id else 10
 
     if total_count >= max_photos:
         keyboard = [[InlineKeyboardButton("✅ Завершить добавление", callback_data="finish_adding_photos")]]
-        limit_info = "\n\n💡 Загружайте фото после заказов (до 3 фото, подтвержденные заказчиком)!"
+        limit_info = "\n\n💡 Загружайте фото после кампанияов (до 3 фото, подтвержденные рекламодательом)!"
 
         await update.message.reply_text(
             f"⚠️ Достигнут лимит в {max_photos} фотографий.\n\n"
@@ -2881,7 +2881,7 @@ async def worker_add_photos_upload(update: Update, context: ContextTypes.DEFAULT
     )
 
 
-async def worker_add_photos_finish_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_add_photos_finish_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка нажатия кнопки завершения"""
     query = update.callback_query
     await query.answer()
@@ -2899,7 +2899,7 @@ async def worker_add_photos_finish_callback(update: Update, context: ContextType
                 "⚠️ Режим добавления фото не активен.\n\n"
                 "Возможно произошла ошибка. Попробуйте еще раз.",
                 reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_worker_menu")]
+                    [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_blogger_menu")]
                 ])
             )
         except Exception as e:
@@ -2908,19 +2908,19 @@ async def worker_add_photos_finish_callback(update: Update, context: ContextType
                 chat_id=query.from_user.id,
                 text="⚠️ Режим добавления фото не активен.\n\nВозвращаемся в меню.",
                 reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_worker_menu")]
+                    [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_blogger_menu")]
                 ])
             )
         return
 
     # Вызываем функцию завершения
-    await worker_add_photos_finish(query, context)
+    await blogger_add_photos_finish(query, context)
 
 
-async def worker_add_photos_finish(query, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_add_photos_finish(query, context: ContextTypes.DEFAULT_TYPE):
     """Завершение добавления фото - сохранение в БД"""
 
-    logger.info("=== worker_add_photos_finish вызвана ===")
+    logger.info("=== blogger_add_photos_finish вызвана ===")
     logger.info(f"Context user_data: {context.user_data}")
 
     new_photos = context.user_data.get("new_photos", [])
@@ -2931,7 +2931,7 @@ async def worker_add_photos_finish(query, context: ContextTypes.DEFAULT_TYPE):
 
     if not new_photos:
         logger.warning("Нет новых фото для сохранения")
-        keyboard = [[InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_worker_menu")]]
+        keyboard = [[InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_blogger_menu")]]
 
         # Удаляем старое сообщение и отправляем новое
         try:
@@ -2988,8 +2988,8 @@ async def worker_add_photos_finish(query, context: ContextTypes.DEFAULT_TYPE):
         result = db.update_worker_field(user_id, "portfolio_photos", photos_string)
         logger.info(f"Результат обновления БД: {result}")
         
-        keyboard = [[InlineKeyboardButton("👤 Мой профиль", callback_data="worker_profile")],
-                    [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_worker_menu")]]
+        keyboard = [[InlineKeyboardButton("👤 Мой профиль", callback_data="blogger_profile")],
+                    [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_blogger_menu")]]
 
         # Подсчитываем валидные фото (для точной статистики)
         valid_new_photos = [fid for fid in new_photos if validate_file_id(fid)]
@@ -3042,7 +3042,7 @@ async def worker_add_photos_finish(query, context: ContextTypes.DEFAULT_TYPE):
         logger.info("Context очищен - режим добавления фото завершён")
         
     except Exception as e:
-        logger.error(f"Ошибка в worker_add_photos_finish: {e}", exc_info=True)
+        logger.error(f"Ошибка в blogger_add_photos_finish: {e}", exc_info=True)
         
         error_text = (
             f"❌ Произошла ошибка при сохранении фото.\n\n"
@@ -3050,7 +3050,7 @@ async def worker_add_photos_finish(query, context: ContextTypes.DEFAULT_TYPE):
             f"Попробуйте ещё раз или обратитесь в поддержку."
         )
         
-        keyboard = [[InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_worker_menu")]]
+        keyboard = [[InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_blogger_menu")]]
         
         # Удаляем старое и отправляем новое
         try:
@@ -3073,7 +3073,7 @@ async def worker_add_photos_finish(query, context: ContextTypes.DEFAULT_TYPE):
 # ------- ГАЛЕРЕЯ РАБОТ МАСТЕРА -------
 
 async def view_portfolio(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Просмотр галереи работ мастера с навигацией"""
+    """Просмотр галереи работ блогера с навигацией"""
     query = update.callback_query
     await query.answer()
 
@@ -3086,20 +3086,20 @@ async def view_portfolio(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_dict = dict(user)
     user_id = user_dict["id"]
-    worker_profile = db.get_worker_profile(user_id)
+    blogger_profile = db.get_worker_profile(user_id)
 
-    if not worker_profile:
-        await query.edit_message_text("❌ Профиль мастера не найден")
+    if not blogger_profile:
+        await query.edit_message_text("❌ Профиль блогера не найден")
         return
 
-    profile_dict = dict(worker_profile)
+    profile_dict = dict(blogger_profile)
     portfolio_photos = profile_dict.get("portfolio_photos") or ""
 
     if not portfolio_photos:
         await query.edit_message_text(
             "📸 У вас пока нет фото работ.\n\nДобавьте их через редактирование профиля.",
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("⬅️ К профилю", callback_data="worker_profile")
+                InlineKeyboardButton("⬅️ К профилю", callback_data="blogger_profile")
             ]])
         )
         return
@@ -3107,12 +3107,12 @@ async def view_portfolio(update: Update, context: ContextTypes.DEFAULT_TYPE):
     photo_ids = [p.strip() for p in portfolio_photos.split(",") if p.strip()]
 
     # НОВОЕ: Проверяем какие фото подтверждены клиентами (из completed_work_photos)
-    worker_id = profile_dict.get("id")
+    blogger_id = profile_dict.get("id")
     verified_photos_info = {}  # photo_id -> True если подтверждено
 
-    if worker_id:
-        # Получаем все подтвержденные фото мастера из completed_work_photos
-        verified_photos = db.get_worker_verified_photos(worker_id, limit=100)
+    if blogger_id:
+        # Получаем все подтвержденные фото блогера из completed_work_photos
+        verified_photos = db.get_worker_verified_photos(blogger_id, limit=100)
         for photo_row in verified_photos:
             photo_dict = dict(photo_row)
             photo_file_id = photo_dict.get('photo_id')
@@ -3136,7 +3136,7 @@ async def view_portfolio(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]
         keyboard.append(nav_buttons)
 
-    keyboard.append([InlineKeyboardButton("⬅️ К профилю", callback_data="worker_profile")])
+    keyboard.append([InlineKeyboardButton("⬅️ К профилю", callback_data="blogger_profile")])
 
     # НОВОЕ: Добавляем галочку если фото подтверждено клиентом
     first_photo_id = photo_ids[0]
@@ -3191,7 +3191,7 @@ async def portfolio_navigate(update: Update, context: ContextTypes.DEFAULT_TYPE)
         ]
         keyboard.append(nav_buttons)
 
-    keyboard.append([InlineKeyboardButton("⬅️ К профилю", callback_data="worker_profile")])
+    keyboard.append([InlineKeyboardButton("⬅️ К профилю", callback_data="blogger_profile")])
 
     try:
         await query.message.edit_media(
@@ -3225,8 +3225,8 @@ async def edit_profile_photo_start(update: Update, context: ContextTypes.DEFAULT
     user_dict = dict(user)
     user_id = user_dict.get("id")
 
-    worker_profile = db.get_worker_profile(user_id)
-    profile_dict = dict(worker_profile)
+    blogger_profile = db.get_worker_profile(user_id)
+    profile_dict = dict(blogger_profile)
     current_photo = profile_dict.get("profile_photo")
 
     # Устанавливаем флаг загрузки фото профиля
@@ -3247,7 +3247,7 @@ async def edit_profile_photo_start(update: Update, context: ContextTypes.DEFAULT
             ),
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("⬅️ Назад к профилю", callback_data="worker_profile")
+                InlineKeyboardButton("⬅️ Назад к профилю", callback_data="blogger_profile")
             ]])
         )
     else:
@@ -3256,10 +3256,10 @@ async def edit_profile_photo_start(update: Update, context: ContextTypes.DEFAULT
             "У вас пока нет фото профиля.\n\n"
             "📸 <b>Как добавить фото:</b>\n"
             "Просто отправьте фото сюда в чат, и оно автоматически установится как фото вашего профиля.\n\n"
-            "💡 <i>Рекомендуем использовать фото вашего лица - это повышает доверие клиентов и увеличивает количество откликов!</i>",
+            "💡 <i>Рекомендуем использовать фото вашего лица - это повышает доверие клиентов и увеличивает количество предложениеов!</i>",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("⬅️ Назад к профилю", callback_data="worker_profile")
+                InlineKeyboardButton("⬅️ Назад к профилю", callback_data="blogger_profile")
             ]])
         )
 
@@ -3270,7 +3270,7 @@ async def upload_profile_photo(update: Update, context: ContextTypes.DEFAULT_TYP
     telegram_id = update.effective_user.id
     logger.info(f"🔧 DEBUG: upload_profile_photo вызван для telegram_id={telegram_id}")
 
-    # Этот handler вызывается только если флаг установлен (проверка в worker_add_photos_upload)
+    # Этот handler вызывается только если флаг установлен (проверка в blogger_add_photos_upload)
     # Двойная проверка не нужна
 
     file_id = None
@@ -3326,8 +3326,8 @@ async def upload_profile_photo(update: Update, context: ContextTypes.DEFAULT_TYP
                 "Теперь это фото будет показываться в вашем профиле.",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("👤 Посмотреть профиль", callback_data="worker_profile")],
-                    [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_worker_menu")]
+                    [InlineKeyboardButton("👤 Посмотреть профиль", callback_data="blogger_profile")],
+                    [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_blogger_menu")]
                 ])
             )
 
@@ -3339,7 +3339,7 @@ async def upload_profile_photo(update: Update, context: ContextTypes.DEFAULT_TYP
             await update.message.reply_text(
                 f"❌ Ошибка при сохранении фото: {str(e)}",
                 reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_worker_menu")
+                    InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_blogger_menu")
                 ]])
             )
             context.user_data.clear()
@@ -3355,7 +3355,7 @@ async def cancel_profile_photo(update: Update, context: ContextTypes.DEFAULT_TYP
     await query.edit_message_text(
         "❌ Загрузка фото профиля отменена.",
         reply_markup=InlineKeyboardMarkup([[
-            InlineKeyboardButton("⬅️ К профилю", callback_data="worker_profile")
+            InlineKeyboardButton("⬅️ К профилю", callback_data="blogger_profile")
         ]])
     )
 
@@ -3367,7 +3367,7 @@ async def manage_portfolio_photos(update: Update, context: ContextTypes.DEFAULT_
     query = update.callback_query
     await query.answer()
 
-    # Получаем профиль мастера
+    # Получаем профиль блогера
     telegram_id = query.from_user.id
     user = db.get_user(telegram_id)
     if not user:
@@ -3377,12 +3377,12 @@ async def manage_portfolio_photos(update: Update, context: ContextTypes.DEFAULT_
     user_dict = dict(user)
     user_id = user_dict.get("id")
 
-    worker_profile = db.get_worker_profile(user_id)
-    if not worker_profile:
-        await query.edit_message_text("❌ Профиль мастера не найден.")
+    blogger_profile = db.get_worker_profile(user_id)
+    if not blogger_profile:
+        await query.edit_message_text("❌ Профиль блогера не найден.")
         return
 
-    profile_dict = dict(worker_profile)
+    profile_dict = dict(blogger_profile)
     portfolio_photos = profile_dict.get("portfolio_photos", "")
 
     if not portfolio_photos:
@@ -3444,7 +3444,7 @@ async def show_portfolio_photo(query, context, index):
 
     # Кнопка удаления
     keyboard.append([InlineKeyboardButton("🗑 Удалить это фото", callback_data=f"delete_portfolio_photo_{index}")])
-    keyboard.append([InlineKeyboardButton("⬅️ Назад к профилю", callback_data="worker_profile")])
+    keyboard.append([InlineKeyboardButton("⬅️ Назад к профилю", callback_data="blogger_profile")])
 
     caption = (
         f"📸 <b>Фото {index + 1} из {len(photos_list)}</b>\n\n"
@@ -3516,7 +3516,7 @@ async def delete_portfolio_photo(update: Update, context: ContextTypes.DEFAULT_T
     # Парсим индекс из callback_data
     index = int(query.data.split("_")[-1])
 
-    # Получаем профиль мастера
+    # Получаем профиль блогера
     telegram_id = query.from_user.id
     user = db.get_user(telegram_id)
     if not user:
@@ -3538,7 +3538,7 @@ async def delete_portfolio_photo(update: Update, context: ContextTypes.DEFAULT_T
     new_portfolio = ",".join(photos_list)
     db.update_worker_field(user_id, "portfolio_photos", new_portfolio)
 
-    logger.info(f"Удалено фото из портфолио мастера {user_id}: индекс {index}")
+    logger.info(f"Удалено фото из портфолио блогера {user_id}: индекс {index}")
 
     # Если остались фото - показываем следующее или предыдущее
     if photos_list:
@@ -3566,37 +3566,37 @@ async def delete_portfolio_photo(update: Update, context: ContextTypes.DEFAULT_T
                  "Вы можете добавить новые фото через меню редактирования профиля.",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("⬅️ К профилю", callback_data="worker_profile")
+                InlineKeyboardButton("⬅️ К профилю", callback_data="blogger_profile")
             ]])
         )
 
 
 async def view_worker_portfolio(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Просмотр галереи работ другого мастера (для клиента)"""
+    """Просмотр галереи работ другого блогера (для клиента)"""
     query = update.callback_query
     await query.answer()
 
-    # Извлекаем worker_id из callback_data
+    # Извлекаем blogger_id из callback_data
     try:
-        worker_id = int(query.data.split("_")[-1])
+        blogger_id = int(query.data.split("_")[-1])
     except (ValueError, IndexError):
         await safe_edit_message(query, "❌ Ошибка: неверный формат данных")
         return
 
-    # Получаем профиль мастера
-    worker_profile = db.get_worker_profile_by_id(worker_id)
+    # Получаем профиль блогера
+    blogger_profile = db.get_worker_profile_by_id(blogger_id)
 
-    if not worker_profile:
-        await safe_edit_message(query, "❌ Профиль мастера не найден")
+    if not blogger_profile:
+        await safe_edit_message(query, "❌ Профиль блогера не найден")
         return
 
-    profile_dict = dict(worker_profile)
+    profile_dict = dict(blogger_profile)
     portfolio_photos = profile_dict.get("portfolio_photos") or ""
 
     if not portfolio_photos:
         await safe_edit_message(
             query,
-            "📸 У этого мастера пока нет фото работ.",
+            "📸 У этого блогера пока нет фото работ.",
             reply_markup=InlineKeyboardMarkup([[
                 InlineKeyboardButton("⬅️ Назад", callback_data="back_to_bid_card")
             ]])
@@ -3608,7 +3608,7 @@ async def view_worker_portfolio(update: Update, context: ContextTypes.DEFAULT_TY
     # Сохраняем в context для навигации
     context.user_data['viewing_worker_portfolio'] = photo_ids
     context.user_data['viewing_worker_portfolio_index'] = 0
-    context.user_data['viewing_worker_id'] = worker_id
+    context.user_data['viewing_worker_id'] = blogger_id
 
     # Показываем первое фото
     keyboard = []
@@ -3616,9 +3616,9 @@ async def view_worker_portfolio(update: Update, context: ContextTypes.DEFAULT_TY
     # Навигация если фото больше одного
     if len(photo_ids) > 1:
         nav_buttons = [
-            InlineKeyboardButton("◀️", callback_data="worker_portfolio_view_prev"),
+            InlineKeyboardButton("◀️", callback_data="blogger_portfolio_view_prev"),
             InlineKeyboardButton(f"1/{len(photo_ids)}", callback_data="noop"),
-            InlineKeyboardButton("▶️", callback_data="worker_portfolio_view_next")
+            InlineKeyboardButton("▶️", callback_data="blogger_portfolio_view_next")
         ]
         keyboard.append(nav_buttons)
 
@@ -3628,17 +3628,17 @@ async def view_worker_portfolio(update: Update, context: ContextTypes.DEFAULT_TY
         await query.message.delete()
         await query.message.reply_photo(
             photo=photo_ids[0],
-            caption=f"📸 <b>Работы мастера</b>\n\n1 из {len(photo_ids)}",
+            caption=f"📸 <b>Работы блогера</b>\n\n1 из {len(photo_ids)}",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
     except Exception as e:
-        logger.error(f"Ошибка при показе галереи мастера: {e}")
+        logger.error(f"Ошибка при показе галереи блогера: {e}")
         await safe_edit_message(query, "❌ Ошибка при загрузке фото")
 
 
-async def worker_portfolio_view_navigate(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Навигация по галерее работ другого мастера"""
+async def blogger_portfolio_view_navigate(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Навигация по галерее работ другого блогера"""
     query = update.callback_query
     await query.answer()
 
@@ -3651,9 +3651,9 @@ async def worker_portfolio_view_navigate(update: Update, context: ContextTypes.D
         return
 
     # Определяем направление
-    if query.data == "worker_portfolio_view_next":
+    if query.data == "blogger_portfolio_view_next":
         current_index = (current_index + 1) % len(photos)
-    elif query.data == "worker_portfolio_view_prev":
+    elif query.data == "blogger_portfolio_view_prev":
         current_index = (current_index - 1) % len(photos)
 
     context.user_data['viewing_worker_portfolio_index'] = current_index
@@ -3663,9 +3663,9 @@ async def worker_portfolio_view_navigate(update: Update, context: ContextTypes.D
 
     if len(photos) > 1:
         nav_buttons = [
-            InlineKeyboardButton("◀️", callback_data="worker_portfolio_view_prev"),
+            InlineKeyboardButton("◀️", callback_data="blogger_portfolio_view_prev"),
             InlineKeyboardButton(f"{current_index + 1}/{len(photos)}", callback_data="noop"),
-            InlineKeyboardButton("▶️", callback_data="worker_portfolio_view_next")
+            InlineKeyboardButton("▶️", callback_data="blogger_portfolio_view_next")
         ]
         keyboard.append(nav_buttons)
 
@@ -3675,7 +3675,7 @@ async def worker_portfolio_view_navigate(update: Update, context: ContextTypes.D
         await query.message.delete()
         await query.message.reply_photo(
             photo=photos[current_index],
-            caption=f"📸 <b>Работы мастера</b>\n\n{current_index + 1} из {len(photos)}",
+            caption=f"📸 <b>Работы блогера</b>\n\n{current_index + 1} из {len(photos)}",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
@@ -3698,9 +3698,9 @@ async def show_edit_profile_menu(update: Update, context: ContextTypes.DEFAULT_T
         [InlineKeyboardButton("🔧 Изменить виды работ", callback_data="edit_categories")],
         [InlineKeyboardButton("📅 Изменить опыт", callback_data="edit_experience")],
         [InlineKeyboardButton("📝 Изменить описание", callback_data="edit_description")],
-        [InlineKeyboardButton("📸 Добавить фото работ", callback_data="worker_add_photos")],
+        [InlineKeyboardButton("📸 Добавить фото работ", callback_data="blogger_add_photos")],
         [InlineKeyboardButton("🗑 Управление фото работ", callback_data="manage_portfolio_photos")],
-        [InlineKeyboardButton("⬅️ Назад к профилю", callback_data="worker_profile")],
+        [InlineKeyboardButton("⬅️ Назад к профилю", callback_data="blogger_profile")],
     ]
 
     # ИСПРАВЛЕНИЕ: Если предыдущее сообщение с фото, нельзя использовать edit_message_text
@@ -3730,8 +3730,8 @@ async def edit_name_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_dict = dict(user)
     user_id = user_dict.get("id")
     
-    worker_profile = db.get_worker_profile(user_id)
-    profile_dict = dict(worker_profile)
+    blogger_profile = db.get_worker_profile(user_id)
+    profile_dict = dict(blogger_profile)
     current_name = profile_dict.get("name") or "—"
     
     await query.edit_message_text(
@@ -3764,7 +3764,7 @@ async def edit_name_save(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     db.update_worker_field(user_id, "name", new_name)
     
-    keyboard = [[InlineKeyboardButton("👤 Вернуться к профилю", callback_data="worker_profile")]]
+    keyboard = [[InlineKeyboardButton("👤 Вернуться к профилю", callback_data="blogger_profile")]]
     
     await update.message.reply_text(
         f"✅ Имя успешно изменено на: <b>{new_name}</b>",
@@ -3784,8 +3784,8 @@ async def edit_phone_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_dict = dict(user)
     user_id = user_dict.get("id")
     
-    worker_profile = db.get_worker_profile(user_id)
-    profile_dict = dict(worker_profile)
+    blogger_profile = db.get_worker_profile(user_id)
+    profile_dict = dict(blogger_profile)
     current_phone = profile_dict.get("phone") or "—"
     
     await query.edit_message_text(
@@ -3818,7 +3818,7 @@ async def edit_phone_save(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     db.update_worker_field(user_id, "phone", new_phone)
     
-    keyboard = [[InlineKeyboardButton("👤 Вернуться к профилю", callback_data="worker_profile")]]
+    keyboard = [[InlineKeyboardButton("👤 Вернуться к профилю", callback_data="blogger_profile")]]
     
     await update.message.reply_text(
         f"✅ Телефон успешно изменён на: <b>{new_phone}</b>",
@@ -3838,28 +3838,28 @@ async def edit_city_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_dict = dict(user)
     user_id = user_dict.get("id")
 
-    worker_profile = db.get_worker_profile(user_id)
-    profile_dict = dict(worker_profile)
-    worker_id = profile_dict['id']
+    blogger_profile = db.get_worker_profile(user_id)
+    profile_dict = dict(blogger_profile)
+    blogger_id = profile_dict['id']
 
-    # Получаем ВСЕ города мастера из worker_cities
-    worker_cities = db.get_worker_cities(worker_id)
+    # Получаем ВСЕ города блогера из blogger_cities
+    blogger_cities = db.get_worker_cities(blogger_id)
 
-    # Если городов нет в worker_cities, берём из старого поля city
-    if not worker_cities:
+    # Если городов нет в blogger_cities, берём из старого поля city
+    if not blogger_cities:
         current_city = profile_dict.get("city")
         if current_city:
-            worker_cities = [current_city]
-            # Мигрируем в worker_cities
-            db.add_worker_city(worker_id, current_city)
+            blogger_cities = [current_city]
+            # Мигрируем в blogger_cities
+            db.add_worker_city(blogger_id, current_city)
 
-    # Сохраняем worker_id в context для последующих шагов
-    context.user_data["edit_worker_id"] = worker_id
-    context.user_data["current_cities"] = worker_cities
+    # Сохраняем blogger_id в context для последующих шагов
+    context.user_data["edit_worker_id"] = blogger_id
+    context.user_data["current_cities"] = blogger_cities
 
     # Формируем текст с текущими городами
-    if worker_cities:
-        cities_text = "\n".join([f"  • {city}" for city in worker_cities])
+    if blogger_cities:
+        cities_text = "\n".join([f"  • {city}" for city in blogger_cities])
     else:
         cities_text = "  (не указаны)"
 
@@ -3872,10 +3872,10 @@ async def edit_city_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )])
 
     # Кнопки управления городами
-    if worker_cities:
+    if blogger_cities:
         keyboard.append([InlineKeyboardButton("🗑 Удалить город", callback_data="remove_city_menu")])
 
-    keyboard.append([InlineKeyboardButton("✅ Готово", callback_data="worker_profile")])
+    keyboard.append([InlineKeyboardButton("✅ Готово", callback_data="blogger_profile")])
 
     await query.edit_message_text(
         f"🏙 <b>Редактирование городов</b>\n\n"
@@ -3910,22 +3910,22 @@ async def edit_region_select(update: Update, context: ContextTypes.DEFAULT_TYPE)
         user_dict = dict(user)
         user_id = user_dict.get("id")
 
-        # ИСПРАВЛЕНО: ДОБАВЛЯЕМ город в worker_cities
-        worker_id = context.user_data.get("edit_worker_id")
-        if worker_id:
-            db.add_worker_city(worker_id, region)
+        # ИСПРАВЛЕНО: ДОБАВЛЯЕМ город в blogger_cities
+        blogger_id = context.user_data.get("edit_worker_id")
+        if blogger_id:
+            db.add_worker_city(blogger_id, region)
 
         # Также обновляем старое поле city для обратной совместимости
         db.update_worker_field(user_id, "city", region)
         db.update_worker_field(user_id, "regions", region)
 
         # Показываем обновлённый список городов
-        worker_cities = db.get_worker_cities(worker_id) if worker_id else [region]
-        cities_text = "\n".join([f"  • {c}" for c in worker_cities])
+        blogger_cities = db.get_worker_cities(blogger_id) if blogger_id else [region]
+        cities_text = "\n".join([f"  • {c}" for c in blogger_cities])
 
         keyboard = [
             [InlineKeyboardButton("➕ Добавить ещё город", callback_data="edit_city")],
-            [InlineKeyboardButton("✅ Готово", callback_data="worker_profile")]
+            [InlineKeyboardButton("✅ Готово", callback_data="blogger_profile")]
         ]
 
         await query.edit_message_text(
@@ -3951,13 +3951,13 @@ async def edit_region_select(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         # Добавляем кнопку "Другой город в области"
         # ЛОГИКА "ДРУГОЙ ГОРОД":
-        # - При редактировании мастер может добавить любой город
+        # - При редактировании блогер может добавить любой город
         # - Это полезно для небольших городов и посёлков
         keyboard.append([InlineKeyboardButton(
             f"📍 Другой город в области",
             callback_data="editcity_other"
         )])
-        keyboard.append([InlineKeyboardButton("❌ Отмена", callback_data="worker_profile")])
+        keyboard.append([InlineKeyboardButton("❌ Отмена", callback_data="blogger_profile")])
 
         await query.edit_message_text(
             f"📍 Область: {region_data['display']}\n\n"
@@ -3981,14 +3981,14 @@ async def edit_city_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return EDIT_CITY
     else:
-        # ИСПРАВЛЕНО: ДОБАВЛЯЕМ город в worker_cities
-        worker_id = context.user_data.get("edit_worker_id")
-        if not worker_id:
-            await query.edit_message_text("❌ Ошибка: не найден worker_id")
+        # ИСПРАВЛЕНО: ДОБАВЛЯЕМ город в blogger_cities
+        blogger_id = context.user_data.get("edit_worker_id")
+        if not blogger_id:
+            await query.edit_message_text("❌ Ошибка: не найден blogger_id")
             return ConversationHandler.END
 
         # Добавляем город
-        db.add_worker_city(worker_id, city)
+        db.add_worker_city(blogger_id, city)
 
         # Также обновляем старое поле city для обратной совместимости
         telegram_id = query.from_user.id
@@ -4000,12 +4000,12 @@ async def edit_city_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
         db.update_worker_field(user_id, "regions", region)
 
         # Показываем обновлённый список городов
-        worker_cities = db.get_worker_cities(worker_id)
-        cities_text = "\n".join([f"  • {c}" for c in worker_cities])
+        blogger_cities = db.get_worker_cities(blogger_id)
+        cities_text = "\n".join([f"  • {c}" for c in blogger_cities])
 
         keyboard = [
             [InlineKeyboardButton("➕ Добавить ещё город", callback_data="edit_city")],
-            [InlineKeyboardButton("✅ Готово", callback_data="worker_profile")]
+            [InlineKeyboardButton("✅ Готово", callback_data="blogger_profile")]
         ]
 
         await query.edit_message_text(
@@ -4034,22 +4034,22 @@ async def edit_city_save(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_dict = dict(user)
     user_id = user_dict.get("id")
 
-    # ИСПРАВЛЕНО: ДОБАВЛЯЕМ город в worker_cities
-    worker_id = context.user_data.get("edit_worker_id")
-    if worker_id:
-        db.add_worker_city(worker_id, new_city)
+    # ИСПРАВЛЕНО: ДОБАВЛЯЕМ город в blogger_cities
+    blogger_id = context.user_data.get("edit_worker_id")
+    if blogger_id:
+        db.add_worker_city(blogger_id, new_city)
 
     # Также обновляем старое поле city для обратной совместимости
     db.update_worker_field(user_id, "city", new_city)
     db.update_worker_field(user_id, "regions", new_city)
 
     # Показываем обновлённый список городов
-    worker_cities = db.get_worker_cities(worker_id) if worker_id else [new_city]
-    cities_text = "\n".join([f"  • {c}" for c in worker_cities])
+    blogger_cities = db.get_worker_cities(blogger_id) if blogger_id else [new_city]
+    cities_text = "\n".join([f"  • {c}" for c in blogger_cities])
 
     keyboard = [
         [InlineKeyboardButton("➕ Добавить ещё город", callback_data="edit_city")],
-        [InlineKeyboardButton("✅ Готово", callback_data="worker_profile")]
+        [InlineKeyboardButton("✅ Готово", callback_data="blogger_profile")]
     ]
 
     await update.message.reply_text(
@@ -4066,15 +4066,15 @@ async def remove_city_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    worker_id = context.user_data.get("edit_worker_id")
-    if not worker_id:
-        await query.edit_message_text("❌ Ошибка: не найден worker_id")
+    blogger_id = context.user_data.get("edit_worker_id")
+    if not blogger_id:
+        await query.edit_message_text("❌ Ошибка: не найден blogger_id")
         return ConversationHandler.END
 
-    # Получаем все города мастера
-    worker_cities = db.get_worker_cities(worker_id)
+    # Получаем все города блогера
+    blogger_cities = db.get_worker_cities(blogger_id)
 
-    if not worker_cities:
+    if not blogger_cities:
         await query.edit_message_text(
             "❌ У вас нет городов для удаления.",
             reply_markup=InlineKeyboardMarkup([[
@@ -4085,7 +4085,7 @@ async def remove_city_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Создаём кнопки для каждого города
     keyboard = []
-    for city in worker_cities:
+    for city in blogger_cities:
         keyboard.append([InlineKeyboardButton(
             f"🗑 Удалить {city}",
             callback_data=f"remove_city_{city}"
@@ -4108,25 +4108,25 @@ async def remove_city_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE
     await query.answer()
 
     city_to_remove = query.data.replace("remove_city_", "")
-    worker_id = context.user_data.get("edit_worker_id")
+    blogger_id = context.user_data.get("edit_worker_id")
 
-    if not worker_id:
-        await query.edit_message_text("❌ Ошибка: не найден worker_id")
+    if not blogger_id:
+        await query.edit_message_text("❌ Ошибка: не найден blogger_id")
         return ConversationHandler.END
 
     # Удаляем город
-    db.remove_worker_city(worker_id, city_to_remove)
+    db.remove_worker_city(blogger_id, city_to_remove)
 
     # Показываем обновлённый список
-    worker_cities = db.get_worker_cities(worker_id)
-    if worker_cities:
-        cities_text = "\n".join([f"  • {c}" for c in worker_cities])
+    blogger_cities = db.get_worker_cities(blogger_id)
+    if blogger_cities:
+        cities_text = "\n".join([f"  • {c}" for c in blogger_cities])
     else:
         cities_text = "  (не указаны)"
 
     keyboard = [
         [InlineKeyboardButton("➕ Добавить город", callback_data="edit_city")],
-        [InlineKeyboardButton("✅ Готово", callback_data="worker_profile")]
+        [InlineKeyboardButton("✅ Готово", callback_data="blogger_profile")]
     ]
 
     await query.edit_message_text(
@@ -4148,8 +4148,8 @@ async def edit_categories_start(update: Update, context: ContextTypes.DEFAULT_TY
     user_dict = dict(user)
     user_id = user_dict.get("id")
 
-    worker_profile = db.get_worker_profile(user_id)
-    profile_dict = dict(worker_profile)
+    blogger_profile = db.get_worker_profile(user_id)
+    profile_dict = dict(blogger_profile)
     current_categories = profile_dict.get("categories") or "—"
 
     context.user_data["edit_categories"] = []
@@ -4161,7 +4161,7 @@ async def edit_categories_start(update: Update, context: ContextTypes.DEFAULT_TY
                 category_data["name"],
                 callback_data=f"editmaincat_{cat_id}"
             )])
-    keyboard.append([InlineKeyboardButton("❌ Отмена", callback_data="worker_profile")])
+    keyboard.append([InlineKeyboardButton("❌ Отмена", callback_data="blogger_profile")])
 
     await query.edit_message_text(
         f"🔧 <b>Изменение видов работ</b>\n\n"
@@ -4203,7 +4203,7 @@ async def edit_main_category(update: Update, context: ContextTypes.DEFAULT_TYPE)
     # Добавляем кнопки навигации
     keyboard.append([InlineKeyboardButton("✅ Завершить выбор категорий", callback_data="editsubcat_done")])
     keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="editsubcat_back")])
-    keyboard.append([InlineKeyboardButton("❌ Отмена", callback_data="worker_profile")])
+    keyboard.append([InlineKeyboardButton("❌ Отмена", callback_data="blogger_profile")])
 
     emoji = WORK_CATEGORIES[cat_id]["emoji"]
 
@@ -4255,7 +4255,7 @@ async def edit_subcategory_select(update: Update, context: ContextTypes.DEFAULT_
                 category_data["name"],
                 callback_data=f"editmaincat_{cat_id}"
             )])
-        keyboard.append([InlineKeyboardButton("❌ Отмена", callback_data="worker_profile")])
+        keyboard.append([InlineKeyboardButton("❌ Отмена", callback_data="blogger_profile")])
 
         await query.edit_message_text(
             "🔧 <b>Выберите основную категорию работ:</b>",
@@ -4300,7 +4300,7 @@ async def edit_subcategory_select(update: Update, context: ContextTypes.DEFAULT_
             keyboard.append(row)
 
         keyboard.append([InlineKeyboardButton("✅ Завершить выбор категорий", callback_data="editsubcat_done")])
-        keyboard.append([InlineKeyboardButton("❌ Отмена", callback_data="worker_profile")])
+        keyboard.append([InlineKeyboardButton("❌ Отмена", callback_data="blogger_profile")])
 
         emoji = WORK_CATEGORIES[cat_id]["emoji"]
 
@@ -4331,7 +4331,7 @@ async def edit_ask_more_categories(update: Update, context: ContextTypes.DEFAULT
                 category_data["name"],
                 callback_data=f"editmaincat_{cat_id}"
             )])
-        keyboard.append([InlineKeyboardButton("❌ Отмена", callback_data="worker_profile")])
+        keyboard.append([InlineKeyboardButton("❌ Отмена", callback_data="blogger_profile")])
 
         categories_text = ", ".join(context.user_data["edit_categories"])
 
@@ -4355,7 +4355,7 @@ async def edit_ask_more_categories(update: Update, context: ContextTypes.DEFAULT
 
         context.user_data.clear()
 
-        keyboard = [[InlineKeyboardButton("👤 Вернуться к профилю", callback_data="worker_profile")]]
+        keyboard = [[InlineKeyboardButton("👤 Вернуться к профилю", callback_data="blogger_profile")]]
 
         await query.edit_message_text(
             f"✅ Виды работ успешно изменены на:\n<b>{new_categories}</b>",
@@ -4375,23 +4375,23 @@ async def edit_experience_start(update: Update, context: ContextTypes.DEFAULT_TY
     user_dict = dict(user)
     user_id = user_dict.get("id")
     
-    worker_profile = db.get_worker_profile(user_id)
-    profile_dict = dict(worker_profile)
+    blogger_profile = db.get_worker_profile(user_id)
+    profile_dict = dict(blogger_profile)
     current_exp = profile_dict.get("experience") or "—"
     
     keyboard = [
-        [InlineKeyboardButton("🌱 Начинающий мастер", callback_data="editexp_Начинающий мастер")],
-        [InlineKeyboardButton("⚡ Опытный мастер", callback_data="editexp_Опытный мастер")],
+        [InlineKeyboardButton("🌱 Начинающий блогер", callback_data="editexp_Начинающий блогер")],
+        [InlineKeyboardButton("⚡ Опытный блогер", callback_data="editexp_Опытный блогер")],
         [InlineKeyboardButton("⭐ Профессионал", callback_data="editexp_Профессионал")],
-        [InlineKeyboardButton("❌ Отмена", callback_data="worker_profile")],
+        [InlineKeyboardButton("❌ Отмена", callback_data="blogger_profile")],
     ]
 
     await query.edit_message_text(
-        f"📊 <b>Изменение уровня мастерства</b>\n\n"
+        f"📊 <b>Изменение уровня блогерства</b>\n\n"
         f"Текущий уровень: <b>{current_exp}</b>\n\n"
         f"Выберите новый уровень:\n\n"
-        "🌱 <b>Начинающий мастер</b> — осваиваете профессию\n"
-        "⚡ <b>Опытный мастер</b> — есть портфолио проектов\n"
+        "🌱 <b>Начинающий блогер</b> — осваиваете профессию\n"
+        "⚡ <b>Опытный блогер</b> — есть портфолио проектов\n"
         "⭐ <b>Профессионал</b> — высокий уровень, сложные проекты",
         reply_markup=InlineKeyboardMarkup(keyboard),
         parse_mode="HTML",
@@ -4413,7 +4413,7 @@ async def edit_experience_save(update: Update, context: ContextTypes.DEFAULT_TYP
     
     db.update_worker_field(user_id, "experience", new_exp)
     
-    keyboard = [[InlineKeyboardButton("👤 Вернуться к профилю", callback_data="worker_profile")]]
+    keyboard = [[InlineKeyboardButton("👤 Вернуться к профилю", callback_data="blogger_profile")]]
     
     await query.edit_message_text(
         f"✅ Опыт работы успешно изменён на: <b>{new_exp}</b>",
@@ -4433,8 +4433,8 @@ async def edit_description_start(update: Update, context: ContextTypes.DEFAULT_T
     user_dict = dict(user)
     user_id = user_dict.get("id")
     
-    worker_profile = db.get_worker_profile(user_id)
-    profile_dict = dict(worker_profile)
+    blogger_profile = db.get_worker_profile(user_id)
+    profile_dict = dict(blogger_profile)
     current_desc = profile_dict.get("description") or "—"
     
     await query.edit_message_text(
@@ -4466,7 +4466,7 @@ async def edit_description_save(update: Update, context: ContextTypes.DEFAULT_TY
     
     db.update_worker_field(user_id, "description", new_desc)
     
-    keyboard = [[InlineKeyboardButton("👤 Вернуться к профилю", callback_data="worker_profile")]]
+    keyboard = [[InlineKeyboardButton("👤 Вернуться к профилю", callback_data="blogger_profile")]]
     
     await update.message.reply_text(
         f"✅ Описание успешно изменено!",
@@ -4478,8 +4478,8 @@ async def edit_description_save(update: Update, context: ContextTypes.DEFAULT_TY
 
 # ------- ЗАГЛУШКИ ДЛЯ ЗАКАЗЧИКА -------
 
-async def client_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Показывает выбор категории заказов (активные/завершённые)"""
+async def advertiser_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Показывает выбор категории кампанияов (активные/завершённые)"""
     query = update.callback_query
     await query.answer()
 
@@ -4495,15 +4495,15 @@ async def client_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
 
-        # Удаляем уведомление о новых сообщениях (пользователь открыл заказы)
+        # Удаляем уведомление о новых сообщениях (пользователь открыл кампанияы)
         db.delete_chat_message_notification(user['id'])
 
-        # НОВОЕ: Обнуляем счётчик непрочитанных откликов (пользователь их просматривает)
+        # НОВОЕ: Обнуляем счётчик непрочитанных предложениеов (пользователь их просматривает)
         db.save_client_notification(user['id'], None, None, 0)
 
-        client_profile = db.get_client_profile(user["id"])
-        if not client_profile:
-            logger.error(f"Client profile не найден для user_id: {user['id']}")
+        advertiser_profile = db.get_client_profile(user["id"])
+        if not advertiser_profile:
+            logger.error(f"Advertiser profile не найден для user_id: {user['id']}")
             await safe_edit_message(
                 query,
                 "❌ Ошибка: профиль клиента не найден.\n\n"
@@ -4513,38 +4513,38 @@ async def client_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
 
-        # Получаем все заказы для подсчета
-        all_orders, total_count, _ = db.get_client_orders(client_profile["id"], page=1, per_page=1000)
+        # Получаем все кампанияы для подсчета
+        all_orders, total_count, _ = db.get_client_orders(advertiser_profile["id"], page=1, per_page=1000)
 
         if not all_orders:
             keyboard = [
-                [InlineKeyboardButton("📝 Создать первый заказ", callback_data="client_create_order")],
-                [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_client_menu")],
+                [InlineKeyboardButton("📝 Создать первый кампания", callback_data="advertiser_create_order")],
+                [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_advertiser_menu")],
             ]
 
             await safe_edit_message(
                 query,
-                "📂 <b>Мои заказы</b>\n\n"
-                "У вас пока нет созданных заказов.\n\n"
-                "Создайте первый заказ, чтобы начать получать отклики от мастеров!",
+                "📂 <b>Мои кампанияы</b>\n\n"
+                "У вас пока нет созданных кампанияов.\n\n"
+                "Создайте первый кампания, чтобы начать получать предложениеи от блогеров!",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
             return
         
-        # Подсчитываем заказы по трем категориям
-        # 1. В ожидании мастера (заказ открыт, но мастер еще не выбран)
+        # Подсчитываем кампанияы по трем категориям
+        # 1. В ожидании блогера (кампания открыт, но блогер еще не выбран)
         waiting_statuses = ['open']
-        # 2. В работе (мастер выбран и работает)
+        # 2. В работе (блогер выбран и работает)
         in_progress_statuses = ['master_selected', 'contact_shared', 'waiting_master_confirmation', 'master_confirmed', 'in_progress']
         # 3. Завершенные
         completed_statuses = ['done', 'completed', 'canceled', 'cancelled']
 
-        # DEBUG: Логируем все заказы
-        logger.info(f"🔍 DEBUG client_my_orders: Всего заказов: {len(all_orders)}")
+        # DEBUG: Логируем все кампанияы
+        logger.info(f"🔍 DEBUG advertiser_my_orders: Всего кампанияов: {len(all_orders)}")
         for o in all_orders:
-            order_dict = dict(o)
-            logger.info(f"🔍 DEBUG: Заказ #{order_dict.get('id')} - статус: '{order_dict.get('status')}'")
+            campaign_dict = dict(o)
+            logger.info(f"🔍 DEBUG: Кампания #{campaign_dict.get('id')} - статус: '{campaign_dict.get('status')}'")
 
         waiting_count = sum(1 for o in all_orders if dict(o).get('status', 'open') in waiting_statuses)
         in_progress_count = sum(1 for o in all_orders if dict(o).get('status', 'open') in in_progress_statuses)
@@ -4553,19 +4553,19 @@ async def client_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.info(f"🔍 DEBUG: Подсчет - Ожидание: {waiting_count}, В работе: {in_progress_count}, Завершено: {completed_count}")
 
         # Показываем меню выбора категории
-        text = "📂 <b>Мои заказы</b>\n\n"
-        text += f"Всего заказов: {total_count}\n"
-        text += f"🔍 В ожидании мастера: {waiting_count}\n"
+        text = "📂 <b>Мои кампанияы</b>\n\n"
+        text += f"Всего кампанияов: {total_count}\n"
+        text += f"🔍 В ожидании блогера: {waiting_count}\n"
         text += f"🔧 В работе: {in_progress_count}\n"
         text += f"✅ Завершённые: {completed_count}\n\n"
         text += "Выберите категорию:"
 
         keyboard = [
-            [InlineKeyboardButton(f"🔍 В ожидании мастера ({waiting_count})", callback_data="client_waiting_orders")],
-            [InlineKeyboardButton(f"🔧 В работе ({in_progress_count})", callback_data="client_in_progress_orders")],
-            [InlineKeyboardButton(f"✅ Завершённые ({completed_count})", callback_data="client_completed_orders")],
-            [InlineKeyboardButton("📝 Создать новый заказ", callback_data="client_create_order")],
-            [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_client_menu")]
+            [InlineKeyboardButton(f"🔍 В ожидании блогера ({waiting_count})", callback_data="advertiser_waiting_orders")],
+            [InlineKeyboardButton(f"🔧 В работе ({in_progress_count})", callback_data="advertiser_in_progress_orders")],
+            [InlineKeyboardButton(f"✅ Завершённые ({completed_count})", callback_data="advertiser_completed_orders")],
+            [InlineKeyboardButton("📝 Создать новый кампания", callback_data="advertiser_create_order")],
+            [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_advertiser_menu")]
         ]
 
         await safe_edit_message(
@@ -4576,19 +4576,19 @@ async def client_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         
     except Exception as e:
-        logger.error(f"Ошибка в client_my_orders: {e}", exc_info=True)
+        logger.error(f"Ошибка в advertiser_my_orders: {e}", exc_info=True)
 
-        keyboard = [[InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_client_menu")]]
+        keyboard = [[InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_advertiser_menu")]]
 
         await query.edit_message_text(
-            f"❌ Ошибка при загрузке заказов:\n{str(e)}\n\nПопробуйте позже.",
+            f"❌ Ошибка при загрузке кампанияов:\n{str(e)}\n\nПопробуйте позже.",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
 
-async def client_waiting_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Показывает заказы в ожидании мастера (без выбранного мастера)"""
+async def advertiser_waiting_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Показывает кампанияы в ожидании блогера (без выбранного блогера)"""
     query = update.callback_query
     await query.answer()
 
@@ -4598,73 +4598,73 @@ async def client_waiting_orders(update: Update, context: ContextTypes.DEFAULT_TY
             await safe_edit_message(query, "❌ Пользователь не найден.")
             return
 
-        client_profile = db.get_client_profile(user["id"])
-        if not client_profile:
+        advertiser_profile = db.get_client_profile(user["id"])
+        if not advertiser_profile:
             await safe_edit_message(query, "❌ Профиль клиента не найден.")
             return
 
-        # Получаем заказы в ожидании (мастер еще не выбран)
-        all_orders, _, _ = db.get_client_orders(client_profile["id"], page=1, per_page=1000)
+        # Получаем кампанияы в ожидании (блогер еще не выбран)
+        all_orders, _, _ = db.get_client_orders(advertiser_profile["id"], page=1, per_page=1000)
         waiting_statuses = ['open']
-        orders = [o for o in all_orders if dict(o).get('status', 'open') in waiting_statuses]
+        campaigns = [o for o in all_orders if dict(o).get('status', 'open') in waiting_statuses]
 
-        if not orders:
+        if not campaigns:
             keyboard = [
-                [InlineKeyboardButton("📝 Создать новый заказ", callback_data="client_create_order")],
-                [InlineKeyboardButton("⬅️ Назад к заказам", callback_data="client_my_orders")]
+                [InlineKeyboardButton("📝 Создать новый кампания", callback_data="advertiser_create_order")],
+                [InlineKeyboardButton("⬅️ Назад к кампанияам", callback_data="advertiser_my_orders")]
             ]
             await safe_edit_message(
                 query,
-                "🔍 <b>В ожидании мастера</b>\n\nУ вас нет заказов в ожидании.",
+                "🔍 <b>В ожидании блогера</b>\n\nУ вас нет кампанияов в ожидании.",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
             return
 
-        # Формируем список заказов
-        text = f"🔍 <b>В ожидании мастера</b> ({len(orders)})\n\n"
+        # Формируем список кампанияов
+        text = f"🔍 <b>В ожидании блогера</b> ({len(campaigns)})\n\n"
         keyboard = []
 
-        for order in orders[:10]:
-            order_dict = dict(order)
-            order_id = order_dict['id']
+        for campaign in campaigns[:10]:
+            campaign_dict = dict(campaign)
+            campaign_id = campaign_dict['id']
 
-            text += f"🟢 <b>Заказ #{order_id}</b> - Открыт\n"
-            text += f"🔧 {order_dict.get('category', 'Не указана')}\n"
+            text += f"🟢 <b>Кампания #{campaign_id}</b> - Открыт\n"
+            text += f"🔧 {campaign_dict.get('category', 'Не указана')}\n"
 
-            description = order_dict.get('description', '')
+            description = campaign_dict.get('description', '')
             if len(description) > 50:
                 description = description[:50] + "..."
             text += f"📝 {description}\n"
 
-            # Количество откликов
-            bids_count = db.get_bids_count_for_order(order_id)
+            # Количество предложениеов
+            bids_count = db.get_bids_count_for_order(campaign_id)
             if bids_count > 0:
                 text += f"💼 {bids_count} {_get_bids_word(bids_count)}\n"
                 keyboard.append([InlineKeyboardButton(
-                    f"💼 Откликов на заказ #{order_id}: {bids_count}",
-                    callback_data=f"view_bids_{order_id}"
+                    f"💼 Предложениеов на кампания #{campaign_id}: {bids_count}",
+                    callback_data=f"view_bids_{campaign_id}"
                 )])
 
             keyboard.append([InlineKeyboardButton(
-                f"❌ Отменить заказ #{order_id}",
-                callback_data=f"cancel_order_{order_id}"
+                f"❌ Отменить кампания #{campaign_id}",
+                callback_data=f"cancel_campaign_{campaign_id}"
             )])
 
             text += "\n"
 
-        keyboard.append([InlineKeyboardButton("📝 Создать новый заказ", callback_data="client_create_order")])
-        keyboard.append([InlineKeyboardButton("⬅️ Назад к заказам", callback_data="client_my_orders")])
+        keyboard.append([InlineKeyboardButton("📝 Создать новый кампания", callback_data="advertiser_create_order")])
+        keyboard.append([InlineKeyboardButton("⬅️ Назад к кампанияам", callback_data="advertiser_my_orders")])
 
         await safe_edit_message(query, text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(keyboard))
 
     except Exception as e:
-        logger.error(f"Ошибка в client_waiting_orders: {e}", exc_info=True)
+        logger.error(f"Ошибка в advertiser_waiting_orders: {e}", exc_info=True)
         await safe_edit_message(query, f"❌ Ошибка: {str(e)}")
 
 
-async def client_in_progress_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Показывает заказы в работе (мастер выбран и работает)"""
+async def advertiser_in_progress_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Показывает кампанияы в работе (блогер выбран и работает)"""
     query = update.callback_query
     await query.answer()
 
@@ -4674,45 +4674,45 @@ async def client_in_progress_orders(update: Update, context: ContextTypes.DEFAUL
             await safe_edit_message(query, "❌ Пользователь не найден.")
             return
 
-        client_profile = db.get_client_profile(user["id"])
-        if not client_profile:
+        advertiser_profile = db.get_client_profile(user["id"])
+        if not advertiser_profile:
             await safe_edit_message(query, "❌ Профиль клиента не найден.")
             return
 
-        # Получаем заказы в работе (мастер выбран)
-        all_orders, _, _ = db.get_client_orders(client_profile["id"], page=1, per_page=1000)
+        # Получаем кампанияы в работе (блогер выбран)
+        all_orders, _, _ = db.get_client_orders(advertiser_profile["id"], page=1, per_page=1000)
         in_progress_statuses = ['master_selected', 'contact_shared', 'waiting_master_confirmation', 'master_confirmed', 'in_progress']
 
-        # DEBUG: Логируем все заказы и их статусы
-        logger.info(f"🔍 DEBUG client_in_progress_orders: Всего заказов клиента: {len(all_orders)}")
+        # DEBUG: Логируем все кампанияы и их статусы
+        logger.info(f"🔍 DEBUG advertiser_in_progress_orders: Всего кампанияов клиента: {len(all_orders)}")
         for o in all_orders:
-            order_dict = dict(o)
-            logger.info(f"🔍 DEBUG: Заказ #{order_dict.get('id')} - статус: '{order_dict.get('status')}' (тип: {type(o).__name__})")
+            campaign_dict = dict(o)
+            logger.info(f"🔍 DEBUG: Кампания #{campaign_dict.get('id')} - статус: '{campaign_dict.get('status')}' (тип: {type(o).__name__})")
 
-        orders = [o for o in all_orders if dict(o).get('status', 'open') in in_progress_statuses]
-        logger.info(f"🔍 DEBUG: Отфильтровано заказов 'в работе': {len(orders)}")
+        campaigns = [o for o in all_orders if dict(o).get('status', 'open') in in_progress_statuses]
+        logger.info(f"🔍 DEBUG: Отфильтровано кампанияов 'в работе': {len(campaigns)}")
 
-        if not orders:
+        if not campaigns:
             keyboard = [
-                [InlineKeyboardButton("📝 Создать новый заказ", callback_data="client_create_order")],
-                [InlineKeyboardButton("⬅️ Назад к заказам", callback_data="client_my_orders")]
+                [InlineKeyboardButton("📝 Создать новый кампания", callback_data="advertiser_create_order")],
+                [InlineKeyboardButton("⬅️ Назад к кампанияам", callback_data="advertiser_my_orders")]
             ]
             await safe_edit_message(
                 query,
-                "🔧 <b>В работе</b>\n\nУ вас нет заказов в работе.",
+                "🔧 <b>В работе</b>\n\nУ вас нет кампанияов в работе.",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
             return
 
-        # Формируем список заказов
-        text = f"🔧 <b>В работе</b> ({len(orders)})\n\n"
+        # Формируем список кампанияов
+        text = f"🔧 <b>В работе</b> ({len(campaigns)})\n\n"
         keyboard = []
 
-        for order in orders[:10]:
-            order_dict = dict(order)
-            order_id = order_dict['id']
-            order_status = order_dict.get('status', '')
+        for campaign in campaigns[:10]:
+            campaign_dict = dict(campaign)
+            campaign_id = campaign_dict['id']
+            campaign_status = campaign_dict.get('status', '')
 
             status_emoji = {
                 "master_selected": "👤",
@@ -4722,51 +4722,51 @@ async def client_in_progress_orders(update: Update, context: ContextTypes.DEFAUL
                 "in_progress": "🔧"
             }
             status_text = {
-                "master_selected": "Мастер выбран",
+                "master_selected": "Блогер выбран",
                 "contact_shared": "Контакт передан",
                 "waiting_master_confirmation": "Ожидает подтверждения",
                 "master_confirmed": "Подтверждено",
                 "in_progress": "В работе"
             }
 
-            emoji = status_emoji.get(order_status, "⚪")
-            status = status_text.get(order_status, "В работе")
+            emoji = status_emoji.get(campaign_status, "⚪")
+            status = status_text.get(campaign_status, "В работе")
 
-            text += f"{emoji} <b>Заказ #{order_id}</b> - {status}\n"
-            text += f"🔧 {order_dict.get('category', 'Не указана')}\n"
+            text += f"{emoji} <b>Кампания #{campaign_id}</b> - {status}\n"
+            text += f"🔧 {campaign_dict.get('category', 'Не указана')}\n"
 
-            description = order_dict.get('description', '')
+            description = campaign_dict.get('description', '')
             if len(description) > 50:
                 description = description[:50] + "..."
             text += f"📝 {description}\n"
 
             # Кнопки чата и завершения
-            chat = db.get_chat_by_order(order_id)
+            chat = db.get_chat_by_order(campaign_id)
             if chat:
                 chat_dict = dict(chat)
                 keyboard.append([InlineKeyboardButton(
-                    f"💬 Чат (заказ #{order_id})",
+                    f"💬 Чат (кампания #{campaign_id})",
                     callback_data=f"open_chat_{chat_dict['id']}"
                 )])
 
             keyboard.append([InlineKeyboardButton(
-                f"✅ Завершить заказ #{order_id}",
-                callback_data=f"complete_order_{order_id}"
+                f"✅ Завершить кампания #{campaign_id}",
+                callback_data=f"complete_campaign_{campaign_id}"
             )])
 
             text += "\n"
 
-        keyboard.append([InlineKeyboardButton("⬅️ Назад к заказам", callback_data="client_my_orders")])
+        keyboard.append([InlineKeyboardButton("⬅️ Назад к кампанияам", callback_data="advertiser_my_orders")])
 
         await safe_edit_message(query, text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(keyboard))
 
     except Exception as e:
-        logger.error(f"Ошибка в client_in_progress_orders: {e}", exc_info=True)
+        logger.error(f"Ошибка в advertiser_in_progress_orders: {e}", exc_info=True)
         await safe_edit_message(query, f"❌ Ошибка: {str(e)}")
 
 
-async def client_completed_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Показывает завершённые заказы клиента"""
+async def advertiser_completed_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Показывает завершённые кампанияы клиента"""
     query = update.callback_query
     await query.answer()
 
@@ -4776,33 +4776,33 @@ async def client_completed_orders(update: Update, context: ContextTypes.DEFAULT_
             await safe_edit_message(query, "❌ Пользователь не найден.")
             return
 
-        client_profile = db.get_client_profile(user["id"])
-        if not client_profile:
+        advertiser_profile = db.get_client_profile(user["id"])
+        if not advertiser_profile:
             await safe_edit_message(query, "❌ Профиль клиента не найден.")
             return
 
-        # Получаем все заказы и фильтруем завершённые
-        all_orders, _, _ = db.get_client_orders(client_profile["id"], page=1, per_page=1000)
+        # Получаем все кампанияы и фильтруем завершённые
+        all_orders, _, _ = db.get_client_orders(advertiser_profile["id"], page=1, per_page=1000)
         completed_statuses = ['done', 'completed', 'canceled', 'cancelled']
-        orders = [o for o in all_orders if dict(o).get('status', 'open') in completed_statuses]
+        campaigns = [o for o in all_orders if dict(o).get('status', 'open') in completed_statuses]
 
-        if not orders:
-            keyboard = [[InlineKeyboardButton("⬅️ Назад к заказам", callback_data="client_my_orders")]]
+        if not campaigns:
+            keyboard = [[InlineKeyboardButton("⬅️ Назад к кампанияам", callback_data="advertiser_my_orders")]]
             await safe_edit_message(
                 query,
-                "✅ <b>Завершённые заказы</b>\n\nУ вас нет завершённых заказов.",
+                "✅ <b>Завершённые кампанияы</b>\n\nУ вас нет завершённых кампанияов.",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
             return
 
-        # Формируем список заказов
-        text = f"✅ <b>Завершённые заказы</b> ({len(orders)})\n\n"
+        # Формируем список кампанияов
+        text = f"✅ <b>Завершённые кампанияы</b> ({len(campaigns)})\n\n"
         keyboard = []
 
-        for order in orders[:10]:  # Показываем первые 10
-            order_dict = dict(order)
-            order_id = order_dict['id']
+        for campaign in campaigns[:10]:  # Показываем первые 10
+            campaign_dict = dict(campaign)
+            campaign_id = campaign_dict['id']
 
             status_emoji = {
                 "done": "✅",
@@ -4815,49 +4815,49 @@ async def client_completed_orders(update: Update, context: ContextTypes.DEFAULT_
                 "canceled": "Отменён"
             }
 
-            emoji = status_emoji.get(order_dict.get("status", "done"), "✅")
-            status = status_text.get(order_dict.get("status", "done"), "Завершён")
+            emoji = status_emoji.get(campaign_dict.get("status", "done"), "✅")
+            status = status_text.get(campaign_dict.get("status", "done"), "Завершён")
 
-            text += f"{emoji} <b>Заказ #{order_id}</b> - {status}\n"
-            text += f"🔧 {order_dict.get('category', 'Не указана')}\n"
+            text += f"{emoji} <b>Кампания #{campaign_id}</b> - {status}\n"
+            text += f"🔧 {campaign_dict.get('category', 'Не указана')}\n"
 
-            description = order_dict.get('description', '')
+            description = campaign_dict.get('description', '')
             if len(description) > 50:
                 description = description[:50] + "..."
             text += f"📝 {description}\n"
 
             # Показываем чат если есть
-            selected_worker_id = order_dict.get('selected_worker_id')
+            selected_worker_id = campaign_dict.get('selected_worker_id')
             if selected_worker_id:
-                chat = db.get_chat_by_order(order_id)
+                chat = db.get_chat_by_order(campaign_id)
                 if chat:
                     chat_dict = dict(chat)
                     keyboard.append([InlineKeyboardButton(
-                        f"💬 Посмотреть чат (заказ #{order_id})",
+                        f"💬 Посмотреть чат (кампания #{campaign_id})",
                         callback_data=f"open_chat_{chat_dict['id']}"
                     )])
 
             text += "\n"
 
-        keyboard.append([InlineKeyboardButton("⬅️ Назад к заказам", callback_data="client_my_orders")])
+        keyboard.append([InlineKeyboardButton("⬅️ Назад к кампанияам", callback_data="advertiser_my_orders")])
 
         await safe_edit_message(query, text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(keyboard))
 
     except Exception as e:
-        logger.error(f"Ошибка в client_completed_orders: {e}", exc_info=True)
+        logger.error(f"Ошибка в advertiser_completed_orders: {e}", exc_info=True)
         await safe_edit_message(query, f"❌ Ошибка: {str(e)}")
 
 
-async def cancel_order_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def cancel_campaign_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    НОВОЕ: Обработчик отмены заказа клиентом.
+    НОВОЕ: Обработчик отмены кампанияа клиентом.
     """
     query = update.callback_query
     await query.answer()
 
     try:
-        # Извлекаем order_id из callback_data
-        order_id = int(query.data.replace("cancel_order_", ""))
+        # Извлекаем campaign_id из callback_data
+        campaign_id = int(query.data.replace("cancel_campaign_", ""))
 
         # Получаем пользователя
         user = db.get_user(query.from_user.id)
@@ -4865,74 +4865,74 @@ async def cancel_order_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             await query.edit_message_text("❌ Пользователь не найден.")
             return
 
-        # Отменяем заказ
-        result = db.cancel_order(order_id, user['id'], reason="Отменен клиентом через бот")
+        # Отменяем кампания
+        result = db.cancel_order(campaign_id, user['id'], reason="Отменен клиентом через бот")
 
         if not result['success']:
             await query.edit_message_text(
-                f"❌ <b>Ошибка отмены заказа</b>\n\n{result['message']}",
+                f"❌ <b>Ошибка отмены кампанияа</b>\n\n{result['message']}",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton("⬅️ Назад к заказам", callback_data="client_my_orders")
+                    InlineKeyboardButton("⬅️ Назад к кампанияам", callback_data="advertiser_my_orders")
                 ]])
             )
             return
 
-        # Успешная отмена - уведомляем мастеров
+        # Успешная отмена - уведомляем блогеров
         notified_count = 0
-        for worker_user_id in result['notified_workers']:
+        for blogger_user_id in result['notified_workers']:
             try:
-                worker_user = db.get_user_by_id(worker_user_id)
-                if worker_user:
+                blogger_user = db.get_user_by_id(blogger_user_id)
+                if blogger_user:
                     await context.bot.send_message(
-                        chat_id=worker_user['telegram_id'],
+                        chat_id=blogger_user['telegram_id'],
                         text=(
-                            f"❌ <b>Заказ #{order_id} отменен</b>\n\n"
-                            f"Клиент отменил заказ на который вы откликались.\n"
-                            f"Ваш отклик больше не актуален."
+                            f"❌ <b>Кампания #{campaign_id} отменен</b>\n\n"
+                            f"Клиент отменил кампания на который вы предложениеались.\n"
+                            f"Ваш предложение больше не актуален."
                         ),
                         parse_mode="HTML"
                     )
                     notified_count += 1
             except Exception as e:
-                logger.warning(f"Не удалось отправить уведомление мастеру {worker_user_id}: {e}")
+                logger.warning(f"Не удалось отправить уведомление блогеру {blogger_user_id}: {e}")
 
         # Сообщаем клиенту об успехе
         await query.edit_message_text(
-            f"✅ <b>Заказ #{order_id} успешно отменен</b>\n\n"
-            f"📨 Уведомлено мастеров: {notified_count}\n\n"
-            f"Заказ больше не будет показываться в поиске.",
+            f"✅ <b>Кампания #{campaign_id} успешно отменен</b>\n\n"
+            f"📨 Уведомлено блогеров: {notified_count}\n\n"
+            f"Кампания больше не будет показываться в поиске.",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("📂 Мои заказы", callback_data="client_my_orders"),
-                InlineKeyboardButton("🏠 Главное меню", callback_data="show_client_menu")
+                InlineKeyboardButton("📂 Мои кампанияы", callback_data="advertiser_my_orders"),
+                InlineKeyboardButton("🏠 Главное меню", callback_data="show_advertiser_menu")
             ]])
         )
 
-        logger.info(f"Заказ {order_id} отменен пользователем {user['id']}. Уведомлено мастеров: {notified_count}")
+        logger.info(f"Кампания {campaign_id} отменен пользователем {user['id']}. Уведомлено блогеров: {notified_count}")
 
     except Exception as e:
-        logger.error(f"Ошибка при отмене заказа: {e}", exc_info=True)
+        logger.error(f"Ошибка при отмене кампанияа: {e}", exc_info=True)
         await query.edit_message_text(
-            f"❌ Произошла ошибка при отмене заказа:\n{str(e)}",
+            f"❌ Произошла ошибка при отмене кампанияа:\n{str(e)}",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("⬅️ Назад", callback_data="client_my_orders")
+                InlineKeyboardButton("⬅️ Назад", callback_data="advertiser_my_orders")
             ]])
         )
 
 
-async def complete_order_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def complete_campaign_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    ОБНОВЛЕНО: Обработчик завершения заказа с оценкой - работает для ОБЕИХ сторон.
-    Клиент оценивает мастера, мастер оценивает клиента.
+    ОБНОВЛЕНО: Обработчик завершения кампанияа с оценкой - работает для ОБЕИХ сторон.
+    Клиент оценивает блогера, блогер оценивает клиента.
     """
     query = update.callback_query
     await query.answer()
 
     try:
-        # Извлекаем order_id из callback_data
-        order_id = int(query.data.replace("complete_order_", ""))
+        # Извлекаем campaign_id из callback_data
+        campaign_id = int(query.data.replace("complete_campaign_", ""))
 
         # Получаем пользователя
         user = db.get_user(query.from_user.id)
@@ -4942,104 +4942,104 @@ async def complete_order_handler(update: Update, context: ContextTypes.DEFAULT_T
 
         user_dict = dict(user)
 
-        # Получаем заказ
-        order = db.get_order_by_id(order_id)
-        if not order:
-            await query.edit_message_text("❌ Заказ не найден.")
+        # Получаем кампания
+        campaign = db.get_order_by_id(campaign_id)
+        if not campaign:
+            await query.edit_message_text("❌ Кампания не найден.")
             return
 
-        order_dict = dict(order)
+        campaign_dict = dict(campaign)
 
-        # Проверяем статус заказа - нельзя оценить отменённый заказ
+        # Проверяем статус кампанияа - нельзя оценить отменённый кампания
         # ВАЖНО: 'completed' разрешён, чтобы обе стороны могли оставить отзыв
-        if order_dict['status'] in ('cancelled',):
+        if campaign_dict['status'] in ('cancelled',):
             await safe_edit_message(
                 query,
-                f"❌ Этот заказ был отменён.\n\n"
-                f"Статус: {order_dict['status']}",
+                f"❌ Этот кампания был отменён.\n\n"
+                f"Статус: {campaign_dict['status']}",
                 parse_mode="HTML"
             )
             return
 
-        # Получаем выбранного мастера
-        selected_worker_id = order_dict.get('selected_worker_id')
+        # Получаем выбранного блогера
+        selected_worker_id = campaign_dict.get('selected_worker_id')
         if not selected_worker_id:
             await safe_edit_message(
                 query,
-                "❌ Для завершения заказа необходимо сначала выбрать мастера.",
+                "❌ Для завершения кампанияа необходимо сначала выбрать блогера.",
                 parse_mode="HTML"
             )
             return
 
-        # КРИТИЧНО: Определяем, кто вызывает - клиент или мастер
-        client_profile = db.get_client_profile(user_dict["id"])
-        worker_profile_caller = db.get_worker_profile(user_dict["id"])
+        # КРИТИЧНО: Определяем, кто вызывает - клиент или блогер
+        advertiser_profile = db.get_client_profile(user_dict["id"])
+        blogger_profile_caller = db.get_worker_profile(user_dict["id"])
 
-        is_client = client_profile and order_dict['client_id'] == dict(client_profile)['id']
-        is_worker = worker_profile_caller and dict(worker_profile_caller)['id'] == selected_worker_id
+        is_client = advertiser_profile and campaign_dict['advertiser_id'] == dict(advertiser_profile)['id']
+        is_worker = blogger_profile_caller and dict(blogger_profile_caller)['id'] == selected_worker_id
 
         if not is_client and not is_worker:
-            await safe_edit_message(query, "❌ Вы не являетесь участником этого заказа.")
+            await safe_edit_message(query, "❌ Вы не являетесь участником этого кампанияа.")
             return
 
         # Проверяем, не оставлен ли уже отзыв этим пользователем
-        existing_review = db.check_review_exists(order_id, user_dict['id'])
+        existing_review = db.check_review_exists(campaign_id, user_dict['id'])
         if existing_review:
             await safe_edit_message(
                 query,
-                "✅ Вы уже завершили этот заказ и оставили отзыв.",
+                "✅ Вы уже завершили этот кампания и оставили отзыв.",
                 parse_mode="HTML"
             )
             return
 
         # Получаем информацию о противоположной стороне
         if is_client:
-            # Клиент оценивает мастера
+            # Клиент оценивает блогера
             target_profile = db.get_worker_by_id(selected_worker_id)
             if not target_profile:
-                await safe_edit_message(query, "❌ Информация о мастере не найдена.")
+                await safe_edit_message(query, "❌ Информация о блогере не найдена.")
                 return
             target_dict = dict(target_profile)
             target_name = target_dict.get('name', 'Без имени')
-            target_role = "Мастер"
-            cancel_callback = "client_my_orders"
+            target_role = "Блогер"
+            cancel_callback = "advertiser_my_orders"
         else:
-            # Мастер оценивает клиента
-            client_data = db.get_client_by_id(order_dict['client_id'])
-            if not client_data:
+            # Блогер оценивает клиента
+            advertiser_data = db.get_client_by_id(campaign_dict['advertiser_id'])
+            if not advertiser_data:
                 await safe_edit_message(query, "❌ Информация о клиенте не найдена.")
                 return
-            client_dict = dict(client_data)
-            client_user = db.get_user_by_id(client_dict['user_id'])
-            if not client_user:
+            advertiser_dict = dict(advertiser_data)
+            advertiser_user = db.get_user_by_id(advertiser_dict['user_id'])
+            if not advertiser_user:
                 await safe_edit_message(query, "❌ Информация о клиенте не найдена.")
                 return
-            client_user_dict = dict(client_user)
-            target_name = client_user_dict.get('first_name', 'Заказчик')
-            target_role = "Заказчик"
-            cancel_callback = "worker_my_orders"
+            advertiser_user_dict = dict(advertiser_user)
+            target_name = advertiser_user_dict.get('first_name', 'Рекламодатель')
+            target_role = "Рекламодатель"
+            cancel_callback = "blogger_my_orders"
 
         # Показываем форму оценки
         text = (
-            f"✅ <b>Завершение заказа #{order_id}</b>\n\n"
+            f"✅ <b>Завершение кампанияа #{campaign_id}</b>\n\n"
             f"👤 <b>{target_role}:</b> {target_name}\n\n"
-            f"📊 <b>Оцените {'работу мастера' if is_client else 'заказчика'}:</b>\n"
-            f"Ваша оценка поможет {'другим клиентам' if is_client else 'другим мастерам'} сделать правильный выбор."
+            f"📊 <b>Оцените {'работу блогера' if is_client else 'рекламодательа'}:</b>\n"
+            f"Ваша оценка поможет {'другим клиентам' if is_client else 'другим блогерам'} сделать правильный выбор."
         )
 
         # Кнопки с оценками от 1 до 5 звезд
-        # Формат callback: rate_order_{order_id}_{rating}_{role}
-        # role: 'client' если оценивает клиент, 'worker' если оценивает мастер
-        role_suffix = 'client' if is_client else 'worker'
+        # Формат callback: rate_order_{campaign_id}_{rating}_{role}
+        # role: 'advertiser' если оценивает клиент, 'blogger' если оценивает блогер
+        role_suffix = 'advertiser' if is_client else 'blogger'
         keyboard = [
             [
-                InlineKeyboardButton("⭐", callback_data=f"rate_order_{order_id}_1_{role_suffix}"),
-                InlineKeyboardButton("⭐⭐", callback_data=f"rate_order_{order_id}_2_{role_suffix}"),
-                InlineKeyboardButton("⭐⭐⭐", callback_data=f"rate_order_{order_id}_3_{role_suffix}"),
+                InlineKeyboardButton("⭐", callback_data=f"rate_order_{campaign_id}_1_{role_suffix}"),
+                InlineKeyboardButton("⭐⭐", callback_data=f"rate_order_{campaign_id}_2_{role_suffix}"),
+                InlineKeyboardButton("⭐⭐⭐", callback_data=f"rate_order_{campaign_id}_3_{role_suffix}"),
             ],
             [
-                InlineKeyboardButton("⭐⭐⭐⭐", callback_data=f"rate_order_{order_id}_4_{role_suffix}"),
-                InlineKeyboardButton("⭐⭐⭐⭐⭐", callback_data=f"rate_order_{order_id}_5_{role_suffix}"),
+                InlineKeyboardButton("⭐⭐⭐⭐", callback_data=f"rate_order_{campaign_id}_4_{role_suffix}"),
+                InlineKeyboardButton("⭐⭐⭐⭐⭐", callback_data=f"rate_order_{campaign_id}_5_{role_suffix}"),
             ],
             [InlineKeyboardButton("❌ Отмена", callback_data=cancel_callback)]
         ]
@@ -5051,10 +5051,10 @@ async def complete_order_handler(update: Update, context: ContextTypes.DEFAULT_T
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-        logger.info(f"{'Клиент' if is_client else 'Мастер'} {user_dict['id']} открыл форму завершения заказа {order_id}")
+        logger.info(f"{'Клиент' if is_client else 'Блогер'} {user_dict['id']} открыл форму завершения кампанияа {campaign_id}")
 
     except Exception as e:
-        logger.error(f"Ошибка при открытии формы завершения заказа: {e}", exc_info=True)
+        logger.error(f"Ошибка при открытии формы завершения кампанияа: {e}", exc_info=True)
         await query.edit_message_text(
             f"❌ Произошла ошибка:\n{str(e)}",
             parse_mode="HTML"
@@ -5063,22 +5063,22 @@ async def complete_order_handler(update: Update, context: ContextTypes.DEFAULT_T
 
 async def submit_order_rating(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    ОБНОВЛЕНО: Обработчик сохранения оценки заказа - работает для ОБЕИХ сторон.
-    Callback data format: rate_order_{order_id}_{rating}_{role}
-    role: 'client' (клиент оценивает мастера) или 'worker' (мастер оценивает клиента)
+    ОБНОВЛЕНО: Обработчик сохранения оценки кампанияа - работает для ОБЕИХ сторон.
+    Callback data format: rate_order_{campaign_id}_{rating}_{role}
+    role: 'advertiser' (клиент оценивает блогера) или 'blogger' (блогер оценивает клиента)
     """
     query = update.callback_query
     await query.answer()
 
     try:
-        # Извлекаем order_id, rating и role из callback_data
-        # Формат: rate_order_{order_id}_{rating}_{role}
+        # Извлекаем campaign_id, rating и role из callback_data
+        # Формат: rate_order_{campaign_id}_{rating}_{role}
         data_parts = query.data.replace("rate_order_", "").split("_")
-        order_id = int(data_parts[0])
+        campaign_id = int(data_parts[0])
         rating = int(data_parts[1])
-        role = data_parts[2] if len(data_parts) > 2 else 'client'  # По умолчанию клиент (обратная совместимость)
+        role = data_parts[2] if len(data_parts) > 2 else 'advertiser'  # По умолчанию клиент (обратная совместимость)
 
-        is_client = (role == 'client')
+        is_client = (role == 'advertiser')
 
         # Получаем пользователя
         user = db.get_user(query.from_user.id)
@@ -5088,99 +5088,99 @@ async def submit_order_rating(update: Update, context: ContextTypes.DEFAULT_TYPE
 
         user_dict = dict(user)
 
-        # Получаем заказ
-        order = db.get_order_by_id(order_id)
-        if not order:
-            await safe_edit_message(query, "❌ Заказ не найден.")
+        # Получаем кампания
+        campaign = db.get_order_by_id(campaign_id)
+        if not campaign:
+            await safe_edit_message(query, "❌ Кампания не найден.")
             return
 
-        order_dict = dict(order)
+        campaign_dict = dict(campaign)
 
-        # Получаем выбранного мастера
-        selected_worker_id = order_dict.get('selected_worker_id')
+        # Получаем выбранного блогера
+        selected_worker_id = campaign_dict.get('selected_worker_id')
         if not selected_worker_id:
-            await safe_edit_message(query, "❌ Мастер не выбран.")
+            await safe_edit_message(query, "❌ Блогер не выбран.")
             return
 
-        # Получаем информацию о мастере
-        worker_profile = db.get_worker_by_id(selected_worker_id)
-        if not worker_profile:
-            await safe_edit_message(query, "❌ Информация о мастере не найдена.")
+        # Получаем информацию о блогере
+        blogger_profile = db.get_worker_by_id(selected_worker_id)
+        if not blogger_profile:
+            await safe_edit_message(query, "❌ Информация о блогере не найдена.")
             return
 
-        worker_dict = dict(worker_profile)
-        worker_user_id = worker_dict['user_id']
+        blogger_dict = dict(blogger_profile)
+        blogger_user_id = blogger_dict['user_id']
 
         # Получаем информацию о клиенте
-        client_data = db.get_client_by_id(order_dict['client_id'])
-        if not client_data:
+        advertiser_data = db.get_client_by_id(campaign_dict['advertiser_id'])
+        if not advertiser_data:
             await safe_edit_message(query, "❌ Информация о клиенте не найдена.")
             return
-        client_dict = dict(client_data)
-        client_user_id = client_dict['user_id']
+        advertiser_dict = dict(advertiser_data)
+        advertiser_user_id = advertiser_dict['user_id']
 
         # Сохраняем отзыв в зависимости от того, кто оценивает
         if is_client:
-            # Клиент оценивает мастера
+            # Клиент оценивает блогера
             review_saved = db.add_review(
                 from_user_id=user_dict['id'],
-                to_user_id=worker_user_id,
-                order_id=order_id,
-                role_from='client',
-                role_to='worker',
+                to_user_id=blogger_user_id,
+                campaign_id=campaign_id,
+                role_from='advertiser',
+                role_to='blogger',
                 rating=rating,
                 comment=None
             )
-            target_name = worker_dict.get('name', 'Без имени')
-            target_role = "мастера"
-            return_callback = "client_my_orders"
-            return_menu_callback = "show_client_menu"
-            notify_user_id = worker_user_id
-            notify_text_prefix = "Клиент завершил заказ и оставил вам оценку"
+            target_name = blogger_dict.get('name', 'Без имени')
+            target_role = "блогера"
+            return_callback = "advertiser_my_orders"
+            return_menu_callback = "show_advertiser_menu"
+            notify_user_id = blogger_user_id
+            notify_text_prefix = "Клиент завершил кампания и оставил вам оценку"
         else:
-            # Мастер оценивает клиента
+            # Блогер оценивает клиента
             review_saved = db.add_review(
                 from_user_id=user_dict['id'],
-                to_user_id=client_user_id,
-                order_id=order_id,
-                role_from='worker',
-                role_to='client',
+                to_user_id=advertiser_user_id,
+                campaign_id=campaign_id,
+                role_from='blogger',
+                role_to='advertiser',
                 rating=rating,
                 comment=None
             )
-            client_user = db.get_user_by_id(client_user_id)
-            client_user_dict = dict(client_user) if client_user else {}
-            target_name = client_user_dict.get('first_name', 'Клиент')
+            advertiser_user = db.get_user_by_id(advertiser_user_id)
+            advertiser_user_dict = dict(advertiser_user) if advertiser_user else {}
+            target_name = advertiser_user_dict.get('first_name', 'Клиент')
             target_role = "клиента"
-            return_callback = "worker_my_orders"
-            return_menu_callback = "show_worker_menu"
-            notify_user_id = client_user_id
-            notify_text_prefix = "Мастер завершил заказ и оставил вам оценку"
+            return_callback = "blogger_my_orders"
+            return_menu_callback = "show_blogger_menu"
+            notify_user_id = advertiser_user_id
+            notify_text_prefix = "Блогер завершил кампания и оставил вам оценку"
 
         if not review_saved:
             await safe_edit_message(
                 query,
-                "❌ Не удалось сохранить отзыв. Возможно, вы уже оценили этот заказ.",
+                "❌ Не удалось сохранить отзыв. Возможно, вы уже оценили этот кампания.",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton("⬅️ Назад к заказам", callback_data=return_callback)
+                    InlineKeyboardButton("⬅️ Назад к кампанияам", callback_data=return_callback)
                 ]])
             )
             return
 
         # Проверяем, оставила ли противоположная сторона уже отзыв
-        opposite_review_exists = db.check_review_exists(order_id, notify_user_id)
+        opposite_review_exists = db.check_review_exists(campaign_id, notify_user_id)
 
-        # ИСПРАВЛЕНО: Обновляем статус заказа на "completed" СРАЗУ при первой оценке
-        # Это делает заказ видимым в "Завершенные заказы" у обеих сторон
-        if order_dict['status'] not in ['completed', 'done']:
-            db.update_order_status(order_id, 'completed')
-            logger.info(f"✅ Заказ {order_id} помечен как 'completed' - первая оценка получена")
+        # ИСПРАВЛЕНО: Обновляем статус кампанияа на "completed" СРАЗУ при первой оценке
+        # Это делает кампания видимым в "Завершенные кампанияы" у обеих сторон
+        if campaign_dict['status'] not in ['completed', 'done']:
+            db.update_order_status(campaign_id, 'completed')
+            logger.info(f"✅ Кампания {campaign_id} помечен как 'completed' - первая оценка получена")
 
         # Если обе стороны оценили, дополнительно помечаем как 'done'
-        if opposite_review_exists and order_dict['status'] != 'done':
-            db.update_order_status(order_id, 'done')
-            logger.info(f"✅ Заказ {order_id} помечен как 'done' - обе стороны оценили")
+        if opposite_review_exists and campaign_dict['status'] != 'done':
+            db.update_order_status(campaign_id, 'done')
+            logger.info(f"✅ Кампания {campaign_id} помечен как 'done' - обе стороны оценили")
 
         # Уведомляем противоположную сторону
         try:
@@ -5190,19 +5190,19 @@ async def submit_order_rating(update: Update, context: ContextTypes.DEFAULT_TYPE
                 return
 
             notify_user_dict = dict(notify_user)
-            logger.info(f"📨 Отправка уведомления о завершении заказа #{order_id} пользователю {notify_user_id} (telegram_id={notify_user_dict['telegram_id']})")
+            logger.info(f"📨 Отправка уведомления о завершении кампанияа #{campaign_id} пользователю {notify_user_id} (telegram_id={notify_user_dict['telegram_id']})")
 
             # ИСПРАВЛЕНО: НЕ показываем рейтинг в уведомлении
             # Пользователь НЕ должен видеть кто и какую оценку ему поставил
 
-            # Если клиент оценил мастера - предлагаем мастеру загрузить фото И оценить клиента
+            # Если клиент оценил блогера - предлагаем блогеру загрузить фото И оценить клиента
             if is_client:
                 keyboard = []
-                # Если мастер еще не оценил клиента, добавляем кнопку оценки
+                # Если блогер еще не оценил клиента, добавляем кнопку оценки
                 if not opposite_review_exists:
-                    keyboard.append([InlineKeyboardButton("⭐ Оценить заказчика", callback_data=f"complete_order_{order_id}")])
-                keyboard.append([InlineKeyboardButton("📸 Загрузить фото работы", callback_data=f"upload_work_photo_{order_id}")])
-                keyboard.append([InlineKeyboardButton("➡️ Пропустить", callback_data=f"skip_work_photo_{order_id}")])
+                    keyboard.append([InlineKeyboardButton("⭐ Оценить рекламодательа", callback_data=f"complete_campaign_{campaign_id}")])
+                keyboard.append([InlineKeyboardButton("📸 Загрузить фото работы", callback_data=f"upload_work_photo_{campaign_id}")])
+                keyboard.append([InlineKeyboardButton("➡️ Пропустить", callback_data=f"skip_work_photo_{campaign_id}")])
 
                 extra_text = (
                     f"\n\n🌟 <b>Повысьте свой рейтинг и авторитетность!</b>\n\n"
@@ -5210,45 +5210,45 @@ async def submit_order_rating(update: Update, context: ContextTypes.DEFAULT_TYPE
                     f"• Клиент сможет подтвердить фото - отзыв станет более весомым\n"
                     f"• Подтверждённые фото получат специальный значок ✅\n"
                     f"• Это повысит доверие будущих клиентов\n"
-                    f"• Больше заказов - выше заработок!\n\n"
+                    f"• Больше кампанияов - выше заработок!\n\n"
                     f"💡 Не упустите возможность - добавьте фото сейчас!"
                 )
-                logger.info(f"📸 Клиент оценил мастера - предлагаем загрузить фото работы")
+                logger.info(f"📸 Клиент оценил блогера - предлагаем загрузить фото работы")
             else:
-                # Мастер оценил клиента - предлагаем клиенту оценить мастера
+                # Блогер оценил клиента - предлагаем клиенту оценить блогера
                 keyboard = []
                 if not opposite_review_exists:
-                    keyboard.append([InlineKeyboardButton("⭐ Оценить мастера", callback_data=f"complete_order_{order_id}")])
-                extra_text = "\n\nОцените работу мастера!"
-                logger.info(f"⭐ Мастер оценил клиента - предлагаем оценить мастера")
+                    keyboard.append([InlineKeyboardButton("⭐ Оценить блогера", callback_data=f"complete_campaign_{campaign_id}")])
+                extra_text = "\n\nОцените работу блогера!"
+                logger.info(f"⭐ Блогер оценил клиента - предлагаем оценить блогера")
 
             await context.bot.send_message(
                 chat_id=notify_user_dict['telegram_id'],
                 text=(
-                    f"✅ <b>Заказ #{order_id} завершен!</b>\n\n"
-                    f"Противоположная сторона завершила заказ.\n\n"
-                    f"🎉 Поздравляем с успешным {'выполнением работы' if is_client else 'заказом'}!"
+                    f"✅ <b>Кампания #{campaign_id} завершен!</b>\n\n"
+                    f"Противоположная сторона завершила кампания.\n\n"
+                    f"🎉 Поздравляем с успешным {'выполнением работы' if is_client else 'кампанияом'}!"
                     f"{extra_text}"
                 ),
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup(keyboard) if keyboard else None
             )
-            logger.info(f"✅ Уведомление о завершении заказа #{order_id} успешно отправлено пользователю {notify_user_id}")
+            logger.info(f"✅ Уведомление о завершении кампанияа #{campaign_id} успешно отправлено пользователю {notify_user_id}")
         except Exception as e:
             logger.error(f"❌ Ошибка при отправке уведомления пользователю {notify_user_id}: {e}", exc_info=True)
 
         # Показываем сообщение об успехе
         stars = "⭐" * rating
         text = (
-            f"✅ <b>Заказ завершен!</b>\n\n"
+            f"✅ <b>Кампания завершен!</b>\n\n"
             f"Спасибо за вашу оценку: {stars} ({rating}/5)\n\n"
             f"👤 <b>{target_role.capitalize()}:</b> {target_name}\n\n"
             f"💬 Хотите оставить комментарий к отзыву?"
         )
 
         keyboard = [
-            [InlineKeyboardButton("💬 Оставить комментарий", callback_data=f"add_comment_{order_id}")],
-            [InlineKeyboardButton("📂 Мои заказы", callback_data=return_callback)],
+            [InlineKeyboardButton("💬 Оставить комментарий", callback_data=f"add_comment_{campaign_id}")],
+            [InlineKeyboardButton("📂 Мои кампанияы", callback_data=return_callback)],
             [InlineKeyboardButton("🏠 Главное меню", callback_data=return_menu_callback)]
         ]
 
@@ -5259,10 +5259,10 @@ async def submit_order_rating(update: Update, context: ContextTypes.DEFAULT_TYPE
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-        logger.info(f"{'Клиент' if is_client else 'Мастер'} {user_dict['id']} завершил заказ {order_id} с оценкой {rating}")
+        logger.info(f"{'Клиент' if is_client else 'Блогер'} {user_dict['id']} завершил кампания {campaign_id} с оценкой {rating}")
 
     except Exception as e:
-        logger.error(f"Ошибка при сохранении оценки заказа: {e}", exc_info=True)
+        logger.error(f"Ошибка при сохранении оценки кампанияа: {e}", exc_info=True)
         await safe_edit_message(
             query,
             f"❌ Произошла ошибка при сохранении оценки:\n{str(e)}",
@@ -5271,13 +5271,13 @@ async def submit_order_rating(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 async def add_comment_to_review(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработчик кнопки 'Оставить комментарий' после завершения заказа"""
+    """Обработчик кнопки 'Оставить комментарий' после завершения кампанияа"""
     query = update.callback_query
     await query.answer()
 
     try:
-        # Извлекаем order_id из callback_data
-        order_id = int(query.data.replace("add_comment_", ""))
+        # Извлекаем campaign_id из callback_data
+        campaign_id = int(query.data.replace("add_comment_", ""))
 
         # Получаем пользователя
         user = db.get_user(query.from_user.id)
@@ -5288,27 +5288,27 @@ async def add_comment_to_review(update: Update, context: ContextTypes.DEFAULT_TY
         user_dict = dict(user)
 
         # Проверяем что отзыв существует
-        if not db.check_review_exists(order_id, user_dict['id']):
+        if not db.check_review_exists(campaign_id, user_dict['id']):
             await safe_edit_message(
                 query,
-                "❌ Отзыв не найден. Сначала завершите заказ с оценкой.",
+                "❌ Отзыв не найден. Сначала завершите кампания с оценкой.",
                 parse_mode="HTML"
             )
             return
 
-        # Сохраняем order_id в context для последующего использования
-        context.user_data['add_comment_order_id'] = order_id
+        # Сохраняем campaign_id в context для последующего использования
+        context.user_data['add_comment_order_id'] = campaign_id
 
         # Просим пользователя ввести комментарий
         await safe_edit_message(
             query,
             f"💬 <b>Добавление комментария к отзыву</b>\n\n"
-            f"Заказ #{order_id}\n\n"
+            f"Кампания #{campaign_id}\n\n"
             f"Напишите ваш комментарий к отзыву (до 500 символов):",
             parse_mode="HTML"
         )
 
-        logger.info(f"Пользователь {user_dict['id']} начал добавление комментария к отзыву по заказу {order_id}")
+        logger.info(f"Пользователь {user_dict['id']} начал добавление комментария к отзыву по кампанияу {campaign_id}")
 
     except Exception as e:
         logger.error(f"Ошибка при начале добавления комментария: {e}", exc_info=True)
@@ -5321,7 +5321,7 @@ async def receive_review_comment(update: Update, context: ContextTypes.DEFAULT_T
     if 'add_comment_order_id' not in context.user_data:
         return  # Игнорируем сообщение если не ожидаем комментарий
 
-    order_id = context.user_data['add_comment_order_id']
+    campaign_id = context.user_data['add_comment_order_id']
     comment = update.message.text.strip()
 
     if len(comment) > 500:
@@ -5340,22 +5340,22 @@ async def receive_review_comment(update: Update, context: ContextTypes.DEFAULT_T
     user_dict = dict(user)
 
     # Определяем роль пользователя
-    worker_profile = db.get_worker_by_user_id(user_dict['id'])
-    is_worker = worker_profile is not None
+    blogger_profile = db.get_worker_by_user_id(user_dict['id'])
+    is_worker = blogger_profile is not None
 
     # Обновляем комментарий в отзыве
-    success = db.update_review_comment(order_id, user_dict['id'], comment)
+    success = db.update_review_comment(campaign_id, user_dict['id'], comment)
 
     # Кнопки возврата в зависимости от роли
     if is_worker:
         keyboard = [
-            [InlineKeyboardButton("📂 Мои заказы", callback_data="worker_my_orders")],
-            [InlineKeyboardButton("🔧 Меню мастера", callback_data="show_worker_menu")]
+            [InlineKeyboardButton("📂 Мои кампанияы", callback_data="blogger_my_orders")],
+            [InlineKeyboardButton("🔧 Меню блогера", callback_data="show_blogger_menu")]
         ]
     else:
         keyboard = [
-            [InlineKeyboardButton("📂 Мои заказы", callback_data="client_my_orders")],
-            [InlineKeyboardButton("🏠 Меню заказчика", callback_data="show_client_menu")]
+            [InlineKeyboardButton("📂 Мои кампанияы", callback_data="advertiser_my_orders")],
+            [InlineKeyboardButton("🏠 Меню рекламодательа", callback_data="show_advertiser_menu")]
         ]
 
     if success:
@@ -5366,7 +5366,7 @@ async def receive_review_comment(update: Update, context: ContextTypes.DEFAULT_T
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
-        logger.info(f"Пользователь {user_dict['id']} добавил комментарий к отзыву по заказу {order_id}")
+        logger.info(f"Пользователь {user_dict['id']} добавил комментарий к отзыву по кампанияу {campaign_id}")
     else:
         await update.message.reply_text(
             "❌ Не удалось обновить комментарий.\n\n"
@@ -5378,24 +5378,24 @@ async def receive_review_comment(update: Update, context: ContextTypes.DEFAULT_T
     del context.user_data['add_comment_order_id']
 
 
-async def worker_upload_work_photo_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_upload_work_photo_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    НОВОЕ: Начало загрузки фото завершённой работы мастером.
+    НОВОЕ: Начало загрузки фото завершённой работы блогером.
     """
     query = update.callback_query
     await query.answer()
 
     try:
-        # Извлекаем order_id из callback_data
-        order_id = int(query.data.replace("upload_work_photo_", ""))
+        # Извлекаем campaign_id из callback_data
+        campaign_id = int(query.data.replace("upload_work_photo_", ""))
 
-        # Сохраняем order_id в context для последующей загрузки фото
-        context.user_data['uploading_work_photo_order_id'] = order_id
+        # Сохраняем campaign_id в context для последующей загрузки фото
+        context.user_data['uploading_work_photo_order_id'] = campaign_id
 
         text = (
-            f"📸 <b>Загрузка фото работы для заказа #{order_id}</b>\n\n"
+            f"📸 <b>Загрузка фото работы для кампанияа #{campaign_id}</b>\n\n"
             f"Отправьте фотографии выполненной работы (до 3 фото).\n\n"
-            f"✅ <b>Подтвержденные заказчиком фото:</b>\n"
+            f"✅ <b>Подтвержденные рекламодательом фото:</b>\n"
             f"• Получат специальный значок ✅\n"
             f"• Повышают доверие клиентов\n"
             f"• Максимум 90 фото в профиле\n\n"
@@ -5407,8 +5407,8 @@ async def worker_upload_work_photo_start(update: Update, context: ContextTypes.D
         )
 
         keyboard = [
-            [InlineKeyboardButton("✅ Завершить загрузку", callback_data=f"finish_work_photos_{order_id}")],
-            [InlineKeyboardButton("❌ Отменить", callback_data=f"cancel_work_photos_{order_id}")]
+            [InlineKeyboardButton("✅ Завершить загрузку", callback_data=f"finish_work_photos_{campaign_id}")],
+            [InlineKeyboardButton("❌ Отменить", callback_data=f"cancel_work_photos_{campaign_id}")]
         ]
 
         await safe_edit_message(
@@ -5421,7 +5421,7 @@ async def worker_upload_work_photo_start(update: Update, context: ContextTypes.D
         # Инициализируем список загруженных фото
         context.user_data['uploaded_work_photos'] = []
 
-        logger.info(f"Мастер начал загрузку фото для заказа {order_id}")
+        logger.info(f"Блогер начал загрузку фото для кампанияа {campaign_id}")
 
     except Exception as e:
         logger.error(f"Ошибка при начале загрузки фото работы: {e}", exc_info=True)
@@ -5432,7 +5432,7 @@ async def worker_upload_work_photo_start(update: Update, context: ContextTypes.D
         )
 
 
-async def worker_skip_work_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_skip_work_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     НОВОЕ: Пропуск загрузки фото работы.
     """
@@ -5440,11 +5440,11 @@ async def worker_skip_work_photo(update: Update, context: ContextTypes.DEFAULT_T
     await query.answer()
 
     try:
-        order_id = int(query.data.replace("skip_work_photo_", ""))
+        campaign_id = int(query.data.replace("skip_work_photo_", ""))
 
         keyboard = [
-            [InlineKeyboardButton("📂 Мои заказы", callback_data="worker_my_orders")],
-            [InlineKeyboardButton("🔧 Меню мастера", callback_data="show_worker_menu")]
+            [InlineKeyboardButton("📂 Мои кампанияы", callback_data="blogger_my_orders")],
+            [InlineKeyboardButton("🔧 Меню блогера", callback_data="show_blogger_menu")]
         ]
 
         await safe_edit_message(
@@ -5455,15 +5455,15 @@ async def worker_skip_work_photo(update: Update, context: ContextTypes.DEFAULT_T
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-        logger.info(f"Мастер пропустил загрузку фото для заказа {order_id}")
+        logger.info(f"Блогер пропустил загрузку фото для кампанияа {campaign_id}")
 
     except Exception as e:
         logger.error(f"Ошибка при пропуске загрузки фото: {e}", exc_info=True)
 
 
-async def worker_upload_work_photo_receive(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_upload_work_photo_receive(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    НОВОЕ: Получение фото завершённой работы от мастера.
+    НОВОЕ: Получение фото завершённой работы от блогера.
     """
     try:
         # КРИТИЧНО: Пропускаем если идет загрузка фото профиля или портфолио
@@ -5471,8 +5471,8 @@ async def worker_upload_work_photo_receive(update: Update, context: ContextTypes
             return  # Пропускаем - пусть обработают другие handlers
 
         # Проверяем, что идёт процесс загрузки фото работы
-        order_id = context.user_data.get('uploading_work_photo_order_id')
-        if not order_id:
+        campaign_id = context.user_data.get('uploading_work_photo_order_id')
+        if not campaign_id:
             return  # Игнорируем фото, если не в процессе загрузки
 
         # Получаем file_id фото
@@ -5487,7 +5487,7 @@ async def worker_upload_work_photo_receive(update: Update, context: ContextTypes
             if len(context.user_data['uploaded_work_photos']) >= 3:
                 await update.message.reply_text(
                     "⚠️ <b>Достигнут лимит</b>\n\n"
-                    "Максимум 3 фото на один заказ.\n\n"
+                    "Максимум 3 фото на один кампания.\n\n"
                     "Нажмите «Завершить загрузку» чтобы сохранить фото.",
                     parse_mode="HTML"
                 )
@@ -5511,13 +5511,13 @@ async def worker_upload_work_photo_receive(update: Update, context: ContextTypes
                     parse_mode="HTML"
                 )
 
-            logger.info(f"Получено фото {count}/3 для заказа {order_id}")
+            logger.info(f"Получено фото {count}/3 для кампанияа {campaign_id}")
 
     except Exception as e:
         logger.error(f"Ошибка при получении фото работы: {e}", exc_info=True)
 
 
-async def worker_finish_work_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_finish_work_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     НОВОЕ: Завершение загрузки фото работы и сохранение в БД.
     """
@@ -5525,15 +5525,15 @@ async def worker_finish_work_photos(update: Update, context: ContextTypes.DEFAUL
     await query.answer()
 
     try:
-        order_id = int(query.data.replace("finish_work_photos_", ""))
+        campaign_id = int(query.data.replace("finish_work_photos_", ""))
         photos = context.user_data.get('uploaded_work_photos', [])
 
         if not photos:
             # ИСПРАВЛЕНО: Добавлены кнопки для повторной попытки или пропуска
             keyboard = [
-                [InlineKeyboardButton("📸 Попробовать снова", callback_data=f"upload_work_photo_{order_id}")],
-                [InlineKeyboardButton("➡️ Пропустить (добавить позже)", callback_data=f"skip_work_photo_{order_id}")],
-                [InlineKeyboardButton("⬅️ К моим заказам", callback_data="worker_my_orders")]
+                [InlineKeyboardButton("📸 Попробовать снова", callback_data=f"upload_work_photo_{campaign_id}")],
+                [InlineKeyboardButton("➡️ Пропустить (добавить позже)", callback_data=f"skip_work_photo_{campaign_id}")],
+                [InlineKeyboardButton("⬅️ К моим кампанияам", callback_data="blogger_my_orders")]
             ]
             await safe_edit_message(
                 query,
@@ -5542,28 +5542,28 @@ async def worker_finish_work_photos(update: Update, context: ContextTypes.DEFAUL
                 "1️⃣ Нажмите «Попробовать снова»\n"
                 "2️⃣ Отправьте фотографии (до 3 шт)\n"
                 "3️⃣ Нажмите «Завершить загрузку»\n\n"
-                "💡 Вы также можете пропустить и добавить фото позже через раздел «Мои заказы».",
+                "💡 Вы также можете пропустить и добавить фото позже через раздел «Мои кампанияы».",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
             return
 
-        # Получаем информацию о мастере
+        # Получаем информацию о блогере
         user = db.get_user(query.from_user.id)
         if not user:
             await safe_edit_message(query, "❌ Пользователь не найден.")
             return
 
         user_dict = dict(user)
-        worker_profile = db.get_worker_profile(user_dict["id"])
-        if not worker_profile:
-            await safe_edit_message(query, "❌ Профиль мастера не найден.")
+        blogger_profile = db.get_worker_profile(user_dict["id"])
+        if not blogger_profile:
+            await safe_edit_message(query, "❌ Профиль блогера не найден.")
             return
 
-        worker_dict = dict(worker_profile)
+        blogger_dict = dict(blogger_profile)
 
         # Проверяем общий лимит подтвержденных фото (90 максимум)
-        current_total = db.count_worker_completed_work_photos(worker_dict['id'])
+        current_total = db.count_worker_completed_work_photos(blogger_dict['id'])
         remaining_slots = max(0, 90 - current_total)
 
         if remaining_slots == 0:
@@ -5576,7 +5576,7 @@ async def worker_finish_work_photos(update: Update, context: ContextTypes.DEFAUL
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup([[
                     InlineKeyboardButton("🗑 Управление фото", callback_data="manage_completed_photos"),
-                    InlineKeyboardButton("⬅️ Назад", callback_data="worker_my_orders")
+                    InlineKeyboardButton("⬅️ Назад", callback_data="blogger_my_orders")
                 ]])
             )
             context.user_data.pop('uploading_work_photo_order_id', None)
@@ -5593,37 +5593,37 @@ async def worker_finish_work_photos(update: Update, context: ContextTypes.DEFAUL
         # Сохраняем каждое фото в БД
         saved_count = 0
         for photo_id in photos_to_save:
-            result = db.add_completed_work_photo(order_id, worker_dict['id'], photo_id)
+            result = db.add_completed_work_photo(campaign_id, blogger_dict['id'], photo_id)
             if result:
                 saved_count += 1
 
-        # Получаем заказ для уведомления клиента
-        order = db.get_order_by_id(order_id)
-        if order:
-            order_dict = dict(order)
-            client = db.get_client_by_id(order_dict['client_id'])
-            if client:
-                client_dict = dict(client)
-                client_user = db.get_user_by_id(client_dict['user_id'])
-                if client_user:
-                    client_user_dict = dict(client_user)
+        # Получаем кампания для уведомления клиента
+        campaign = db.get_order_by_id(campaign_id)
+        if campaign:
+            campaign_dict = dict(campaign)
+            advertiser = db.get_client_by_id(campaign_dict['advertiser_id'])
+            if advertiser:
+                advertiser_dict = dict(advertiser)
+                advertiser_user = db.get_user_by_id(advertiser_dict['user_id'])
+                if advertiser_user:
+                    advertiser_user_dict = dict(advertiser_user)
 
                     # Уведомляем клиента о загруженных фото
                     keyboard = [
-                        [InlineKeyboardButton("📸 Проверить фото", callback_data=f"check_work_photos_{order_id}")],
+                        [InlineKeyboardButton("📸 Проверить фото", callback_data=f"check_work_photos_{campaign_id}")],
                         [InlineKeyboardButton("➡️ Позже", callback_data="noop")]
                     ]
 
                     try:
                         await context.bot.send_message(
-                            chat_id=client_user_dict['telegram_id'],
+                            chat_id=advertiser_user_dict['telegram_id'],
                             text=(
-                                f"📸 <b>Мастер загрузил фото работы!</b>\n\n"
-                                f"По заказу #{order_id} мастер <b>{worker_dict.get('name', 'Мастер')}</b> "
+                                f"📸 <b>Блогер загрузил фото работы!</b>\n\n"
+                                f"По кампанияу #{campaign_id} блогер <b>{blogger_dict.get('name', 'Блогер')}</b> "
                                 f"загрузил {saved_count} {_get_photos_word(saved_count)} выполненной работы.\n\n"
                                 f"✅ <b>Подтвердите фотографии:</b>\n"
-                                f"Если это действительно фото вашего заказа, подтвердите их. "
-                                f"Подтверждённые фото получат специальный значок ✅ и будут показаны в профиле мастера."
+                                f"Если это действительно фото вашего кампанияа, подтвердите их. "
+                                f"Подтверждённые фото получат специальный значок ✅ и будут показаны в профиле блогера."
                             ),
                             parse_mode="HTML",
                             reply_markup=InlineKeyboardMarkup(keyboard)
@@ -5631,11 +5631,11 @@ async def worker_finish_work_photos(update: Update, context: ContextTypes.DEFAUL
                     except Exception as e:
                         logger.warning(f"Не удалось уведомить клиента о фото: {e}")
 
-        # Подтверждаем мастеру (ИСПРАВЛЕНО: добавлены кнопки навигации)
+        # Подтверждаем блогеру (ИСПРАВЛЕНО: добавлены кнопки навигации)
         keyboard = [
-            [InlineKeyboardButton("👤 Мой профиль", callback_data="worker_profile")],
-            [InlineKeyboardButton("📦 Мои заказы", callback_data="worker_my_orders")],
-            [InlineKeyboardButton("🏠 Главное меню", callback_data="show_worker_menu")]
+            [InlineKeyboardButton("👤 Мой профиль", callback_data="blogger_profile")],
+            [InlineKeyboardButton("📦 Мои кампанияы", callback_data="blogger_my_orders")],
+            [InlineKeyboardButton("🏠 Главное меню", callback_data="show_blogger_menu")]
         ]
 
         await safe_edit_message(
@@ -5653,7 +5653,7 @@ async def worker_finish_work_photos(update: Update, context: ContextTypes.DEFAUL
         context.user_data.pop('uploading_work_photo_order_id', None)
         context.user_data.pop('uploaded_work_photos', None)
 
-        logger.info(f"Мастер {worker_dict['id']} загрузил {saved_count} фото для заказа {order_id}")
+        logger.info(f"Блогер {blogger_dict['id']} загрузил {saved_count} фото для кампанияа {campaign_id}")
 
     except Exception as e:
         logger.error(f"Ошибка при завершении загрузки фото: {e}", exc_info=True)
@@ -5664,7 +5664,7 @@ async def worker_finish_work_photos(update: Update, context: ContextTypes.DEFAUL
         )
 
 
-async def worker_cancel_work_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_cancel_work_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     НОВОЕ: Отмена загрузки фото работы.
     """
@@ -5689,7 +5689,7 @@ async def worker_cancel_work_photos(update: Update, context: ContextTypes.DEFAUL
 
 async def manage_completed_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    НОВОЕ: Управление фотографиями завершенных работ мастера.
+    НОВОЕ: Управление фотографиями завершенных работ блогера.
     Позволяет просматривать и удалять старые фото.
     """
     query = update.callback_query
@@ -5703,23 +5703,23 @@ async def manage_completed_photos(update: Update, context: ContextTypes.DEFAULT_
             return
 
         user_dict = dict(user)
-        worker_profile = db.get_worker_profile(user_dict['id'])
-        if not worker_profile:
-            await safe_edit_message(query, "❌ Профиль мастера не найден.")
+        blogger_profile = db.get_worker_profile(user_dict['id'])
+        if not blogger_profile:
+            await safe_edit_message(query, "❌ Профиль блогера не найден.")
             return
 
-        worker_dict = dict(worker_profile)
+        blogger_dict = dict(blogger_profile)
 
-        # Получаем все фотографии мастера
-        all_photos = db.get_all_worker_completed_photos(worker_dict['id'])
+        # Получаем все фотографии блогера
+        all_photos = db.get_all_worker_completed_photos(blogger_dict['id'])
         if not all_photos:
             await safe_edit_message(
                 query,
                 "📸 <b>У вас пока нет фотографий завершенных работ</b>\n\n"
-                "Фотографии появятся после завершения заказов.",
+                "Фотографии появятся после завершения кампанияов.",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton("⬅️ Назад", callback_data="show_worker_menu")
+                    InlineKeyboardButton("⬅️ Назад", callback_data="show_blogger_menu")
                 ]])
             )
             return
@@ -5749,10 +5749,10 @@ async def manage_completed_photos(update: Update, context: ContextTypes.DEFAULT_
         for idx, photo in enumerate(photos_on_page, start=start_idx + 1):
             photo_dict = dict(photo)
             verified_mark = "✅" if photo_dict.get('verified') else ""
-            order_title = photo_dict.get('order_title', 'Без названия')[:30]
+            campaign_title = photo_dict.get('campaign_title', 'Без названия')[:30]
 
             keyboard.append([InlineKeyboardButton(
-                f"{verified_mark} Фото #{idx}: {order_title}",
+                f"{verified_mark} Фото #{idx}: {campaign_title}",
                 callback_data=f"view_work_photo_{photo_dict['id']}"
             )])
 
@@ -5767,7 +5767,7 @@ async def manage_completed_photos(update: Update, context: ContextTypes.DEFAULT_
             keyboard.append(nav_buttons)
 
         # Кнопка возврата
-        keyboard.append([InlineKeyboardButton("🏠 В главное меню", callback_data="show_worker_menu")])
+        keyboard.append([InlineKeyboardButton("🏠 В главное меню", callback_data="show_blogger_menu")])
 
         await safe_edit_message(
             query,
@@ -5825,15 +5825,15 @@ async def view_work_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         user_dict = dict(user)
-        worker_profile = db.get_worker_profile(user_dict['id'])
-        if not worker_profile:
-            await safe_edit_message(query, "❌ Профиль мастера не найден.")
+        blogger_profile = db.get_worker_profile(user_dict['id'])
+        if not blogger_profile:
+            await safe_edit_message(query, "❌ Профиль блогера не найден.")
             return
 
-        worker_dict = dict(worker_profile)
+        blogger_dict = dict(blogger_profile)
 
         # Получаем все фото и находим нужное
-        all_photos = db.get_all_worker_completed_photos(worker_dict['id'])
+        all_photos = db.get_all_worker_completed_photos(blogger_dict['id'])
         target_photo = None
         for photo in all_photos:
             photo_dict = dict(photo)
@@ -5846,12 +5846,12 @@ async def view_work_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         # Отправляем фото с кнопками
-        verified_text = "✅ Подтверждено заказчиком" if target_photo.get('verified') else "⏳ Не подтверждено"
-        order_title = target_photo.get('order_title', 'Без названия')
+        verified_text = "✅ Подтверждено рекламодательом" if target_photo.get('verified') else "⏳ Не подтверждено"
+        campaign_title = target_photo.get('campaign_title', 'Без названия')
 
         text = (
             f"📸 <b>Фото работы</b>\n\n"
-            f"📋 <b>Заказ:</b> {order_title}\n"
+            f"📋 <b>Кампания:</b> {campaign_title}\n"
             f"🔖 <b>Статус:</b> {verified_text}\n\n"
             f"🗑 Хотите удалить это фото?"
         )
@@ -5925,7 +5925,7 @@ async def confirm_delete_work_photo(update: Update, context: ContextTypes.DEFAUL
         )
 
 
-async def client_check_work_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def advertiser_check_work_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     НОВОЕ: Просмотр фото работы клиентом для подтверждения.
     """
@@ -5933,10 +5933,10 @@ async def client_check_work_photos(update: Update, context: ContextTypes.DEFAULT
     await query.answer()
 
     try:
-        order_id = int(query.data.replace("check_work_photos_", ""))
+        campaign_id = int(query.data.replace("check_work_photos_", ""))
 
         # Получаем фото работы
-        photos = db.get_completed_work_photos(order_id)
+        photos = db.get_completed_work_photos(campaign_id)
         if not photos:
             await safe_edit_message(
                 query,
@@ -5947,9 +5947,9 @@ async def client_check_work_photos(update: Update, context: ContextTypes.DEFAULT
 
         # Отправляем фото с кнопками подтверждения
         text = (
-            f"📸 <b>Фотографии работы по заказу #{order_id}</b>\n\n"
+            f"📸 <b>Фотографии работы по кампанияу #{campaign_id}</b>\n\n"
             f"Всего фото: {len(photos)}\n\n"
-            f"Подтвердите, что это фото вашего заказа:"
+            f"Подтвердите, что это фото вашего кампанияа:"
         )
 
         for idx, photo in enumerate(photos):
@@ -5985,10 +5985,10 @@ async def client_check_work_photos(update: Update, context: ContextTypes.DEFAULT
         )
 
 
-async def client_verify_work_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def advertiser_verify_work_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     ИСПРАВЛЕНО: Подтверждение фото работы клиентом.
-    После подтверждения фото добавляется в портфолио мастера.
+    После подтверждения фото добавляется в портфолио блогера.
     """
     query = update.callback_query
     await query.answer("✅ Фото подтверждено!")
@@ -5996,58 +5996,58 @@ async def client_verify_work_photo(update: Update, context: ContextTypes.DEFAULT
     try:
         photo_id = int(query.data.replace("verify_photo_", ""))
 
-        # Получаем информацию о фото перед подтверждением (для уведомления мастера)
+        # Получаем информацию о фото перед подтверждением (для уведомления блогера)
         photo_info = db.get_completed_work_photo_by_id(photo_id)
 
-        # Подтверждаем фото в БД (также добавляет в портфолио мастера)
+        # Подтверждаем фото в БД (также добавляет в портфолио блогера)
         success = db.verify_completed_work_photo(photo_id)
 
         if success:
-            # НОВОЕ: Уведомляем мастера о подтверждении фото
+            # НОВОЕ: Уведомляем блогера о подтверждении фото
             if photo_info:
                 photo_dict = dict(photo_info)
-                worker_id = photo_dict.get('worker_id')
-                order_id = photo_dict.get('order_id')
+                blogger_id = photo_dict.get('blogger_id')
+                campaign_id = photo_dict.get('campaign_id')
 
-                if worker_id:
-                    worker_profile = db.get_worker_profile_by_id(worker_id)
-                    if worker_profile:
-                        worker_dict = dict(worker_profile)
-                        worker_user = db.get_user_by_id(worker_dict['user_id'])
+                if blogger_id:
+                    blogger_profile = db.get_worker_profile_by_id(blogger_id)
+                    if blogger_profile:
+                        blogger_dict = dict(blogger_profile)
+                        blogger_user = db.get_user_by_id(blogger_dict['user_id'])
 
-                        if worker_user:
-                            worker_user_dict = dict(worker_user)
+                        if blogger_user:
+                            blogger_user_dict = dict(blogger_user)
                             try:
-                                # Отправляем уведомление мастеру
+                                # Отправляем уведомление блогеру
                                 await context.bot.send_message(
-                                    chat_id=worker_user_dict['telegram_id'],
+                                    chat_id=blogger_user_dict['telegram_id'],
                                     text=(
                                         f"✅ <b>Клиент подтвердил ваше фото!</b>\n\n"
-                                        f"Ваше фото работы по заказу #{order_id} подтверждено клиентом.\n\n"
+                                        f"Ваше фото работы по кампанияу #{campaign_id} подтверждено клиентом.\n\n"
                                         f"🎉 Фото добавлено в ваш профиль с отметкой ✅ «Подтверждено клиентом».\n\n"
                                         f"💡 Подтверждённые фото повышают доверие новых клиентов!"
                                     ),
                                     parse_mode="HTML",
                                     reply_markup=InlineKeyboardMarkup([[
-                                        InlineKeyboardButton("👤 Мой профиль", callback_data="worker_profile"),
-                                        InlineKeyboardButton("🏠 Главное меню", callback_data="show_worker_menu")
+                                        InlineKeyboardButton("👤 Мой профиль", callback_data="blogger_profile"),
+                                        InlineKeyboardButton("🏠 Главное меню", callback_data="show_blogger_menu")
                                     ]])
                                 )
-                                logger.info(f"✅ Отправлено уведомление мастеру {worker_id} о подтверждении фото {photo_id}")
+                                logger.info(f"✅ Отправлено уведомление блогеру {blogger_id} о подтверждении фото {photo_id}")
                             except Exception as e:
-                                logger.warning(f"Не удалось уведомить мастера о подтверждении фото: {e}")
+                                logger.warning(f"Не удалось уведомить блогера о подтверждении фото: {e}")
 
             # Определяем роль для кнопки возврата
             user = db.get_user(query.from_user.id)
             is_worker = db.get_worker_profile(user['id']) if user else None
-            menu_callback = "show_worker_menu" if is_worker else "show_client_menu"
+            menu_callback = "show_blogger_menu" if is_worker else "show_advertiser_menu"
 
             keyboard = [[InlineKeyboardButton("🏠 Главное меню", callback_data=menu_callback)]]
 
             await query.edit_message_caption(
                 caption="✅ <b>Фото подтверждено клиентом</b>\n\n"
-                        "Это фото добавлено в портфолио мастера с отметкой о подтверждении.\n\n"
-                        "Теперь другие заказчики смогут видеть эту проверенную работу в профиле мастера.",
+                        "Это фото добавлено в портфолио блогера с отметкой о подтверждении.\n\n"
+                        "Теперь другие рекламодательи смогут видеть эту проверенную работу в профиле блогера.",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
@@ -6070,16 +6070,16 @@ def _get_photos_word(count):
         return "фото"
 
 
-async def view_order_bids(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Просмотр откликов на заказ клиента с навигацией"""
+async def view_campaign_bids(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Просмотр предложениеов на кампания клиента с навигацией"""
     query = update.callback_query
     await query.answer()
 
     try:
-        # Извлекаем order_id из callback_data
-        order_id = int(query.data.replace("view_bids_", ""))
+        # Извлекаем campaign_id из callback_data
+        campaign_id = int(query.data.replace("view_bids_", ""))
 
-        # Проверяем что заказ принадлежит текущему пользователю
+        # Проверяем что кампания принадлежит текущему пользователю
         user = db.get_user(query.from_user.id)
         if not user:
             await query.edit_message_text(
@@ -6088,32 +6088,32 @@ async def view_order_bids(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
 
-        client_profile = db.get_client_profile(user["id"])
-        if not client_profile:
+        advertiser_profile = db.get_client_profile(user["id"])
+        if not advertiser_profile:
             await query.edit_message_text(
                 "❌ Ошибка: профиль клиента не найден.",
                 parse_mode="HTML"
             )
             return
 
-        # Получаем заказ
-        order = db.get_order_by_id(order_id)
-        if not order or order['client_id'] != client_profile['id']:
+        # Получаем кампания
+        campaign = db.get_order_by_id(campaign_id)
+        if not campaign or campaign['advertiser_id'] != advertiser_profile['id']:
             await query.edit_message_text(
-                "❌ Заказ не найден или у вас нет доступа к нему.",
+                "❌ Кампания не найден или у вас нет доступа к нему.",
                 parse_mode="HTML"
             )
             return
 
-        # Получаем все отклики
-        bids = db.get_bids_for_order(order_id)
+        # Получаем все предложениеи
+        offers = db.get_bids_for_order(campaign_id)
 
-        if not bids:
-            keyboard = [[InlineKeyboardButton("⬅️ К моим заказам", callback_data="client_my_orders")]]
+        if not offers:
+            keyboard = [[InlineKeyboardButton("⬅️ К моим кампанияам", callback_data="advertiser_my_orders")]]
             await query.edit_message_text(
-                f"💼 <b>Отклики на заказ #{order_id}</b>\n\n"
-                "Пока нет откликов от мастеров.\n\n"
-                "Ожидайте, мастера скоро откликнутся!",
+                f"💼 <b>Предложениеи на кампания #{campaign_id}</b>\n\n"
+                "Пока нет предложениеов от блогеров.\n\n"
+                "Ожидайте, блогера скоро предложениенутся!",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
@@ -6121,124 +6121,124 @@ async def view_order_bids(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Применяем сортировку, если выбрана
         sort_order = context.user_data.get('bids_sort_order', 'default')
-        bids_list = [dict(bid) for bid in bids]
+        bids_list = [dict(offer) for offer in offers]
 
         if sort_order == 'price_low':
             bids_list.sort(key=lambda x: x.get('proposed_price', 0))
         elif sort_order == 'price_high':
             bids_list.sort(key=lambda x: x.get('proposed_price', 0), reverse=True)
         elif sort_order == 'rating':
-            bids_list.sort(key=lambda x: x.get('worker_rating', 0), reverse=True)
+            bids_list.sort(key=lambda x: x.get('blogger_rating', 0), reverse=True)
         elif sort_order == 'timeline':
             bids_list.sort(key=lambda x: x.get('ready_in_days', 999))
 
-        # Сохраняем отклики в контексте для навигации
+        # Сохраняем предложениеи в контексте для навигации
         context.user_data['viewing_bids'] = {
-            'order_id': order_id,
-            'bids': bids_list,
+            'campaign_id': campaign_id,
+            'offers': bids_list,
             'current_index': 0
         }
 
-        # Показываем первый отклик
+        # Показываем первый предложение
         await show_bid_card(update, context, query=query)
 
     except Exception as e:
-        logger.error(f"Ошибка в view_order_bids: {e}", exc_info=True)
-        keyboard = [[InlineKeyboardButton("⬅️ К моим заказам", callback_data="client_my_orders")]]
+        logger.error(f"Ошибка в view_campaign_bids: {e}", exc_info=True)
+        keyboard = [[InlineKeyboardButton("⬅️ К моим кампанияам", callback_data="advertiser_my_orders")]]
         await query.edit_message_text(
-            f"❌ Ошибка при загрузке откликов:\n{str(e)}",
+            f"❌ Ошибка при загрузке предложениеов:\n{str(e)}",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
 
 async def sort_bids_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработчик сортировки откликов"""
+    """Обработчик сортировки предложениеов"""
     query = update.callback_query
     await query.answer()
 
     try:
-        # Извлекаем order_id и тип сортировки из callback_data
-        # Формат: sort_bids_{order_id}_{sort_type}
+        # Извлекаем campaign_id и тип сортировки из callback_data
+        # Формат: sort_bids_{campaign_id}_{sort_type}
         parts = query.data.replace("sort_bids_", "").split("_")
-        order_id = int(parts[0])
+        campaign_id = int(parts[0])
         sort_type = "_".join(parts[1:])  # price_low, price_high, rating, timeline
 
         # Сохраняем выбранную сортировку
         context.user_data['bids_sort_order'] = sort_type
 
-        # Перезагружаем отклики с новой сортировкой
-        # Используем фейковый callback_data для повторного вызова view_order_bids
-        query.data = f"view_bids_{order_id}"
-        await view_order_bids(update, context)
+        # Перезагружаем предложениеи с новой сортировкой
+        # Используем фейковый callback_data для повторного вызова view_campaign_bids
+        query.data = f"view_bids_{campaign_id}"
+        await view_campaign_bids(update, context)
 
     except Exception as e:
         logger.error(f"Ошибка в sort_bids_handler: {e}", exc_info=True)
-        await query.answer("❌ Ошибка при сортировке откликов", show_alert=True)
+        await query.answer("❌ Ошибка при сортировке предложениеов", show_alert=True)
 
 
 async def show_bid_card(update: Update, context: ContextTypes.DEFAULT_TYPE, query=None):
-    """Показывает карточку отклика с информацией о мастере"""
+    """Показывает карточку предложениеа с информацией о блогере"""
     if not query:
         query = update.callback_query
         await query.answer()
 
     try:
-        bid_data = context.user_data.get('viewing_bids')
-        if not bid_data:
+        offer_data = context.user_data.get('viewing_bids')
+        if not offer_data:
             await query.edit_message_text(
-                "❌ Ошибка: данные откликов не найдены.",
+                "❌ Ошибка: данные предложениеов не найдены.",
                 parse_mode="HTML"
             )
             return
 
-        bids = bid_data['bids']
-        current_index = bid_data['current_index']
-        bid = bids[current_index]
+        offers = offer_data['offers']
+        current_index = offer_data['current_index']
+        offer = offers[current_index]
 
-        # Формируем текст карточки мастера
-        text = f"💼 <b>Отклик {current_index + 1} из {len(bids)}</b>\n\n"
+        # Формируем текст карточки блогера
+        text = f"💼 <b>Предложение {current_index + 1} из {len(offers)}</b>\n\n"
 
-        text += f"👤 <b>{bid['worker_name']}</b>\n"
+        text += f"👤 <b>{offer['blogger_name']}</b>\n"
 
         # Рейтинг
-        rating = bid.get('worker_rating', 0)
-        rating_count = bid.get('worker_rating_count', 0)
+        rating = offer.get('blogger_rating', 0)
+        rating_count = offer.get('blogger_rating_count', 0)
         if rating > 0:
             stars = "⭐" * int(rating)
             text += f"{stars} {rating:.1f} ({rating_count} отзывов)\n"
         else:
-            text += "⭐ Новый мастер (пока нет отзывов)\n"
+            text += "⭐ Новый блогер (пока нет отзывов)\n"
 
         # Проверенные отзывы
-        verified_reviews = bid.get('worker_verified_reviews', 0)
+        verified_reviews = offer.get('blogger_verified_reviews', 0)
         if verified_reviews > 0:
             text += f"✅ {verified_reviews} проверенных отзывов\n"
 
         # Опыт
-        experience = bid.get('worker_experience', '')
+        experience = offer.get('blogger_experience', '')
         if experience:
             text += f"📅 Опыт: {experience}\n"
 
         # Город
-        city = bid.get('worker_city', '')
+        city = offer.get('blogger_city', '')
         if city:
             text += f"📍 Город: {city}\n"
 
         # Категории
-        categories = bid.get('worker_categories', '')
+        categories = offer.get('blogger_categories', '')
         if categories:
             text += f"🔧 Услуги: {categories}\n"
 
         text += "\n"
 
         # Предложенная цена
-        price = bid.get('proposed_price', 0)
-        currency = bid.get('currency', 'BYN')
+        price = offer.get('proposed_price', 0)
+        currency = offer.get('currency', 'BYN')
         text += f"💰 <b>Предложенная цена: {price} {currency}</b>\n"
 
         # Срок готовности
-        ready_in_days = bid.get('ready_in_days', None)
+        ready_in_days = offer.get('ready_in_days', None)
         if ready_in_days is not None:
             if ready_in_days == 0:
                 ready_text = "Сегодня"
@@ -6258,34 +6258,34 @@ async def show_bid_card(update: Update, context: ContextTypes.DEFAULT_TYPE, quer
 
         text += "\n"
 
-        # Комментарий к отклику
-        comment = bid.get('comment', '')
+        # Комментарий к предложениеу
+        comment = offer.get('comment', '')
         if comment:
-            text += f"💬 <b>Комментарий мастера:</b>\n{comment}\n\n"
+            text += f"💬 <b>Комментарий блогера:</b>\n{comment}\n\n"
 
-        # Описание мастера
-        description = bid.get('worker_description', '')
+        # Описание блогера
+        description = offer.get('blogger_description', '')
         if description:
             if len(description) > 200:
                 description = description[:200] + "..."
-            text += f"📝 <b>О мастере:</b>\n{description}\n\n"
+            text += f"📝 <b>О блогере:</b>\n{description}\n\n"
 
-        text += "💡 <i>Выберите этого мастера, чтобы получить доступ к его контактам</i>"
+        text += "💡 <i>Выберите этого блогера, чтобы получить доступ к его контактам</i>"
 
         # Кнопки навигации и действий
         keyboard = []
 
-        # Сортировка (если откликов больше 1)
-        if len(bids) > 1:
+        # Сортировка (если предложениеов больше 1)
+        if len(offers) > 1:
             current_sort = context.user_data.get('bids_sort_order', 'default')
             sort_buttons = [
                 InlineKeyboardButton(
                     "✅ Цена ⬆️" if current_sort == "price_low" else "Цена ⬆️",
-                    callback_data=f"sort_bids_{bid_data['order_id']}_price_low"
+                    callback_data=f"sort_bids_{offer_data['campaign_id']}_price_low"
                 ),
                 InlineKeyboardButton(
                     "✅ Цена ⬇️" if current_sort == "price_high" else "Цена ⬇️",
-                    callback_data=f"sort_bids_{bid_data['order_id']}_price_high"
+                    callback_data=f"sort_bids_{offer_data['campaign_id']}_price_high"
                 ),
             ]
             keyboard.append(sort_buttons)
@@ -6293,46 +6293,46 @@ async def show_bid_card(update: Update, context: ContextTypes.DEFAULT_TYPE, quer
             sort_buttons2 = [
                 InlineKeyboardButton(
                     "✅ По рейтингу" if current_sort == "rating" else "⭐ По рейтингу",
-                    callback_data=f"sort_bids_{bid_data['order_id']}_rating"
+                    callback_data=f"sort_bids_{offer_data['campaign_id']}_rating"
                 ),
                 InlineKeyboardButton(
                     "✅ По сроку" if current_sort == "timeline" else "⏱ По сроку",
-                    callback_data=f"sort_bids_{bid_data['order_id']}_timeline"
+                    callback_data=f"sort_bids_{offer_data['campaign_id']}_timeline"
                 ),
             ]
             keyboard.append(sort_buttons2)
 
-        # Навигация (если откликов больше 1)
-        if len(bids) > 1:
+        # Навигация (если предложениеов больше 1)
+        if len(offers) > 1:
             nav_buttons = []
             if current_index > 0:
-                nav_buttons.append(InlineKeyboardButton("◀️ Предыдущий", callback_data="bid_prev"))
+                nav_buttons.append(InlineKeyboardButton("◀️ Предыдущий", callback_data="offer_prev"))
             nav_buttons.append(InlineKeyboardButton(
-                f"{current_index + 1}/{len(bids)}",
+                f"{current_index + 1}/{len(offers)}",
                 callback_data="noop"
             ))
-            if current_index < len(bids) - 1:
-                nav_buttons.append(InlineKeyboardButton("Следующий ▶️", callback_data="bid_next"))
+            if current_index < len(offers) - 1:
+                nav_buttons.append(InlineKeyboardButton("Следующий ▶️", callback_data="offer_next"))
             keyboard.append(nav_buttons)
 
-        # Кнопка выбора мастера
+        # Кнопка выбора блогера
         keyboard.append([InlineKeyboardButton(
-            "✅ Выбрать этого мастера",
-            callback_data=f"select_master_{bid['id']}"
+            "✅ Выбрать этого блогера",
+            callback_data=f"select_master_{offer['id']}"
         )])
 
         # Кнопка просмотра всех работ (если есть фото)
-        portfolio_photos = bid.get('worker_portfolio_photos', '')
+        portfolio_photos = offer.get('blogger_portfolio_photos', '')
         if portfolio_photos:
             keyboard.append([InlineKeyboardButton(
-                "📸 Посмотреть работы мастера",
-                callback_data=f"view_worker_portfolio_{bid['worker_id']}"
+                "📸 Посмотреть работы блогера",
+                callback_data=f"view_worker_portfolio_{offer['blogger_id']}"
             )])
 
-        keyboard.append([InlineKeyboardButton("⬅️ К моим заказам", callback_data="client_my_orders")])
+        keyboard.append([InlineKeyboardButton("⬅️ К моим кампанияам", callback_data="advertiser_my_orders")])
 
-        # Отправляем с фото профиля мастера, если есть
-        profile_photo = bid.get('worker_profile_photo', '')
+        # Отправляем с фото профиля блогера, если есть
+        profile_photo = offer.get('blogger_profile_photo', '')
         portfolio_photos_list = [p.strip() for p in portfolio_photos.split(',') if p.strip()] if portfolio_photos else []
 
         photo_to_show = profile_photo if profile_photo else (portfolio_photos_list[0] if portfolio_photos_list else None)
@@ -6354,7 +6354,7 @@ async def show_bid_card(update: Update, context: ContextTypes.DEFAULT_TYPE, quer
                 )
             except Exception as photo_error:
                 # Если не удалось отправить фото, отправляем без фото
-                logger.warning(f"Не удалось отправить фото отклика: {photo_error}")
+                logger.warning(f"Не удалось отправить фото предложениеа: {photo_error}")
                 await context.bot.send_message(
                     chat_id=query.from_user.id,
                     text=text,
@@ -6371,7 +6371,7 @@ async def show_bid_card(update: Update, context: ContextTypes.DEFAULT_TYPE, quer
 
     except Exception as e:
         logger.error(f"Ошибка в show_bid_card: {e}", exc_info=True)
-        keyboard = [[InlineKeyboardButton("⬅️ К моим заказам", callback_data="client_my_orders")]]
+        keyboard = [[InlineKeyboardButton("⬅️ К моим кампанияам", callback_data="advertiser_my_orders")]]
         # Сообщение могло быть удалено, поэтому используем send_message вместо edit
         try:
             await query.message.delete()
@@ -6379,59 +6379,59 @@ async def show_bid_card(update: Update, context: ContextTypes.DEFAULT_TYPE, quer
             pass
         await context.bot.send_message(
             chat_id=query.from_user.id,
-            text=f"❌ Ошибка при отображении отклика:\n{str(e)}",
+            text=f"❌ Ошибка при отображении предложениеа:\n{str(e)}",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
 
-async def bid_navigate(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Навигация между откликами"""
+async def offer_navigate(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Навигация между предложениеами"""
     query = update.callback_query
     await query.answer()
 
     try:
-        bid_data = context.user_data.get('viewing_bids')
-        if not bid_data:
-            await query.edit_message_text("❌ Ошибка: данные откликов не найдены.")
+        offer_data = context.user_data.get('viewing_bids')
+        if not offer_data:
+            await query.edit_message_text("❌ Ошибка: данные предложениеов не найдены.")
             return
 
-        bids = bid_data['bids']
-        current_index = bid_data['current_index']
+        offers = offer_data['offers']
+        current_index = offer_data['current_index']
 
         if "prev" in query.data:
             current_index = max(0, current_index - 1)
         elif "next" in query.data:
-            current_index = min(len(bids) - 1, current_index + 1)
+            current_index = min(len(offers) - 1, current_index + 1)
 
         context.user_data['viewing_bids']['current_index'] = current_index
 
         await show_bid_card(update, context, query=query)
 
     except Exception as e:
-        logger.error(f"Ошибка в bid_navigate: {e}", exc_info=True)
+        logger.error(f"Ошибка в offer_navigate: {e}", exc_info=True)
 
 
 async def back_to_bid_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Возврат к карточке отклика из просмотра портфолио"""
+    """Возврат к карточке предложениеа из просмотра портфолио"""
     query = update.callback_query
     await query.answer()
 
     try:
-        # Проверяем, что у нас есть данные об откликах
-        bid_data = context.user_data.get('viewing_bids')
-        if not bid_data:
+        # Проверяем, что у нас есть данные об предложениеах
+        offer_data = context.user_data.get('viewing_bids')
+        if not offer_data:
             await query.message.delete()
             await context.bot.send_message(
                 chat_id=query.from_user.id,
-                text="❌ Ошибка: данные откликов не найдены. Вернитесь к списку заказов.",
+                text="❌ Ошибка: данные предложениеов не найдены. Вернитесь к списку кампанияов.",
                 reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton("⬅️ К моим заказам", callback_data="client_my_orders")
+                    InlineKeyboardButton("⬅️ К моим кампанияам", callback_data="advertiser_my_orders")
                 ]])
             )
             return
 
-        # Показываем текущую карточку отклика
+        # Показываем текущую карточку предложениеа
         await show_bid_card(update, context, query=query)
 
     except Exception as e:
@@ -6439,57 +6439,57 @@ async def back_to_bid_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.delete()
         await context.bot.send_message(
             chat_id=query.from_user.id,
-            text="❌ Произошла ошибка. Вернитесь к списку заказов.",
+            text="❌ Произошла ошибка. Вернитесь к списку кампанияов.",
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("⬅️ К моим заказам", callback_data="client_my_orders")
+                InlineKeyboardButton("⬅️ К моим кампанияам", callback_data="advertiser_my_orders")
             ]])
         )
 
 
 async def select_master(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка выбора мастера клиентом"""
+    """Обработка выбора блогера клиентом"""
     query = update.callback_query
     await query.answer()
 
     try:
-        # Извлекаем bid_id из callback_data
-        bid_id = int(query.data.replace("select_master_", ""))
+        # Извлекаем offer_id из callback_data
+        offer_id = int(query.data.replace("select_master_", ""))
 
-        # Получаем информацию об отклике
-        bids = context.user_data.get('viewing_bids', {}).get('bids', [])
+        # Получаем информацию об предложениее
+        offers = context.user_data.get('viewing_bids', {}).get('offers', [])
         selected_bid = None
-        for bid in bids:
-            if bid['id'] == bid_id:
-                selected_bid = bid
+        for offer in offers:
+            if offer['id'] == offer_id:
+                selected_bid = offer
                 break
 
         if not selected_bid:
             await safe_edit_message(
                 query,
-                "❌ Ошибка: отклик не найден.",
+                "❌ Ошибка: предложение не найден.",
                 parse_mode="HTML"
             )
             return
 
-        order_id = selected_bid['order_id']
-        worker_name = selected_bid['worker_name']
+        campaign_id = selected_bid['campaign_id']
+        blogger_name = selected_bid['blogger_name']
         price = selected_bid['proposed_price']
         currency = selected_bid['currency']
 
         # 💝 БЕСПЛАТНАЯ БЛАГОДАРНОСТЬ: Приучаем пользователей к действию "поблагодарить платформу"
         # Позже (при 10-20k пользователей) эта кнопка превратится в реальную оплату через Stars
         text = (
-            f"✅ <b>Вы выбрали мастера:</b>\n\n"
-            f"👤 {worker_name}\n"
+            f"✅ <b>Вы выбрали блогера:</b>\n\n"
+            f"👤 {blogger_name}\n"
             f"💰 Цена работы: {price} {currency}\n\n"
-            f"🎉 <b>Получите контакт мастера:</b>\n\n"
-            f"Наша платформа помогает мастерам находить клиентов, а клиентам - надёжных специалистов.\n\n"
+            f"🎉 <b>Получите контакт блогера:</b>\n\n"
+            f"Наша платформа помогает блогерам находить клиентов, а клиентам - надёжных специалистов.\n\n"
             f"💝 Нажмите кнопку ниже, чтобы продолжить:"
         )
 
         keyboard = [
-            [InlineKeyboardButton("💝 Сказать спасибо и получить контакт", callback_data=f"thank_platform_{bid_id}")],
-            [InlineKeyboardButton("⬅️ Назад к откликам", callback_data=f"view_bids_{order_id}")],
+            [InlineKeyboardButton("💝 Сказать спасибо и получить контакт", callback_data=f"thank_platform_{offer_id}")],
+            [InlineKeyboardButton("⬅️ Назад к предложениеам", callback_data=f"view_bids_{campaign_id}")],
         ]
 
         await safe_edit_message(
@@ -6503,7 +6503,7 @@ async def select_master(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"Ошибка в select_master: {e}", exc_info=True)
         await safe_edit_message(
             query,
-            f"❌ Ошибка при выборе мастера:\n{str(e)}",
+            f"❌ Ошибка при выборе блогера:\n{str(e)}",
             parse_mode="HTML"
         )
 
@@ -6514,7 +6514,7 @@ async def pay_with_stars(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     try:
-        bid_id = int(query.data.replace("pay_stars_", ""))
+        offer_id = int(query.data.replace("pay_stars_", ""))
 
         # TODO: Интеграция с Telegram Stars Payment API
         # Здесь должна быть реальная интеграция с платежной системой Telegram Stars
@@ -6527,8 +6527,8 @@ async def pay_with_stars(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
         keyboard = [
-            [InlineKeyboardButton("✅ Имитировать успешную оплату (тест)", callback_data=f"test_payment_success_{bid_id}")],
-            [InlineKeyboardButton("⬅️ Назад", callback_data=f"select_master_{bid_id}")],
+            [InlineKeyboardButton("✅ Имитировать успешную оплату (тест)", callback_data=f"test_payment_success_{offer_id}")],
+            [InlineKeyboardButton("⬅️ Назад", callback_data=f"select_master_{offer_id}")],
         ]
 
         await query.edit_message_text(
@@ -6547,7 +6547,7 @@ async def pay_with_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     try:
-        bid_id = int(query.data.replace("pay_card_", ""))
+        offer_id = int(query.data.replace("pay_card_", ""))
 
         # MOCK: В реальной системе здесь будет интеграция с BePaid/Stripe
         # Для демонстрации показываем реквизиты и кнопку подтверждения
@@ -6559,7 +6559,7 @@ async def pay_with_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "━━━━━━━━━━━━━━━━━━━━━━\n"
             "💳 Карта: <code>4242 4242 4242 4242</code>\n"
             "👤 Получатель: <b>ИП Ремонтные Услуги</b>\n"
-            "📝 Назначение: <i>Доступ к контакту мастера</i>\n"
+            "📝 Назначение: <i>Доступ к контакту блогера</i>\n"
             "━━━━━━━━━━━━━━━━━━━━━━\n\n"
             "⚠️ <b>ДЕМО-РЕЖИМ:</b> Это тестовая заглушка.\n"
             "В продакшн будет интеграция с:\n"
@@ -6569,8 +6569,8 @@ async def pay_with_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
         keyboard = [
-            [InlineKeyboardButton("✅ Я оплатил", callback_data=f"confirm_payment_{bid_id}")],
-            [InlineKeyboardButton("⬅️ Назад", callback_data=f"select_master_{bid_id}")],
+            [InlineKeyboardButton("✅ Я оплатил", callback_data=f"confirm_payment_{offer_id}")],
+            [InlineKeyboardButton("⬅️ Назад", callback_data=f"select_master_{offer_id}")],
         ]
 
         await query.edit_message_text(
@@ -6592,7 +6592,7 @@ async def confirm_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer("Проверяем оплату...")
 
     try:
-        bid_id = int(query.data.replace("confirm_payment_", ""))
+        offer_id = int(query.data.replace("confirm_payment_", ""))
 
         # MOCK: Показываем процесс проверки
         await query.edit_message_text(
@@ -6613,8 +6613,8 @@ async def confirm_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(
             "✅ <b>Оплата подтверждена!</b>\n\n"
             "💳 Списано: <b>1.00 BYN</b>\n"
-            "📄 ID транзакции: <code>MOCK-" + str(bid_id).zfill(6) + "</code>\n\n"
-            "⏳ Открываем доступ к мастеру...",
+            "📄 ID транзакции: <code>MOCK-" + str(offer_id).zfill(6) + "</code>\n\n"
+            "⏳ Открываем доступ к блогеру...",
             parse_mode="HTML"
         )
 
@@ -6623,7 +6623,7 @@ async def confirm_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Вызываем основную функцию успешной оплаты
         # Подменяем callback_data чтобы test_payment_success правильно обработал
-        query.data = f"test_payment_success_{bid_id}"
+        query.data = f"test_payment_success_{offer_id}"
         await test_payment_success(update, context)
 
     except Exception as e:
@@ -6634,42 +6634,42 @@ async def confirm_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Попробуйте еще раз или обратитесь в поддержку.",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("🔄 Попробовать еще раз", callback_data=f"pay_card_{bid_id}"),
-                InlineKeyboardButton("🏠 Главное меню", callback_data="show_client_menu")
+                InlineKeyboardButton("🔄 Попробовать еще раз", callback_data=f"pay_card_{offer_id}"),
+                InlineKeyboardButton("🏠 Главное меню", callback_data="show_advertiser_menu")
             ]])
         )
 
 
-async def process_bid_selection(update: Update, context: ContextTypes.DEFAULT_TYPE, bid_id: int):
+async def process_bid_selection(update: Update, context: ContextTypes.DEFAULT_TYPE, offer_id: int):
     """
-    Общая функция для обработки выбора мастера (с оплатой или без).
+    Общая функция для обработки выбора блогера (с оплатой или без).
     Вызывается из thank_platform и test_payment_success.
     """
     query = update.callback_query
 
     try:
-        # Получаем информацию об отклике
+        # Получаем информацию об предложениее
         # Сначала пытаемся получить из context.user_data, если нет - из базы данных
-        bids = context.user_data.get('viewing_bids', {}).get('bids', [])
+        offers = context.user_data.get('viewing_bids', {}).get('offers', [])
         selected_bid = None
-        for bid in bids:
-            if bid['id'] == bid_id:
-                selected_bid = bid
+        for offer in offers:
+            if offer['id'] == offer_id:
+                selected_bid = offer
                 break
 
         # Если не нашли в context.user_data, получаем из базы данных
         if not selected_bid:
-            bid_from_db = db.get_bid_by_id(bid_id)
-            if bid_from_db:
-                selected_bid = dict(bid_from_db)
+            offer_from_db = db.get_bid_by_id(offer_id)
+            if offer_from_db:
+                selected_bid = dict(offer_from_db)
             else:
-                await safe_edit_message(query, "❌ Ошибка: отклик не найден.", parse_mode="HTML")
+                await safe_edit_message(query, "❌ Ошибка: предложение не найден.", parse_mode="HTML")
                 return
 
-        order_id = selected_bid['order_id']
-        worker_id = selected_bid['worker_id']
-        worker_name = selected_bid['worker_name']
-        worker_telegram_id = selected_bid.get('worker_telegram_id')
+        campaign_id = selected_bid['campaign_id']
+        blogger_id = selected_bid['blogger_id']
+        blogger_name = selected_bid['blogger_name']
+        blogger_telegram_id = selected_bid.get('blogger_telegram_id')
 
         # Получаем информацию о клиенте
         user = db.get_user(query.from_user.id)
@@ -6677,35 +6677,35 @@ async def process_bid_selection(update: Update, context: ContextTypes.DEFAULT_TY
             await safe_edit_message(query, "❌ Ошибка: пользователь не найден.", parse_mode="HTML")
             return
 
-        client_profile = db.get_client_profile(user["id"])
-        if not client_profile:
+        advertiser_profile = db.get_client_profile(user["id"])
+        if not advertiser_profile:
             await safe_edit_message(query, "❌ Ошибка: профиль клиента не найден.", parse_mode="HTML")
             return
 
         # 1. Создаём транзакцию (оплата 1 BYN за доступ)
         transaction_id = db.create_transaction(
             user_id=user["id"],
-            order_id=order_id,
-            bid_id=bid_id,
+            campaign_id=campaign_id,
+            offer_id=offer_id,
             transaction_type="chat_access",
             amount=1.00,
             currency="BYN",
             payment_method="test",
-            description=f"Доступ к чату с мастером для заказа #{order_id}"
+            description=f"Доступ к чату с блогером для кампанияа #{campaign_id}"
         )
 
-        logger.info(f"✅ Транзакция #{transaction_id} создана: клиент {user['id']} оплатил доступ к мастеру {worker_id}")
+        logger.info(f"✅ Транзакция #{transaction_id} создана: клиент {user['id']} оплатил доступ к блогеру {blogger_id}")
 
-        # 2. Получаем worker_user_id (из таблицы workers поле user_id)
-        worker_profile = db.get_worker_by_id(worker_id)
-        if not worker_profile:
-            await safe_edit_message(query, "❌ Ошибка: профиль мастера не найден.", parse_mode="HTML")
+        # 2. Получаем blogger_user_id (из таблицы bloggers поле user_id)
+        blogger_profile = db.get_worker_by_id(blogger_id)
+        if not blogger_profile:
+            await safe_edit_message(query, "❌ Ошибка: профиль блогера не найден.", parse_mode="HTML")
             return
 
-        worker_user_id = worker_profile['user_id']
+        blogger_user_id = blogger_profile['user_id']
 
         # 3. Проверяем существует ли уже чат
-        existing_chat = db.get_chat_by_order_and_bid(order_id, bid_id)
+        existing_chat = db.get_chat_by_order_and_bid(campaign_id, offer_id)
 
         if existing_chat:
             chat_id = existing_chat['id']
@@ -6713,56 +6713,56 @@ async def process_bid_selection(update: Update, context: ContextTypes.DEFAULT_TY
         else:
             # Создаём новый чат
             chat_id = db.create_chat(
-                order_id=order_id,
-                client_user_id=user["id"],
-                worker_user_id=worker_user_id,
-                bid_id=bid_id
+                campaign_id=campaign_id,
+                advertiser_user_id=user["id"],
+                blogger_user_id=blogger_user_id,
+                offer_id=offer_id
             )
-            logger.info(f"✅ Чат #{chat_id} создан между клиентом {user['id']} и мастером {worker_user_id}")
+            logger.info(f"✅ Чат #{chat_id} создан между клиентом {user['id']} и блогером {blogger_user_id}")
 
-        # 4. Отмечаем отклик как выбранный, НО заказ в статусе "waiting_master_confirmation"
-        db.update_order_status(order_id, "waiting_master_confirmation")
-        db.select_bid(bid_id)
+        # 4. Отмечаем предложение как выбранный, НО кампания в статусе "waiting_master_confirmation"
+        db.update_order_status(campaign_id, "waiting_master_confirmation")
+        db.select_bid(offer_id)
 
-        # 5. Уведомляем мастера что его выбрали и открыт чат
-        if worker_telegram_id:
+        # 5. Уведомляем блогера что его выбрали и открыт чат
+        if blogger_telegram_id:
             try:
                 keyboard_for_worker = [
                     [InlineKeyboardButton("💬 Открыть чат", callback_data=f"open_chat_{chat_id}")],
                 ]
 
                 await context.bot.send_message(
-                    chat_id=worker_telegram_id,
+                    chat_id=blogger_telegram_id,
                     text=(
-                        f"🎉 <b>Ваш отклик выбран!</b>\n\n"
-                        f"Клиент выбрал вас для выполнения заказа #{order_id}\n\n"
+                        f"🎉 <b>Ваш предложение выбран!</b>\n\n"
+                        f"Клиент выбрал вас для выполнения кампанияа #{campaign_id}\n\n"
                         f"💬 Открыт чат для обсуждения деталей.\n"
                         f"⚠️ <b>ВАЖНО:</b> Ответьте клиенту в течение 24 часов, иначе ваш рейтинг снизится!\n\n"
-                        f"Обсудите детали заказа и подтвердите готовность выполнить работу."
+                        f"Обсудите детали кампанияа и подтвердите готовность выполнить работу."
                     ),
                     parse_mode="HTML",
                     reply_markup=InlineKeyboardMarkup(keyboard_for_worker)
                 )
             except Exception as e:
-                logger.error(f"Ошибка при отправке уведомления мастеру: {e}")
+                logger.error(f"Ошибка при отправке уведомления блогеру: {e}")
 
         # 6. Показываем клиенту что чат открыт
         text = (
             f"✅ <b>Оплата прошла успешно!</b>\n\n"
-            f"👤 <b>Выбран мастер:</b> {worker_name}\n\n"
+            f"👤 <b>Выбран блогер:</b> {blogger_name}\n\n"
             f"💬 <b>Открыт чат для обсуждения деталей</b>\n\n"
             f"📋 <b>Следующие шаги:</b>\n"
-            f"1. Обсудите с мастером детали заказа в чате\n"
-            f"2. Дождитесь подтверждения мастера (до 24 часов)\n"
+            f"1. Обсудите с блогером детали кампанияа в чате\n"
+            f"2. Дождитесь подтверждения блогера (до 24 часов)\n"
             f"3. Договоритесь о времени и месте встречи\n\n"
-            f"💡 Если мастер не ответит в течение 24 часов, вы сможете выбрать другого мастера БЕЗ дополнительной оплаты.\n\n"
+            f"💡 Если блогер не ответит в течение 24 часов, вы сможете выбрать другого блогера БЕЗ дополнительной оплаты.\n\n"
             f"Удачного сотрудничества! 🤝"
         )
 
         keyboard = [
             [InlineKeyboardButton("💬 Открыть чат", callback_data=f"open_chat_{chat_id}")],
-            [InlineKeyboardButton("📂 Мои заказы", callback_data="client_my_orders")],
-            [InlineKeyboardButton("🏠 Главное меню", callback_data="show_client_menu")],
+            [InlineKeyboardButton("📂 Мои кампанияы", callback_data="advertiser_my_orders")],
+            [InlineKeyboardButton("🏠 Главное меню", callback_data="show_advertiser_menu")],
         ]
 
         await safe_edit_message(
@@ -6785,7 +6785,7 @@ async def thank_platform(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     💝 Обработчик кнопки "Сказать спасибо платформе"
 
-    На данный момент работает бесплатно - просто создаёт чат между клиентом и мастером.
+    На данный момент работает бесплатно - просто создаёт чат между клиентом и блогером.
     В будущем (при 10-20k пользователей) здесь будет реальная оплата через Telegram Stars.
     Цель: приучить пользователей к действию "поблагодарить/оплатить" перед получением контакта.
     """
@@ -6793,9 +6793,9 @@ async def thank_platform(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer("💝 Спасибо за поддержку!")
 
     try:
-        bid_id = int(query.data.replace("thank_platform_", ""))
-        # ИСПРАВЛЕНО: Вызываем общую функцию напрямую с bid_id
-        await process_bid_selection(update, context, bid_id)
+        offer_id = int(query.data.replace("thank_platform_", ""))
+        # ИСПРАВЛЕНО: Вызываем общую функцию напрямую с offer_id
+        await process_bid_selection(update, context, offer_id)
 
     except Exception as e:
         logger.error(f"Ошибка в thank_platform: {e}", exc_info=True)
@@ -6808,10 +6808,10 @@ async def thank_platform(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def test_payment_success(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    🆓 БЕСПЛАТНЫЙ РЕЖИМ: Обрабатывает выбор мастера БЕЗ оплаты (до достижения 10-20k пользователей)
+    🆓 БЕСПЛАТНЫЙ РЕЖИМ: Обрабатывает выбор блогера БЕЗ оплаты (до достижения 10-20k пользователей)
 
     Раньше была тестовой функцией для имитации оплаты, теперь используется как основной обработчик
-    в бесплатном режиме. Создаёт чат между клиентом и мастером напрямую без платежей.
+    в бесплатном режиме. Создаёт чат между клиентом и блогером напрямую без платежей.
     """
     query = update.callback_query
     # Не вызываем answer() здесь, т.к. уже вызван в thank_platform
@@ -6819,11 +6819,11 @@ async def test_payment_success(update: Update, context: ContextTypes.DEFAULT_TYP
         await query.answer()
 
     try:
-        bid_id = int(query.data.replace("test_payment_success_", ""))
+        offer_id = int(query.data.replace("test_payment_success_", ""))
         # ИСПРАВЛЕНО: Вызываем общую функцию process_bid_selection
-        await process_bid_selection(update, context, bid_id)
+        await process_bid_selection(update, context, offer_id)
 
-        # Очищаем контекст просмотра откликов
+        # Очищаем контекст просмотра предложениеов
         if 'viewing_bids' in context.user_data:
             del context.user_data['viewing_bids']
 
@@ -6841,7 +6841,7 @@ async def test_payment_success(update: Update, context: ContextTypes.DEFAULT_TYP
 # ============================================
 
 async def open_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Открывает чат между клиентом и мастером"""
+    """Открывает чат между клиентом и блогером"""
     query = update.callback_query
     await query.answer()
 
@@ -6863,38 +6863,38 @@ async def open_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         user_dict = dict(user)
-        is_client = user_dict['id'] == chat_dict['client_user_id']
-        is_worker = user_dict['id'] == chat_dict['worker_user_id']
+        is_client = user_dict['id'] == chat_dict['advertiser_user_id']
+        is_worker = user_dict['id'] == chat_dict['blogger_user_id']
 
         if not is_client and not is_worker:
             await query.edit_message_text("❌ У вас нет доступа к этому чату.")
             return
 
         # Определяем роль пользователя
-        my_role = "client" if is_client else "worker"
-        other_role = "worker" if is_client else "client"
+        my_role = "advertiser" if is_client else "blogger"
+        other_role = "blogger" if is_client else "advertiser"
 
         # Получаем информацию о собеседнике
         if is_client:
-            worker = db.get_user_by_id(chat_dict['worker_user_id'])
-            if worker:
-                worker = dict(worker)
-                worker_profile = db.get_worker_profile(worker['id'])
-                if worker_profile:
-                    worker_profile = dict(worker_profile)
-                    other_name = worker_profile['name']
+            blogger = db.get_user_by_id(chat_dict['blogger_user_id'])
+            if blogger:
+                blogger = dict(blogger)
+                blogger_profile = db.get_worker_profile(blogger['id'])
+                if blogger_profile:
+                    blogger_profile = dict(blogger_profile)
+                    other_name = blogger_profile['name']
                 else:
-                    other_name = "Мастер"
+                    other_name = "Блогер"
             else:
-                other_name = "Мастер"
+                other_name = "Блогер"
         else:
-            client = db.get_user_by_id(chat_dict['client_user_id'])
-            if client:
-                client = dict(client)
-                client_profile = db.get_client_profile(client['id'])
-                if client_profile:
-                    client_profile = dict(client_profile)
-                    other_name = client_profile['name']
+            advertiser = db.get_user_by_id(chat_dict['advertiser_user_id'])
+            if advertiser:
+                advertiser = dict(advertiser)
+                advertiser_profile = db.get_client_profile(advertiser['id'])
+                if advertiser_profile:
+                    advertiser_profile = dict(advertiser_profile)
+                    other_name = advertiser_profile['name']
                 else:
                     other_name = "Клиент"
             else:
@@ -6909,7 +6909,7 @@ async def open_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Формируем текст чата
         text = f"💬 <b>Чат с {other_name}</b>\n"
-        text += f"📋 Заказ #{chat_dict['order_id']}\n\n"
+        text += f"📋 Кампания #{chat_dict['campaign_id']}\n\n"
 
         if messages_list:
             text += "<b>История сообщений:</b>\n\n"
@@ -6943,8 +6943,8 @@ async def open_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [
             [InlineKeyboardButton("🔄 Обновить", callback_data=f"open_chat_{chat_id}")],
             [
-                InlineKeyboardButton("⬅️ Назад", callback_data="show_client_menu" if is_client else "show_worker_menu"),
-                InlineKeyboardButton("🏠 Главное меню", callback_data="show_client_menu" if is_client else "show_worker_menu")
+                InlineKeyboardButton("⬅️ Назад", callback_data="show_advertiser_menu" if is_client else "show_blogger_menu"),
+                InlineKeyboardButton("🏠 Главное меню", callback_data="show_advertiser_menu" if is_client else "show_blogger_menu")
             ],
         ]
 
@@ -6989,8 +6989,8 @@ async def handle_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE
     # КРИТИЧНО: Проверяем, не находится ли пользователь в ConversationHandler
     # Если находится - пропускаем, чтобы ConversationHandler обработал сообщение
     conversation_keys = ['review_order_id', 'review_bid_id', 'review_rating',
-                        'adding_photos', 'bid_order_id',
-                        'uploading_work_photo_order_id', 'order_client_id']
+                        'adding_photos', 'offer_order_id',
+                        'uploading_work_photo_order_id', 'campaign_client_id']
     if any(key in context.user_data for key in conversation_keys):
         # Пользователь в ConversationHandler, пропускаем
         logger.info(f"[DEBUG] handle_chat_message: пользователь в ConversationHandler, пропускаем")
@@ -7027,16 +7027,16 @@ async def handle_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE
 
         logger.info(f"✅ Сообщение #{message_id} отправлено в чат #{chat_id} от {my_role}")
 
-        # Если это первое сообщение мастера - подтверждаем готовность
-        if my_role == "worker" and not db.is_worker_confirmed(chat_id):
+        # Если это первое сообщение блогера - подтверждаем готовность
+        if my_role == "blogger" and not db.is_worker_confirmed(chat_id):
             db.confirm_worker_in_chat(chat_id)
-            logger.info(f"✅ Мастер подтвердил готовность в чате #{chat_id}")
+            logger.info(f"✅ Блогер подтвердил готовность в чате #{chat_id}")
 
-            # Обновляем статус заказа
+            # Обновляем статус кампанияа
             chat = db.get_chat_by_id(chat_id)
             if chat:
-                db.update_order_status(chat['order_id'], "master_confirmed")
-                logger.info(f"✅ Заказ #{chat['order_id']} переведён в статус 'master_confirmed'")
+                db.update_order_status(chat['campaign_id'], "master_confirmed")
+                logger.info(f"✅ Кампания #{chat['campaign_id']} переведён в статус 'master_confirmed'")
 
         # Получаем информацию о чате для уведомления
         chat = db.get_chat_by_id(chat_id)
@@ -7047,39 +7047,39 @@ async def handle_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         chat_dict = dict(chat)
 
         # Уведомляем собеседника о новом сообщении
-        other_user_id = chat_dict['worker_user_id'] if my_role == "client" else chat_dict['client_user_id']
+        other_user_id = chat_dict['blogger_user_id'] if my_role == "advertiser" else chat_dict['advertiser_user_id']
         other_user = db.get_user_by_id(other_user_id)
 
         if other_user:
             other_user_dict = dict(other_user)
 
-            # ИСПРАВЛЕНО: Проверяем статус заказа - не уведомляем о сообщениях в завершенных заказах
-            order = db.get_order_by_id(chat_dict['order_id'])
+            # ИСПРАВЛЕНО: Проверяем статус кампанияа - не уведомляем о сообщениях в завершенных кампанияах
+            campaign = db.get_order_by_id(chat_dict['campaign_id'])
             should_notify = False
 
-            if order:
-                order_dict = dict(order)
-                order_status = order_dict.get('status', 'open')
-                # Уведомляем только для активных заказов (НЕ завершенных)
-                if order_status in ['open', 'waiting_master_confirmation', 'master_confirmed', 'in_progress']:
+            if campaign:
+                campaign_dict = dict(campaign)
+                campaign_status = campaign_dict.get('status', 'open')
+                # Уведомляем только для активных кампанияов (НЕ завершенных)
+                if campaign_status in ['open', 'waiting_master_confirmation', 'master_confirmed', 'in_progress']:
                     should_notify = True
                 else:
-                    logger.info(f"Заказ #{chat_dict['order_id']} имеет статус '{order_status}' - пропускаем уведомление о сообщении")
+                    logger.info(f"Кампания #{chat_dict['campaign_id']} имеет статус '{campaign_status}' - пропускаем уведомление о сообщении")
 
             if should_notify:
                 try:
-                    # Определяем кнопку для возврата в заказы (в зависимости от роли получателя)
+                    # Определяем кнопку для возврата в кампанияы (в зависимости от роли получателя)
                     other_user_id = other_user_dict['id']
                     is_client = db.get_client_profile(other_user_id) is not None
-                    orders_callback = "client_my_orders" if is_client else "worker_my_orders"
+                    orders_callback = "advertiser_my_orders" if is_client else "blogger_my_orders"
 
                     # ОБНОВЛЯЕМОЕ уведомление - одно сообщение на пользователя
                     notification_text = (
                         f"💬 <b>У вас есть новые сообщения!</b>\n\n"
-                        f"Откройте \"Мои заказы\" чтобы прочитать сообщения"
+                        f"Откройте \"Мои кампанияы\" чтобы прочитать сообщения"
                     )
 
-                    keyboard = [[InlineKeyboardButton("📂 Мои заказы", callback_data=orders_callback)]]
+                    keyboard = [[InlineKeyboardButton("📂 Мои кампанияы", callback_data=orders_callback)]]
                     reply_markup = InlineKeyboardMarkup(keyboard)
 
                     # Получаем существующее уведомление
@@ -7123,7 +7123,7 @@ async def handle_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE
                     logger.error(f"Ошибка при отправке уведомления: {e}")
 
         # Определяем меню для возврата
-        menu_callback = "show_client_menu" if my_role == "client" else "show_worker_menu"
+        menu_callback = "show_advertiser_menu" if my_role == "advertiser" else "show_blogger_menu"
 
         # Подтверждаем отправку
         await update.message.reply_text(
@@ -7171,11 +7171,11 @@ async def noop_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def cancel_edit_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    Отмена редактирования профиля с возвратом к профилю мастера.
+    Отмена редактирования профиля с возвратом к профилю блогера.
     """
     context.user_data.clear()
 
-    keyboard = [[InlineKeyboardButton("👤 Вернуться к профилю", callback_data="worker_profile")]]
+    keyboard = [[InlineKeyboardButton("👤 Вернуться к профилю", callback_data="blogger_profile")]]
 
     await update.message.reply_text(
         "❌ Действие отменено.\n\n"
@@ -7214,10 +7214,10 @@ async def cancel_from_callback(update: Update, context: ContextTypes.DEFAULT_TYP
     # Перенаправляем на соответствующий обработчик меню
     if query.data == "go_main_menu":
         return await go_main_menu(update, context)
-    elif query.data == "show_worker_menu":
-        return await show_worker_menu(update, context)
-    elif query.data == "show_client_menu":
-        return await show_client_menu(update, context)
+    elif query.data == "show_blogger_menu":
+        return await show_blogger_menu(update, context)
+    elif query.data == "show_advertiser_menu":
+        return await show_advertiser_menu(update, context)
 
     # По умолчанию возвращаемся в главное меню
     return await go_main_menu(update, context)
@@ -7268,7 +7268,7 @@ async def reset_profile_command(update: Update, context: ContextTypes.DEFAULT_TY
 
 
 async def add_test_orders_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда для добавления тестовых заказов (только для user_id 641830790)"""
+    """Команда для добавления тестовых кампанияов (только для user_id 641830790)"""
     telegram_id = update.effective_user.id
 
     # Вызываем функцию из db.py
@@ -7278,7 +7278,7 @@ async def add_test_orders_command(update: Update, context: ContextTypes.DEFAULT_
 
 
 async def add_test_workers_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда для добавления тестовых мастеров и откликов (только для user_id 641830790)"""
+    """Команда для добавления тестовых блогеров и предложениеов (только для user_id 641830790)"""
     telegram_id = update.effective_user.id
 
     # Вызываем функцию из db.py
@@ -7289,44 +7289,44 @@ async def add_test_workers_command(update: Update, context: ContextTypes.DEFAULT
 
 async def add_test_bids_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    Команда для добавления тестовых откликов на заказ
-    Использование: /add_test_bids order_id
+    Команда для добавления тестовых предложениеов на кампания
+    Использование: /add_test_bids campaign_id
     """
     telegram_id = update.effective_user.id
 
     if len(context.args) < 1:
         await update.message.reply_text(
             "📋 <b>Использование команды /add_test_bids</b>\n\n"
-            "<code>/add_test_bids order_id</code>\n\n"
+            "<code>/add_test_bids campaign_id</code>\n\n"
             "Пример:\n"
             "<code>/add_test_bids 123</code>\n\n"
-            "Эта команда добавит несколько тестовых откликов от мастеров на указанный заказ.",
+            "Эта команда добавит несколько тестовых предложениеов от блогеров на указанный кампания.",
             parse_mode="HTML"
         )
         return
 
     try:
-        order_id = int(context.args[0])
+        campaign_id = int(context.args[0])
     except ValueError:
-        await update.message.reply_text("❌ ID заказа должен быть числом")
+        await update.message.reply_text("❌ ID кампанияа должен быть числом")
         return
 
-    # Проверяем существование заказа
-    order = db.get_order(order_id)
-    if not order:
-        await update.message.reply_text(f"❌ Заказ с ID {order_id} не найден")
+    # Проверяем существование кампанияа
+    campaign = db.get_order(campaign_id)
+    if not campaign:
+        await update.message.reply_text(f"❌ Кампания с ID {campaign_id} не найден")
         return
 
-    # Получаем всех мастеров
+    # Получаем всех блогеров
     all_workers = db.get_all_workers()
     if not all_workers or len(all_workers) == 0:
         await update.message.reply_text(
-            "❌ В системе нет мастеров.\n\n"
-            "Сначала создайте профили мастеров или используйте команду /add_test_workers"
+            "❌ В системе нет блогеров.\n\n"
+            "Сначала создайте профили блогеров или используйте команду /add_test_workers"
         )
         return
 
-    # Создаем отклики от первых 5 мастеров (или меньше, если мастеров мало)
+    # Создаем предложениеи от первых 5 блогеров (или меньше, если блогеров мало)
     workers_to_use = list(all_workers)[:5]
     created_count = 0
 
@@ -7339,9 +7339,9 @@ async def add_test_bids_command(update: Update, context: ContextTypes.DEFAULT_TY
         "Могу приступить уже сегодня"
     ]
 
-    for i, worker in enumerate(workers_to_use):
-        worker_dict = dict(worker)
-        worker_id = worker_dict['id']
+    for i, blogger in enumerate(workers_to_use):
+        blogger_dict = dict(blogger)
+        blogger_id = blogger_dict['id']
 
         # Генерируем разные цены
         price = base_price + (i * 50)  # 100, 150, 200, 250, 300
@@ -7349,45 +7349,45 @@ async def add_test_bids_command(update: Update, context: ContextTypes.DEFAULT_TY
         ready_days = 3 + i  # 3, 4, 5, 6, 7 дней
 
         try:
-            # Проверяем, не откликался ли уже этот мастер
-            # ИСПРАВЛЕНО: используем worker_id (ID профиля мастера), а не worker_dict['user_id']
-            if db.check_worker_bid_exists(order_id, worker_id):
+            # Проверяем, не предложениеался ли уже этот блогер
+            # ИСПРАВЛЕНО: используем blogger_id (ID профиля блогера), а не blogger_dict['user_id']
+            if db.check_worker_bid_exists(campaign_id, blogger_id):
                 continue
 
-            # Создаем отклик (обходим rate limiting через прямую вставку в БД)
+            # Создаем предложение (обходим rate limiting через прямую вставку в БД)
             with db.get_db_connection() as conn:
                 cursor = db.get_cursor(conn)
                 now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
                 cursor.execute("""
-                    INSERT INTO bids (
-                        order_id, worker_id, proposed_price, currency,
+                    INSERT INTO offers (
+                        campaign_id, blogger_id, proposed_price, currency,
                         comment, ready_in_days, created_at, status
                     )
                     VALUES (?, ?, ?, ?, ?, ?, ?, 'active')
-                """, (order_id, worker_id, price, 'BYN', comment, ready_days, now))
+                """, (campaign_id, blogger_id, price, 'BYN', comment, ready_days, now))
 
                 conn.commit()
                 created_count += 1
-                logger.info(f"✅ Создан тестовый отклик от мастера {worker_id} на заказ {order_id}")
+                logger.info(f"✅ Создан тестовый предложение от блогера {blogger_id} на кампания {campaign_id}")
 
         except Exception as e:
-            logger.error(f"Ошибка создания тестового отклика: {e}")
+            logger.error(f"Ошибка создания тестового предложениеа: {e}")
             continue
 
     if created_count > 0:
         await update.message.reply_text(
-            f"✅ Создано тестовых откликов: {created_count}\n\n"
-            f"📋 Заказ ID: {order_id}\n"
-            f"Откликов добавлено: {created_count}\n\n"
-            "Теперь вы можете проверить сортировку откликов!",
+            f"✅ Создано тестовых предложениеов: {created_count}\n\n"
+            f"📋 Кампания ID: {campaign_id}\n"
+            f"Предложениеов добавлено: {created_count}\n\n"
+            "Теперь вы можете проверить сортировку предложениеов!",
             parse_mode="HTML"
         )
     else:
         await update.message.reply_text(
-            f"⚠️ Не удалось создать отклики.\n\n"
+            f"⚠️ Не удалось создать предложениеи.\n\n"
             f"Возможные причины:\n"
-            f"• Все мастера уже откликнулись на этот заказ\n"
+            f"• Все блогера уже предложениенулись на этот кампания\n"
             f"• Произошла ошибка при создании",
             parse_mode="HTML"
         )
@@ -7395,96 +7395,96 @@ async def add_test_bids_command(update: Update, context: ContextTypes.DEFAULT_TY
 
 # ------- ПРОСМОТР ЗАКАЗОВ ДЛЯ МАСТЕРОВ -------
 
-async def worker_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Просмотр доступных заказов для мастера"""
+async def blogger_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Просмотр доступных кампанияов для блогера"""
     query = update.callback_query
     await query.answer()
 
     try:
-        # Получаем профиль мастера
+        # Получаем профиль блогера
         user = db.get_user(query.from_user.id)
         if not user:
             await query.edit_message_text("❌ Ошибка: пользователь не найден.")
             return
 
-        # НОВОЕ: Обнуляем счётчик непрочитанных заказов (пользователь их просматривает)
+        # НОВОЕ: Обнуляем счётчик непрочитанных кампанияов (пользователь их просматривает)
         db.save_worker_notification(user['id'], None, None, 0)
 
-        worker_profile = db.get_worker_profile(user["id"])
-        if not worker_profile:
-            await query.edit_message_text("❌ Ошибка: профиль мастера не найден.")
+        blogger_profile = db.get_worker_profile(user["id"])
+        if not blogger_profile:
+            await query.edit_message_text("❌ Ошибка: профиль блогера не найден.")
             return
         
-        worker_dict = dict(worker_profile)
-        worker_id = worker_dict['id']
-        categories = worker_dict.get("categories", "").split(", ")
+        blogger_dict = dict(blogger_profile)
+        blogger_id = blogger_dict['id']
+        categories = blogger_dict.get("categories", "").split(", ")
 
         # ИСПРАВЛЕНО: Один запрос для всех категорий вместо N запросов
-        # ИСПРАВЛЕНО: Фильтрация по городам мастера (worker_id)
-        # Раньше: 5 категорий = 5 SQL запросов, мастер видел заказы из ВСЕХ городов
-        # Теперь: 5 категорий = 1 SQL запрос, мастер видит заказы ТОЛЬКО из своих городов
-        all_orders = db.get_orders_by_categories(categories, per_page=30, worker_id=worker_id)
-        all_orders = [dict(order) for order in all_orders]
+        # ИСПРАВЛЕНО: Фильтрация по городам блогера (blogger_id)
+        # Раньше: 5 категорий = 5 SQL запросов, блогер видел кампанияы из ВСЕХ городов
+        # Теперь: 5 категорий = 1 SQL запрос, блогер видит кампанияы ТОЛЬКО из своих городов
+        all_orders = db.get_orders_by_categories(categories, per_page=30, blogger_id=blogger_id)
+        all_orders = [dict(campaign) for campaign in all_orders]
 
-        # Фильтруем заказы - не показываем те, на которые мастер уже откликнулся
-        # НОВОЕ: Также не показываем заказы, от которых мастер отказался
-        # ИСПРАВЛЕНО: Используем worker_id (ID профиля мастера), а не user["id"] (ID пользователя)
-        all_orders = [order for order in all_orders
-                     if not db.check_worker_bid_exists(order['id'], worker_id)
-                     and not db.check_order_declined(user["id"], order['id'])]
+        # Фильтруем кампанияы - не показываем те, на которые блогер уже предложениенулся
+        # НОВОЕ: Также не показываем кампанияы, от которых блогер отказался
+        # ИСПРАВЛЕНО: Используем blogger_id (ID профиля блогера), а не user["id"] (ID пользователя)
+        all_orders = [campaign for campaign in all_orders
+                     if not db.check_worker_bid_exists(campaign['id'], blogger_id)
+                     and not db.check_order_declined(user["id"], campaign['id'])]
         
         if not all_orders:
             keyboard = [
-                [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_worker_menu")],
+                [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_blogger_menu")],
             ]
             
             await query.edit_message_text(
-                "📋 <b>Доступные заказы</b>\n\n"
-                f"🔧 Ваши категории: <i>{worker_dict.get('categories', 'Не указаны')}</i>\n\n"
-                "Пока нет открытых заказов по вашим категориям.\n\n"
-                "Как только появятся новые заказы, вы их увидите здесь!",
+                "📋 <b>Доступные кампанияы</b>\n\n"
+                f"🔧 Ваши категории: <i>{blogger_dict.get('categories', 'Не указаны')}</i>\n\n"
+                "Пока нет открытых кампанияов по вашим категориям.\n\n"
+                "Как только появятся новые кампанияы, вы их увидите здесь!",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
             return
         
-        # Показываем список заказов
-        orders_text = "📋 <b>Доступные заказы</b>\n\n"
-        orders_text += f"🔧 Ваши категории: <i>{worker_dict.get('categories', 'Не указаны')}</i>\n\n"
-        orders_text += f"Найдено заказов: <b>{len(all_orders)}</b>\n\n"
+        # Показываем список кампанияов
+        orders_text = "📋 <b>Доступные кампанияы</b>\n\n"
+        orders_text += f"🔧 Ваши категории: <i>{blogger_dict.get('categories', 'Не указаны')}</i>\n\n"
+        orders_text += f"Найдено кампанияов: <b>{len(all_orders)}</b>\n\n"
         
-        # Показываем первые 5 заказов
+        # Показываем первые 5 кампанияов
         keyboard = []
-        for i, order in enumerate(all_orders[:5], 1):
-            orders_text += f"🟢 <b>Заказ #{order['id']}</b>\n"
-            orders_text += f"📍 Город: {order.get('city', 'Не указан')}\n"
-            orders_text += f"🔧 Категория: {order.get('category', 'Не указана')}\n"
+        for i, campaign in enumerate(all_orders[:5], 1):
+            orders_text += f"🟢 <b>Кампания #{campaign['id']}</b>\n"
+            orders_text += f"📍 Город: {campaign.get('city', 'Не указан')}\n"
+            orders_text += f"🔧 Категория: {campaign.get('category', 'Не указана')}\n"
             
             # Описание (сокращённое)
-            description = order.get('description', '')
+            description = campaign.get('description', '')
             if len(description) > 80:
                 description = description[:80] + "..."
             orders_text += f"📝 {description}\n"
             
             # Фото
-            photos = order.get('photos', '')
+            photos = campaign.get('photos', '')
             photos_count = len([p for p in photos.split(',') if p]) if photos else 0
             if photos_count > 0:
                 orders_text += f"📸 {photos_count} фото\n"
             
-            orders_text += f"📅 {order.get('created_at', '')}\n"
+            orders_text += f"📅 {campaign.get('created_at', '')}\n"
             orders_text += "\n"
             
             # Добавляем кнопку для просмотра деталей
             keyboard.append([InlineKeyboardButton(
-                f"👁 Заказ #{order['id']} - Подробнее", 
-                callback_data=f"view_order_{order['id']}"
+                f"👁 Кампания #{campaign['id']} - Подробнее", 
+                callback_data=f"view_campaign_{campaign['id']}"
             )])
         
         if len(all_orders) > 5:
-            orders_text += f"<i>... и ещё {len(all_orders) - 5} заказов</i>\n\n"
+            orders_text += f"<i>... и ещё {len(all_orders) - 5} кампанияов</i>\n\n"
 
-        keyboard.append([InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_worker_menu")])
+        keyboard.append([InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_blogger_menu")])
 
         await safe_edit_message(
             query,
@@ -7494,69 +7494,69 @@ async def worker_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
 
     except Exception as e:
-        logger.error(f"Ошибка при просмотре заказов: {e}", exc_info=True)
+        logger.error(f"Ошибка при просмотре кампанияов: {e}", exc_info=True)
         await safe_edit_message(
             query,
-            "❌ Произошла ошибка при загрузке заказов.\n\n"
+            "❌ Произошла ошибка при загрузке кампанияов.\n\n"
             "Попробуйте позже.",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_worker_menu")]
+                [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_blogger_menu")]
             ])
         )
 
 
-async def worker_view_order_details(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Детальный просмотр заказа мастером"""
+async def blogger_view_order_details(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Детальный просмотр кампанияа блогером"""
     query = update.callback_query
     await query.answer()
     
     try:
-        # Извлекаем order_id из callback_data
-        order_id = int(query.data.replace("view_order_", ""))
+        # Извлекаем campaign_id из callback_data
+        campaign_id = int(query.data.replace("view_campaign_", ""))
         
-        # Получаем заказ
-        order = db.get_order_by_id(order_id)
-        if not order:
-            await query.edit_message_text("❌ Заказ не найден.")
+        # Получаем кампания
+        campaign = db.get_order_by_id(campaign_id)
+        if not campaign:
+            await query.edit_message_text("❌ Кампания не найден.")
             return
         
-        order_dict = dict(order)
+        campaign_dict = dict(campaign)
         
-        # Проверяем есть ли уже отклик от этого мастера
+        # Проверяем есть ли уже предложение от этого блогера
         user = db.get_user(query.from_user.id)
-        worker_profile = db.get_worker_profile(user["id"])
+        blogger_profile = db.get_worker_profile(user["id"])
 
-        already_bid = db.check_worker_bid_exists(order_id, worker_profile["id"])
+        already_bid = db.check_worker_bid_exists(campaign_id, blogger_profile["id"])
 
-        # ПРОВЕРКА: Мастер не может откликаться на свой заказ
-        client = db.get_client_by_id(order_dict['client_id'])
+        # ПРОВЕРКА: Блогер не может предложениеаться на свой кампания
+        advertiser = db.get_client_by_id(campaign_dict['advertiser_id'])
         is_own_order = False
-        if client:
-            client_dict = dict(client)
-            is_own_order = (client_dict['user_id'] == user["id"])
+        if advertiser:
+            advertiser_dict = dict(advertiser)
+            is_own_order = (advertiser_dict['user_id'] == user["id"])
         
         # Формируем текст
-        text = f"📋 <b>Заказ #{order_id}</b>\n\n"
-        text += f"📍 <b>Город:</b> {order_dict.get('city', 'Не указан')}\n"
-        text += f"🔧 <b>Категория:</b> {order_dict.get('category', 'Не указана')}\n"
-        text += f"📅 <b>Создан:</b> {order_dict.get('created_at', '')}\n\n"
-        text += f"📝 <b>Описание:</b>\n{order_dict.get('description', 'Нет описания')}\n\n"
+        text = f"📋 <b>Кампания #{campaign_id}</b>\n\n"
+        text += f"📍 <b>Город:</b> {campaign_dict.get('city', 'Не указан')}\n"
+        text += f"🔧 <b>Категория:</b> {campaign_dict.get('category', 'Не указана')}\n"
+        text += f"📅 <b>Создан:</b> {campaign_dict.get('created_at', '')}\n\n"
+        text += f"📝 <b>Описание:</b>\n{campaign_dict.get('description', 'Нет описания')}\n\n"
         
         # Информация о клиенте
-        text += f"👤 <b>Заказчик:</b> {order_dict.get('client_name', 'Неизвестно')}\n"
-        client_rating = order_dict.get('client_rating', 0)
-        client_rating_count = order_dict.get('client_rating_count', 0)
-        if client_rating_count > 0:
-            text += f"⭐ {client_rating:.1f} ({client_rating_count} отзывов)\n"
+        text += f"👤 <b>Рекламодатель:</b> {campaign_dict.get('advertiser_name', 'Неизвестно')}\n"
+        advertiser_rating = campaign_dict.get('advertiser_rating', 0)
+        advertiser_rating_count = campaign_dict.get('advertiser_rating_count', 0)
+        if advertiser_rating_count > 0:
+            text += f"⭐ {advertiser_rating:.1f} ({advertiser_rating_count} отзывов)\n"
         
         # Получаем фото
-        photos = order_dict.get('photos', '')
+        photos = campaign_dict.get('photos', '')
         photo_ids = [p.strip() for p in photos.split(',') if p.strip()]
         
         if photo_ids:
             # Отправляем первое фото с текстом
-            context.user_data['current_order_id'] = order_id
-            context.user_data['order_photos'] = photo_ids
+            context.user_data['current_order_id'] = campaign_id
+            context.user_data['campaign_photos'] = photo_ids
             context.user_data['current_photo_index'] = 0
             
             keyboard = []
@@ -7565,31 +7565,31 @@ async def worker_view_order_details(update: Update, context: ContextTypes.DEFAUL
             if len(photo_ids) > 1:
                 nav_buttons = []
                 if len(photo_ids) > 1:
-                    nav_buttons.append(InlineKeyboardButton("◀️", callback_data=f"order_photo_prev_{order_id}"))
+                    nav_buttons.append(InlineKeyboardButton("◀️", callback_data=f"campaign_photo_prev_{campaign_id}"))
                 nav_buttons.append(InlineKeyboardButton(f"1/{len(photo_ids)}", callback_data="noop"))
                 if len(photo_ids) > 1:
-                    nav_buttons.append(InlineKeyboardButton("▶️", callback_data=f"order_photo_next_{order_id}"))
+                    nav_buttons.append(InlineKeyboardButton("▶️", callback_data=f"campaign_photo_next_{campaign_id}"))
                 keyboard.append(nav_buttons)
             
-            # Кнопка завершения заказа если мастер работает над ним
-            order_status = order_dict.get('status', 'open')
-            selected_worker_id = order_dict.get('selected_worker_id')
+            # Кнопка завершения кампанияа если блогер работает над ним
+            campaign_status = campaign_dict.get('status', 'open')
+            selected_worker_id = campaign_dict.get('selected_worker_id')
 
-            if order_status == 'in_progress' and selected_worker_id == worker_profile["id"]:
-                keyboard.append([InlineKeyboardButton("✅ Работа завершена", callback_data=f"worker_complete_order_{order_id}")])
-            # Кнопка отклика (только для открытых заказов)
-            elif order_status == 'open':
+            if campaign_status == 'in_progress' and selected_worker_id == blogger_profile["id"]:
+                keyboard.append([InlineKeyboardButton("✅ Работа завершена", callback_data=f"blogger_complete_order_{campaign_id}")])
+            # Кнопка предложениеа (только для открытых кампанияов)
+            elif campaign_status == 'open':
                 if is_own_order:
-                    keyboard.append([InlineKeyboardButton("🚫 Это ваш заказ", callback_data="noop")])
+                    keyboard.append([InlineKeyboardButton("🚫 Это ваш кампания", callback_data="noop")])
                 elif already_bid:
-                    keyboard.append([InlineKeyboardButton("✅ Вы уже откликнулись", callback_data="noop")])
+                    keyboard.append([InlineKeyboardButton("✅ Вы уже предложениенулись", callback_data="noop")])
                 else:
-                    keyboard.append([InlineKeyboardButton("💰 Откликнуться", callback_data=f"bid_on_order_{order_id}")])
-                    # НОВОЕ: Кнопка "Отказаться от заказа" (не показывать этот заказ больше)
-                    keyboard.append([InlineKeyboardButton("🚫 Отказаться от заказа", callback_data=f"decline_order_{order_id}")])
+                    keyboard.append([InlineKeyboardButton("💰 Предложениенуться", callback_data=f"offer_on_order_{campaign_id}")])
+                    # НОВОЕ: Кнопка "Отказаться от кампанияа" (не показывать этот кампания больше)
+                    keyboard.append([InlineKeyboardButton("🚫 Отказаться от кампанияа", callback_data=f"decline_campaign_{campaign_id}")])
 
-            # ИСПРАВЛЕНО: Если мастер откликнулся на заказ - возвращаем в "Мои отклики", иначе в "Доступные заказы"
-            back_callback = "worker_my_bids" if already_bid else "worker_view_orders"
+            # ИСПРАВЛЕНО: Если блогер предложениенулся на кампания - возвращаем в "Мои предложениеи", иначе в "Доступные кампанияы"
+            back_callback = "blogger_my_bids" if already_bid else "blogger_view_orders"
             keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data=back_callback)])
             
             await query.message.delete()
@@ -7603,25 +7603,25 @@ async def worker_view_order_details(update: Update, context: ContextTypes.DEFAUL
             # Нет фото - просто текст
             keyboard = []
 
-            # Кнопка завершения заказа если мастер работает над ним
-            order_status = order_dict.get('status', 'open')
-            selected_worker_id = order_dict.get('selected_worker_id')
+            # Кнопка завершения кампанияа если блогер работает над ним
+            campaign_status = campaign_dict.get('status', 'open')
+            selected_worker_id = campaign_dict.get('selected_worker_id')
 
-            if order_status == 'in_progress' and selected_worker_id == worker_profile["id"]:
-                keyboard.append([InlineKeyboardButton("✅ Работа завершена", callback_data=f"worker_complete_order_{order_id}")])
-            # Кнопка отклика (только для открытых заказов)
-            elif order_status == 'open':
+            if campaign_status == 'in_progress' and selected_worker_id == blogger_profile["id"]:
+                keyboard.append([InlineKeyboardButton("✅ Работа завершена", callback_data=f"blogger_complete_order_{campaign_id}")])
+            # Кнопка предложениеа (только для открытых кампанияов)
+            elif campaign_status == 'open':
                 if is_own_order:
-                    keyboard.append([InlineKeyboardButton("🚫 Это ваш заказ", callback_data="noop")])
+                    keyboard.append([InlineKeyboardButton("🚫 Это ваш кампания", callback_data="noop")])
                 elif already_bid:
-                    keyboard.append([InlineKeyboardButton("✅ Вы уже откликнулись", callback_data="noop")])
+                    keyboard.append([InlineKeyboardButton("✅ Вы уже предложениенулись", callback_data="noop")])
                 else:
-                    keyboard.append([InlineKeyboardButton("💰 Откликнуться", callback_data=f"bid_on_order_{order_id}")])
-                    # НОВОЕ: Кнопка "Отказаться от заказа" (не показывать этот заказ больше)
-                    keyboard.append([InlineKeyboardButton("🚫 Отказаться от заказа", callback_data=f"decline_order_{order_id}")])
+                    keyboard.append([InlineKeyboardButton("💰 Предложениенуться", callback_data=f"offer_on_order_{campaign_id}")])
+                    # НОВОЕ: Кнопка "Отказаться от кампанияа" (не показывать этот кампания больше)
+                    keyboard.append([InlineKeyboardButton("🚫 Отказаться от кампанияа", callback_data=f"decline_campaign_{campaign_id}")])
 
-            # ИСПРАВЛЕНО: Если мастер откликнулся на заказ - возвращаем в "Мои отклики", иначе в "Доступные заказы"
-            back_callback = "worker_my_bids" if already_bid else "worker_view_orders"
+            # ИСПРАВЛЕНО: Если блогер предложениенулся на кампания - возвращаем в "Мои предложениеи", иначе в "Доступные кампанияы"
+            back_callback = "blogger_my_bids" if already_bid else "blogger_view_orders"
             keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data=back_callback)])
             
             await query.edit_message_text(
@@ -7631,45 +7631,45 @@ async def worker_view_order_details(update: Update, context: ContextTypes.DEFAUL
             )
             
     except Exception as e:
-        logger.error(f"Ошибка при просмотре деталей заказа: {e}", exc_info=True)
+        logger.error(f"Ошибка при просмотре деталей кампанияа: {e}", exc_info=True)
         await query.edit_message_text(
             "❌ Произошла ошибка.\n\nПопробуйте позже.",
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("⬅️ Назад", callback_data="worker_view_orders")
+                InlineKeyboardButton("⬅️ Назад", callback_data="blogger_view_orders")
             ]])
         )
 
 
-async def worker_decline_order_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """НОВОЕ: Подтверждение отказа от заказа (шаг 1)"""
+async def blogger_decline_order_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """НОВОЕ: Подтверждение отказа от кампанияа (шаг 1)"""
     query = update.callback_query
     await query.answer()
 
     try:
-        # Извлекаем order_id из callback_data: "decline_order_123"
-        order_id = int(query.data.replace("decline_order_", ""))
+        # Извлекаем campaign_id из callback_data: "decline_campaign_123"
+        campaign_id = int(query.data.replace("decline_campaign_", ""))
 
-        # Получаем заказ
-        order = db.get_order_by_id(order_id)
-        if not order:
-            await query.edit_message_text("❌ Заказ не найден.")
+        # Получаем кампания
+        campaign = db.get_order_by_id(campaign_id)
+        if not campaign:
+            await query.edit_message_text("❌ Кампания не найден.")
             return
 
-        order_dict = dict(order)
+        campaign_dict = dict(campaign)
 
         # Спрашиваем подтверждение
         text = (
-            f"🚫 <b>Отказаться от заказа?</b>\n\n"
-            f"Заказ #{order_id} больше не будет отображаться в списке доступных заказов.\n\n"
-            f"📍 <b>Город:</b> {order_dict.get('city', 'Не указан')}\n"
-            f"🔧 <b>Категория:</b> {order_dict.get('category', 'Не указана')}\n\n"
-            f"Вы уверены, что хотите отказаться от этого заказа?"
+            f"🚫 <b>Отказаться от кампанияа?</b>\n\n"
+            f"Кампания #{campaign_id} больше не будет отображаться в списке доступных кампанияов.\n\n"
+            f"📍 <b>Город:</b> {campaign_dict.get('city', 'Не указан')}\n"
+            f"🔧 <b>Категория:</b> {campaign_dict.get('category', 'Не указана')}\n\n"
+            f"Вы уверены, что хотите отказаться от этого кампанияа?"
         )
 
         keyboard = [
             [
-                InlineKeyboardButton("✅ Да, отказаться", callback_data=f"decline_order_yes_{order_id}"),
-                InlineKeyboardButton("❌ Нет, вернуться", callback_data=f"decline_order_no_{order_id}")
+                InlineKeyboardButton("✅ Да, отказаться", callback_data=f"decline_campaign_yes_{campaign_id}"),
+                InlineKeyboardButton("❌ Нет, вернуться", callback_data=f"decline_campaign_no_{campaign_id}")
             ]
         ]
 
@@ -7684,19 +7684,19 @@ async def worker_decline_order_confirm(update: Update, context: ContextTypes.DEF
         await query.edit_message_text(
             "❌ Произошла ошибка.\n\nПопробуйте позже.",
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("⬅️ Назад", callback_data="worker_view_orders")
+                InlineKeyboardButton("⬅️ Назад", callback_data="blogger_view_orders")
             ]])
         )
 
 
-async def worker_decline_order_yes(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_decline_order_yes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """НОВОЕ: Подтверждение отказа - ДА (шаг 2)"""
     query = update.callback_query
     await query.answer()
 
     try:
-        # Извлекаем order_id из callback_data: "decline_order_yes_123"
-        order_id = int(query.data.replace("decline_order_yes_", ""))
+        # Извлекаем campaign_id из callback_data: "decline_campaign_yes_123"
+        campaign_id = int(query.data.replace("decline_campaign_yes_", ""))
 
         # Получаем user_id
         user = db.get_user(query.from_user.id)
@@ -7704,23 +7704,23 @@ async def worker_decline_order_yes(update: Update, context: ContextTypes.DEFAULT
             await query.edit_message_text("❌ Ошибка: пользователь не найден.")
             return
 
-        worker_user_id = user["id"]
+        blogger_user_id = user["id"]
 
         # Сохраняем отказ в БД
-        success = db.decline_order(worker_user_id, order_id)
+        success = db.decline_order(blogger_user_id, campaign_id)
 
         if success:
             text = (
-                f"✅ <b>Заказ скрыт</b>\n\n"
-                f"Заказ #{order_id} больше не будет отображаться в списке доступных заказов.\n\n"
-                f"Вы можете продолжить просмотр других заказов."
+                f"✅ <b>Кампания скрыт</b>\n\n"
+                f"Кампания #{campaign_id} больше не будет отображаться в списке доступных кампанияов.\n\n"
+                f"Вы можете продолжить просмотр других кампанияов."
             )
         else:
-            text = "❌ Не удалось скрыть заказ. Попробуйте позже."
+            text = "❌ Не удалось скрыть кампания. Попробуйте позже."
 
         keyboard = [
-            [InlineKeyboardButton("📋 К списку заказов", callback_data="worker_view_orders")],
-            [InlineKeyboardButton("🏠 Главное меню", callback_data="show_worker_menu")]
+            [InlineKeyboardButton("📋 К списку кампанияов", callback_data="blogger_view_orders")],
+            [InlineKeyboardButton("🏠 Главное меню", callback_data="show_blogger_menu")]
         ]
 
         await query.edit_message_text(
@@ -7730,50 +7730,50 @@ async def worker_decline_order_yes(update: Update, context: ContextTypes.DEFAULT
         )
 
     except Exception as e:
-        logger.error(f"Ошибка при отказе от заказа: {e}", exc_info=True)
+        logger.error(f"Ошибка при отказе от кампанияа: {e}", exc_info=True)
         await query.edit_message_text(
             "❌ Произошла ошибка.\n\nПопробуйте позже.",
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("⬅️ Назад", callback_data="worker_view_orders")
+                InlineKeyboardButton("⬅️ Назад", callback_data="blogger_view_orders")
             ]])
         )
 
 
-async def worker_decline_order_no(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """НОВОЕ: Отмена отказа - НЕТ, вернуться к заказу"""
+async def blogger_decline_order_no(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """НОВОЕ: Отмена отказа - НЕТ, вернуться к кампанияу"""
     query = update.callback_query
     await query.answer()
 
     try:
-        # Извлекаем order_id из callback_data: "decline_order_no_123"
-        order_id = int(query.data.replace("decline_order_no_", ""))
+        # Извлекаем campaign_id из callback_data: "decline_campaign_no_123"
+        campaign_id = int(query.data.replace("decline_campaign_no_", ""))
 
-        # Возвращаемся к просмотру заказа (симулируем callback)
+        # Возвращаемся к просмотру кампанияа (симулируем callback)
         # Создаем новый query с правильным callback_data
-        query.data = f"view_order_{order_id}"
-        await worker_view_order_details(update, context)
+        query.data = f"view_campaign_{campaign_id}"
+        await blogger_view_order_details(update, context)
 
     except Exception as e:
         logger.error(f"Ошибка при отмене отказа: {e}", exc_info=True)
         await query.edit_message_text(
             "❌ Произошла ошибка.\n\nПопробуйте позже.",
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("⬅️ Назад", callback_data="worker_view_orders")
+                InlineKeyboardButton("⬅️ Назад", callback_data="blogger_view_orders")
             ]])
         )
 
 
-async def worker_order_photo_nav(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Навигация по фото заказа"""
+async def blogger_order_photo_nav(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Навигация по фото кампанияа"""
     query = update.callback_query
     await query.answer()
     
     try:
-        photo_ids = context.user_data.get('order_photos', [])
+        photo_ids = context.user_data.get('campaign_photos', [])
         current_index = context.user_data.get('current_photo_index', 0)
-        order_id = context.user_data.get('current_order_id')
+        campaign_id = context.user_data.get('current_order_id')
         
-        if not photo_ids or order_id is None:
+        if not photo_ids or campaign_id is None:
             return
         
         # Определяем направление
@@ -7784,46 +7784,46 @@ async def worker_order_photo_nav(update: Update, context: ContextTypes.DEFAULT_T
         
         context.user_data['current_photo_index'] = current_index
         
-        # Получаем заказ для caption
-        order = db.get_order_by_id(order_id)
-        order_dict = dict(order)
+        # Получаем кампания для caption
+        campaign = db.get_order_by_id(campaign_id)
+        campaign_dict = dict(campaign)
         
-        # Проверяем отклик
+        # Проверяем предложение
         user = db.get_user(query.from_user.id)
-        worker_profile = db.get_worker_profile(user["id"])
-        already_bid = db.check_worker_bid_exists(order_id, worker_profile["id"])
+        blogger_profile = db.get_worker_profile(user["id"])
+        already_bid = db.check_worker_bid_exists(campaign_id, blogger_profile["id"])
 
-        # ПРОВЕРКА: Мастер не может откликаться на свой заказ
-        client = db.get_client_by_id(order_dict['client_id'])
+        # ПРОВЕРКА: Блогер не может предложениеаться на свой кампания
+        advertiser = db.get_client_by_id(campaign_dict['advertiser_id'])
         is_own_order = False
-        if client:
-            client_dict = dict(client)
-            is_own_order = (client_dict['user_id'] == user["id"])
+        if advertiser:
+            advertiser_dict = dict(advertiser)
+            is_own_order = (advertiser_dict['user_id'] == user["id"])
 
         # Формируем текст
-        text = f"📋 <b>Заказ #{order_id}</b>\n\n"
-        text += f"📍 <b>Город:</b> {order_dict.get('city', 'Не указан')}\n"
-        text += f"🔧 <b>Категория:</b> {order_dict.get('category', 'Не указана')}\n"
-        text += f"📅 <b>Создан:</b> {order_dict.get('created_at', '')}\n\n"
-        text += f"📝 <b>Описание:</b>\n{order_dict.get('description', 'Нет описания')}\n\n"
-        text += f"👤 <b>Заказчик:</b> {order_dict.get('client_name', 'Неизвестно')}\n"
+        text = f"📋 <b>Кампания #{campaign_id}</b>\n\n"
+        text += f"📍 <b>Город:</b> {campaign_dict.get('city', 'Не указан')}\n"
+        text += f"🔧 <b>Категория:</b> {campaign_dict.get('category', 'Не указана')}\n"
+        text += f"📅 <b>Создан:</b> {campaign_dict.get('created_at', '')}\n\n"
+        text += f"📝 <b>Описание:</b>\n{campaign_dict.get('description', 'Нет описания')}\n\n"
+        text += f"👤 <b>Рекламодатель:</b> {campaign_dict.get('advertiser_name', 'Неизвестно')}\n"
         
         # Обновляем кнопки
         keyboard = []
         nav_buttons = []
-        nav_buttons.append(InlineKeyboardButton("◀️", callback_data=f"order_photo_prev_{order_id}"))
+        nav_buttons.append(InlineKeyboardButton("◀️", callback_data=f"campaign_photo_prev_{campaign_id}"))
         nav_buttons.append(InlineKeyboardButton(f"{current_index+1}/{len(photo_ids)}", callback_data="noop"))
-        nav_buttons.append(InlineKeyboardButton("▶️", callback_data=f"order_photo_next_{order_id}"))
+        nav_buttons.append(InlineKeyboardButton("▶️", callback_data=f"campaign_photo_next_{campaign_id}"))
         keyboard.append(nav_buttons)
         
         if is_own_order:
-            keyboard.append([InlineKeyboardButton("🚫 Это ваш заказ", callback_data="noop")])
+            keyboard.append([InlineKeyboardButton("🚫 Это ваш кампания", callback_data="noop")])
         elif already_bid:
-            keyboard.append([InlineKeyboardButton("✅ Вы уже откликнулись", callback_data="noop")])
+            keyboard.append([InlineKeyboardButton("✅ Вы уже предложениенулись", callback_data="noop")])
         else:
-            keyboard.append([InlineKeyboardButton("💰 Откликнуться", callback_data=f"bid_on_order_{order_id}")])
+            keyboard.append([InlineKeyboardButton("💰 Предложениенуться", callback_data=f"offer_on_order_{campaign_id}")])
         
-        keyboard.append([InlineKeyboardButton("⬅️ К списку заказов", callback_data="worker_view_orders")])
+        keyboard.append([InlineKeyboardButton("⬅️ К списку кампанияов", callback_data="blogger_view_orders")])
 
         # Обновляем фото
         await query.message.edit_media(
@@ -7837,8 +7837,8 @@ async def worker_order_photo_nav(update: Update, context: ContextTypes.DEFAULT_T
 
 # ------- ЛИСТАНИЕ МАСТЕРОВ ДЛЯ КЛИЕНТОВ -------
 
-async def client_browse_workers(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Начало просмотра мастеров - выбор фильтров"""
+async def advertiser_browse_workers(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Начало просмотра блогеров - выбор фильтров"""
     query = update.callback_query
     await query.answer()
     
@@ -7848,21 +7848,21 @@ async def client_browse_workers(update: Update, context: ContextTypes.DEFAULT_TY
     
     keyboard = [
         [InlineKeyboardButton("▶️ Начать просмотр", callback_data="browse_start_now")],
-        [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_client_menu")],
+        [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_advertiser_menu")],
     ]
     
     await query.edit_message_text(
-        "🔍 <b>Поиск мастера</b>\n\n"
-        "Сейчас показываем всех мастеров.\n\n"
+        "🔍 <b>Поиск блогера</b>\n\n"
+        "Сейчас показываем всех блогеров.\n\n"
         "(Фильтры по городу и категориям добавим в следующей версии)\n\n"
-        "Нажмите \"Начать просмотр\" чтобы увидеть карточки мастеров:",
+        "Нажмите \"Начать просмотр\" чтобы увидеть карточки блогеров:",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
 
 async def browse_start_viewing(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Начало просмотра карточек мастеров"""
+    """Начало просмотра карточек блогеров"""
     query = update.callback_query
     await query.answer()
     
@@ -7870,48 +7870,48 @@ async def browse_start_viewing(update: Update, context: ContextTypes.DEFAULT_TYP
     city_filter = context.user_data.get("browse_city")
     category_filter = context.user_data.get("browse_category")
     
-    # Получаем список мастеров
-    workers = db.get_all_workers(city=city_filter, category=category_filter)
+    # Получаем список блогеров
+    bloggers = db.get_all_workers(city=city_filter, category=category_filter)
     
-    if not workers:
+    if not bloggers:
         await query.edit_message_text(
-            "😔 <b>Мастера не найдены</b>\n\n"
-            "Пока ни один мастер не зарегистрировался.\n"
+            "😔 <b>Блогера не найдены</b>\n\n"
+            "Пока ни один блогер не зарегистрировался.\n"
             "Попробуйте зайти позже!",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_client_menu")],
+                [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_advertiser_menu")],
             ])
         )
         return
     
-    # Сохраняем список и индекс текущего мастера
-    context.user_data["workers_list"] = [dict(w) for w in workers]
+    # Сохраняем список и индекс текущего блогера
+    context.user_data["workers_list"] = [dict(w) for w in bloggers]
     context.user_data["current_worker_index"] = 0
     context.user_data["current_photo_index"] = 0
     
-    logger.info(f"Найдено мастеров: {len(workers)}")
+    logger.info(f"Найдено блогеров: {len(bloggers)}")
     
-    # Показываем первого мастера
-    await show_worker_card(query, context, edit=True)
+    # Показываем первого блогера
+    await show_blogger_card(query, context, edit=True)
 
 
-async def show_worker_card(query_or_message, context: ContextTypes.DEFAULT_TYPE, edit=False):
-    """Показывает карточку мастера"""
+async def show_blogger_card(query_or_message, context: ContextTypes.DEFAULT_TYPE, edit=False):
+    """Показывает карточку блогера"""
     
     workers_list = context.user_data.get("workers_list", [])
-    worker_index = context.user_data.get("current_worker_index", 0)
+    blogger_index = context.user_data.get("current_worker_index", 0)
     photo_index = context.user_data.get("current_photo_index", 0)
     
-    if worker_index >= len(workers_list):
-        # Все мастера просмотрены
+    if blogger_index >= len(workers_list):
+        # Все блогера просмотрены
         keyboard = [
             [InlineKeyboardButton("🔄 Начать сначала", callback_data="browse_restart")],
-            [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_client_menu")],
+            [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_advertiser_menu")],
         ]
         
         text = (
-            "✅ <b>Вы просмотрели всех мастеров!</b>\n\n"
+            "✅ <b>Вы просмотрели всех блогеров!</b>\n\n"
             "Можете начать сначала или вернуться в меню."
         )
         
@@ -7929,17 +7929,17 @@ async def show_worker_card(query_or_message, context: ContextTypes.DEFAULT_TYPE,
             )
         return
     
-    worker = workers_list[worker_index]
+    blogger = workers_list[blogger_index]
     
     # Формируем текст карточки
-    name = worker.get("name", "Без имени")
-    city = worker.get("city", "Не указан")
-    categories = worker.get("categories", "Не указаны")
-    experience = worker.get("experience", "Не указан")
-    description = worker.get("description", "Нет описания")
-    rating = worker.get("rating", 0.0)
-    rating_count = worker.get("rating_count", 0)
-    portfolio_photos = worker.get("portfolio_photos", "")
+    name = blogger.get("name", "Без имени")
+    city = blogger.get("city", "Не указан")
+    categories = blogger.get("categories", "Не указаны")
+    experience = blogger.get("experience", "Не указан")
+    description = blogger.get("description", "Нет описания")
+    rating = blogger.get("rating", 0.0)
+    rating_count = blogger.get("rating_count", 0)
+    portfolio_photos = blogger.get("portfolio_photos", "")
     
     # Обрабатываем фото
     photos_list = [p for p in portfolio_photos.split(",") if p] if portfolio_photos else []
@@ -7970,20 +7970,20 @@ async def show_worker_card(query_or_message, context: ContextTypes.DEFAULT_TYPE,
         if photo_nav:
             keyboard.append(photo_nav)
     
-    # Действия с мастером
+    # Действия с блогером
     keyboard.append([
-        InlineKeyboardButton("💬 Написать", url=f"tg://user?id={worker.get('telegram_id')}")
+        InlineKeyboardButton("💬 Написать", url=f"tg://user?id={blogger.get('telegram_id')}")
     ])
     
-    # Навигация по мастерам
+    # Навигация по блогерам
     nav_buttons = []
-    if worker_index < len(workers_list) - 1:
-        nav_buttons.append(InlineKeyboardButton("➡️ Следующий мастер", callback_data="browse_next_worker"))
+    if blogger_index < len(workers_list) - 1:
+        nav_buttons.append(InlineKeyboardButton("➡️ Следующий блогер", callback_data="browse_next_worker"))
     
     if nav_buttons:
         keyboard.append(nav_buttons)
     
-    keyboard.append([InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_client_menu")])
+    keyboard.append([InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_advertiser_menu")])
     
     # Отправляем карточку
     if photos_list:
@@ -8028,95 +8028,95 @@ async def show_worker_card(query_or_message, context: ContextTypes.DEFAULT_TYPE,
 
 
 async def browse_next_worker(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Переключение на следующего мастера"""
+    """Переключение на следующего блогера"""
     query = update.callback_query
     await query.answer()
     
     context.user_data["current_worker_index"] = context.user_data.get("current_worker_index", 0) + 1
     context.user_data["current_photo_index"] = 0  # Сбрасываем индекс фото
     
-    await show_worker_card(query, context, edit=True)
+    await show_blogger_card(query, context, edit=True)
 
 
 async def browse_photo_prev(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Предыдущее фото мастера"""
+    """Предыдущее фото блогера"""
     query = update.callback_query
     await query.answer()
     
     context.user_data["current_photo_index"] = max(0, context.user_data.get("current_photo_index", 0) - 1)
     
-    await show_worker_card(query, context, edit=True)
+    await show_blogger_card(query, context, edit=True)
 
 
 async def browse_photo_next(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Следующее фото мастера"""
+    """Следующее фото блогера"""
     query = update.callback_query
     await query.answer()
     
     workers_list = context.user_data.get("workers_list", [])
-    worker_index = context.user_data.get("current_worker_index", 0)
+    blogger_index = context.user_data.get("current_worker_index", 0)
     
-    if worker_index < len(workers_list):
-        worker = workers_list[worker_index]
-        photos_list = [p for p in worker.get("portfolio_photos", "").split(",") if p]
+    if blogger_index < len(workers_list):
+        blogger = workers_list[blogger_index]
+        photos_list = [p for p in blogger.get("portfolio_photos", "").split(",") if p]
         
         current_photo_index = context.user_data.get("current_photo_index", 0)
         context.user_data["current_photo_index"] = min(len(photos_list) - 1, current_photo_index + 1)
     
-    await show_worker_card(query, context, edit=True)
+    await show_blogger_card(query, context, edit=True)
 
 
 async def browse_restart(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Начать просмотр мастеров сначала"""
+    """Начать просмотр блогеров сначала"""
     query = update.callback_query
     await query.answer()
     
     context.user_data["current_worker_index"] = 0
     context.user_data["current_photo_index"] = 0
     
-    await show_worker_card(query, context, edit=True)
+    await show_blogger_card(query, context, edit=True)
 
 
 # ------- ОТКЛИКИ МАСТЕРОВ НА ЗАКАЗЫ -------
 
-async def worker_bid_on_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Начало создания отклика - выбор валюты"""
+async def blogger_bid_on_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Начало создания предложениеа - выбор валюты"""
     query = update.callback_query
     await query.answer()
 
-    # Извлекаем order_id
-    order_id = int(query.data.replace("bid_on_order_", ""))
-    context.user_data['bid_order_id'] = order_id
+    # Извлекаем campaign_id
+    campaign_id = int(query.data.replace("offer_on_order_", ""))
+    context.user_data['offer_order_id'] = campaign_id
 
-    # Проверяем не откликался ли уже
+    # Проверяем не предложениеался ли уже
     user = db.get_user(query.from_user.id)
     user_dict = dict(user) if user else {}
-    worker_profile = db.get_worker_profile(user_dict.get("id"))
+    blogger_profile = db.get_worker_profile(user_dict.get("id"))
 
-    if not worker_profile:
-        await query.answer("Ошибка: профиль мастера не найден", show_alert=True)
+    if not blogger_profile:
+        await query.answer("Ошибка: профиль блогера не найден", show_alert=True)
         return ConversationHandler.END
 
-    profile_dict = dict(worker_profile)
-    worker_id = profile_dict.get("id")
+    profile_dict = dict(blogger_profile)
+    blogger_id = profile_dict.get("id")
 
-    # ПРОВЕРКА: Мастер не может откликаться на свой заказ
-    order = db.get_order_by_id(order_id)
-    if order:
-        order_dict = dict(order)
-        client = db.get_client_by_id(order_dict['client_id'])
-        if client:
-            client_dict = dict(client)
-            if client_dict['user_id'] == user_dict.get("id"):
-                await query.answer("❌ Вы не можете откликнуться на свой заказ!", show_alert=True)
+    # ПРОВЕРКА: Блогер не может предложениеаться на свой кампания
+    campaign = db.get_order_by_id(campaign_id)
+    if campaign:
+        campaign_dict = dict(campaign)
+        advertiser = db.get_client_by_id(campaign_dict['advertiser_id'])
+        if advertiser:
+            advertiser_dict = dict(advertiser)
+            if advertiser_dict['user_id'] == user_dict.get("id"):
+                await query.answer("❌ Вы не можете предложениенуться на свой кампания!", show_alert=True)
                 return ConversationHandler.END
 
-    if db.check_worker_bid_exists(order_id, worker_id):
-        await query.answer("Вы уже откликнулись на этот заказ!", show_alert=True)
+    if db.check_worker_bid_exists(campaign_id, blogger_id):
+        await query.answer("Вы уже предложениенулись на этот кампания!", show_alert=True)
         return ConversationHandler.END
 
     text = (
-        "💰 <b>Ваш отклик на заказ</b>\n\n"
+        "💰 <b>Ваш предложение на кампания</b>\n\n"
         "⚠️ <b>ВНИМАНИЕ:</b> Цену изменить будет НЕЛЬЗЯ!\n\n"
         "💵 Сначала выберите валюту, в которой будете указывать цену:"
     )
@@ -8124,11 +8124,11 @@ async def worker_bid_on_order(update: Update, context: ContextTypes.DEFAULT_TYPE
     # Выбор валюты
     keyboard = [
         [
-            InlineKeyboardButton("BYN (₽)", callback_data="bid_currency_BYN"),
-            InlineKeyboardButton("USD ($)", callback_data="bid_currency_USD"),
+            InlineKeyboardButton("BYN (₽)", callback_data="offer_currency_BYN"),
+            InlineKeyboardButton("USD ($)", callback_data="offer_currency_USD"),
         ],
         [
-            InlineKeyboardButton("EUR (€)", callback_data="bid_currency_EUR"),
+            InlineKeyboardButton("EUR (€)", callback_data="offer_currency_EUR"),
         ],
         [InlineKeyboardButton("❌ Отмена", callback_data="cancel_bid")],
     ]
@@ -8148,10 +8148,10 @@ async def worker_bid_on_order(update: Update, context: ContextTypes.DEFAULT_TYPE
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-    return BID_SELECT_CURRENCY
+    return OFFER_SELECT_CURRENCY
 
 
-async def worker_bid_enter_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_bid_enter_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка ввода цены - переход к комментарию"""
     price_text = update.message.text.strip()
 
@@ -8161,16 +8161,16 @@ async def worker_bid_enter_price(update: Update, context: ContextTypes.DEFAULT_T
         if price <= 0:
             raise ValueError
     except:
-        currency = context.user_data.get('bid_currency', 'BYN')
+        currency = context.user_data.get('offer_currency', 'BYN')
         await update.message.reply_text(
             f"❌ Пожалуйста, введите корректную цену в {currency} (только число).\n\n"
             "Например: <code>150</code> или <code>99.50</code>",
             parse_mode="HTML"
         )
-        return BID_ENTER_PRICE
+        return OFFER_ENTER_PRICE
 
-    context.user_data['bid_price'] = price
-    currency = context.user_data.get('bid_currency', 'BYN')
+    context.user_data['offer_price'] = price
+    currency = context.user_data.get('offer_currency', 'BYN')
 
     # Спрашиваем срок готовности
     keyboard = [
@@ -8197,16 +8197,16 @@ async def worker_bid_enter_price(update: Update, context: ContextTypes.DEFAULT_T
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-    return BID_SELECT_READY_DAYS
+    return OFFER_SELECT_READY_DAYS
 
 
-async def worker_bid_select_currency(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_bid_select_currency(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора валюты - переход к вводу цены"""
     query = update.callback_query
     await query.answer()
 
-    currency = query.data.replace("bid_currency_", "")
-    context.user_data['bid_currency'] = currency
+    currency = query.data.replace("offer_currency_", "")
+    context.user_data['offer_currency'] = currency
 
     # Получаем символ валюты для отображения
     currency_symbols = {
@@ -8242,17 +8242,17 @@ async def worker_bid_select_currency(update: Update, context: ContextTypes.DEFAU
             reply_markup=keyboard
         )
 
-    return BID_ENTER_PRICE
+    return OFFER_ENTER_PRICE
 
 
-async def worker_bid_select_ready_days(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_bid_select_ready_days(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора срока готовности - переход к комментарию"""
     query = update.callback_query
     await query.answer()
 
     # Извлекаем количество дней из callback_data
     ready_days = int(query.data.replace("ready_days_", ""))
-    context.user_data['bid_ready_days'] = ready_days
+    context.user_data['offer_ready_days'] = ready_days
 
     # Формируем текст для отображения срока
     if ready_days == 0:
@@ -8270,14 +8270,14 @@ async def worker_bid_select_ready_days(update: Update, context: ContextTypes.DEF
     else:
         ready_text = f"Через {ready_days} дн."
 
-    price = context.user_data['bid_price']
-    currency = context.user_data['bid_currency']
+    price = context.user_data['offer_price']
+    currency = context.user_data['offer_currency']
 
     # Спрашиваем комментарий
     await query.edit_message_text(
         f"💰 Ваша цена: <b>{price} {currency}</b>\n"
         f"⏱ Срок: <b>{ready_text}</b>\n\n"
-        "📝 Хотите добавить комментарий к отклику?\n\n"
+        "📝 Хотите добавить комментарий к предложениеу?\n\n"
         "💡 <b>Это ваш шанс выделиться!</b> Расскажите:\n"
         "✓ Почему именно такая цена (материалы, сложность работ)\n"
         "✓ Что входит в стоимость, а что оплачивается отдельно\n"
@@ -8289,43 +8289,43 @@ async def worker_bid_select_ready_days(update: Update, context: ContextTypes.DEF
         "Напишите комментарий или нажмите «Пропустить»:",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup([[
-            InlineKeyboardButton("⏭ Пропустить", callback_data="bid_skip_comment"),
+            InlineKeyboardButton("⏭ Пропустить", callback_data="offer_skip_comment"),
             InlineKeyboardButton("❌ Отмена", callback_data="cancel_bid")
         ]])
     )
 
-    return BID_ENTER_COMMENT
+    return OFFER_ENTER_COMMENT
 
 
-async def worker_bid_enter_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_bid_enter_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка ввода комментария"""
     comment = update.message.text.strip()
-    context.user_data['bid_comment'] = comment
+    context.user_data['offer_comment'] = comment
 
-    return await worker_bid_publish(update, context)
+    return await blogger_bid_publish(update, context)
 
 
-async def worker_bid_skip_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_bid_skip_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Пропуск комментария"""
     query = update.callback_query
     await query.answer()
     
-    context.user_data['bid_comment'] = ""
+    context.user_data['offer_comment'] = ""
     
-    return await worker_bid_publish(update, context)
+    return await blogger_bid_publish(update, context)
 
 
-async def worker_bid_publish(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Публикация отклика"""
+async def blogger_bid_publish(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Публикация предложениеа"""
     try:
         # Получаем данные
-        order_id = context.user_data['bid_order_id']
-        price = context.user_data['bid_price']
-        currency = context.user_data['bid_currency']
-        comment = context.user_data.get('bid_comment', '')
-        ready_in_days = context.user_data.get('bid_ready_days', 7)
+        campaign_id = context.user_data['offer_order_id']
+        price = context.user_data['offer_price']
+        currency = context.user_data['offer_currency']
+        comment = context.user_data.get('offer_comment', '')
+        ready_in_days = context.user_data.get('offer_ready_days', 7)
 
-        # Получаем worker_id
+        # Получаем blogger_id
         if update.callback_query:
             telegram_id = update.callback_query.from_user.id
             message = update.callback_query.message
@@ -8335,14 +8335,14 @@ async def worker_bid_publish(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         user = db.get_user(telegram_id)
         user_dict = dict(user)
-        worker_profile = db.get_worker_profile(user_dict["id"])
-        worker_profile_dict = dict(worker_profile)
+        blogger_profile = db.get_worker_profile(user_dict["id"])
+        blogger_profile_dict = dict(blogger_profile)
 
-        # Создаём отклик (может вызвать ValueError при rate limiting)
+        # Создаём предложение (может вызвать ValueError при rate limiting)
         try:
-            bid_id = db.create_bid(
-                order_id=order_id,
-                worker_id=worker_profile_dict["id"],
+            offer_id = db.create_bid(
+                campaign_id=campaign_id,
+                blogger_id=blogger_profile_dict["id"],
                 proposed_price=price,
                 currency=currency,
                 comment=comment,
@@ -8358,46 +8358,46 @@ async def worker_bid_publish(update: Update, context: ContextTypes.DEFAULT_TYPE)
             await message.reply_text(
                 str(e),
                 reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton("⬅️ Назад", callback_data="worker_view_orders")
+                    InlineKeyboardButton("⬅️ Назад", callback_data="blogger_view_orders")
                 ]])
             )
             context.user_data.clear()
             return ConversationHandler.END
 
-        logger.info(f"✅ Отклик #{bid_id} создан мастером {worker_profile_dict['id']} на заказ {order_id}")
+        logger.info(f"✅ Предложение #{offer_id} создан блогером {blogger_profile_dict['id']} на кампания {campaign_id}")
 
         # Отправляем уведомление клиенту
-        order = db.get_order_by_id(order_id)
-        if order:
+        campaign = db.get_order_by_id(campaign_id)
+        if campaign:
             # Получаем telegram_id клиента
-            client = db.get_client_by_id(order['client_id'])
-            client_user = db.get_user_by_id(client['user_id'])
+            advertiser = db.get_client_by_id(campaign['advertiser_id'])
+            advertiser_user = db.get_user_by_id(advertiser['user_id'])
 
-            worker_name = worker_profile_dict.get('name', 'Мастер')
+            blogger_name = blogger_profile_dict.get('name', 'Блогер')
 
             # Используем новую функцию уведомления
             await notify_client_new_bid(
                 context,
-                client_user['telegram_id'],
-                client_user['id'],  # client_user_id для системы уведомлений
-                order_id,
-                worker_name,
+                advertiser_user['telegram_id'],
+                advertiser_user['id'],  # advertiser_user_id для системы уведомлений
+                campaign_id,
+                blogger_name,
                 price,
                 currency
             )
         
-        # ИСПРАВЛЕНО: Добавлена кнопка "Мои отклики" для быстрого доступа к своим откликам
+        # ИСПРАВЛЕНО: Добавлена кнопка "Мои предложениеи" для быстрого доступа к своим предложениеам
         keyboard = [
-            [InlineKeyboardButton("💼 Мои отклики", callback_data="worker_my_bids")],
-            [InlineKeyboardButton("📋 К доступным заказам", callback_data="worker_view_orders")],
+            [InlineKeyboardButton("💼 Мои предложениеи", callback_data="blogger_my_bids")],
+            [InlineKeyboardButton("📋 К доступным кампанияам", callback_data="blogger_view_orders")],
         ]
 
         await message.reply_text(
-            "✅ <b>Отклик отправлен!</b>\n\n"
+            "✅ <b>Предложение отправлен!</b>\n\n"
             f"💰 Ваша цена: {price} {currency}\n"
             f"📝 Комментарий: {comment if comment else 'Нет'}\n\n"
-            "Клиент увидит ваш отклик и сможет с вами связаться!\n\n"
-            "💡 Вы можете посмотреть свои отклики в разделе \"💼 Мои отклики\"",
+            "Клиент увидит ваш предложение и сможет с вами связаться!\n\n"
+            "💡 Вы можете посмотреть свои предложениеи в разделе \"💼 Мои предложениеи\"",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
@@ -8406,7 +8406,7 @@ async def worker_bid_publish(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return ConversationHandler.END
         
     except Exception as e:
-        logger.error(f"Ошибка создания отклика: {e}", exc_info=True)
+        logger.error(f"Ошибка создания предложениеа: {e}", exc_info=True)
 
         if update.callback_query:
             message = update.callback_query.message
@@ -8414,25 +8414,25 @@ async def worker_bid_publish(update: Update, context: ContextTypes.DEFAULT_TYPE)
             message = update.message
             
         await message.reply_text(
-            "❌ Произошла ошибка при создании отклика.\n\nПопробуйте позже.",
+            "❌ Произошла ошибка при создании предложениеа.\n\nПопробуйте позже.",
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("⬅️ Назад", callback_data="worker_view_orders")
+                InlineKeyboardButton("⬅️ Назад", callback_data="blogger_view_orders")
             ]])
         )
         context.user_data.clear()
         return ConversationHandler.END
 
 
-async def worker_bid_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Отмена создания отклика"""
+async def blogger_bid_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Отмена создания предложениеа"""
     query = update.callback_query
     await query.answer()
 
     await safe_edit_message(
         query,
-        "❌ Создание отклика отменено.",
+        "❌ Создание предложениеа отменено.",
         reply_markup=InlineKeyboardMarkup([[
-            InlineKeyboardButton("📋 К доступным заказам", callback_data="worker_view_orders")
+            InlineKeyboardButton("📋 К доступным кампанияам", callback_data="blogger_view_orders")
         ]])
     )
 
@@ -8457,37 +8457,37 @@ async def go_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_dict = dict(user)
     user_id = user_dict["id"]
     
-    # Проверяем есть ли профиль мастера
-    worker_profile = db.get_worker_profile(user_id)
+    # Проверяем есть ли профиль блогера
+    blogger_profile = db.get_worker_profile(user_id)
     # Проверяем есть ли профиль клиента
-    client_profile = db.get_client_profile(user_id)
+    advertiser_profile = db.get_client_profile(user_id)
     
-    has_worker = worker_profile is not None
-    has_client = client_profile is not None
+    has_worker = blogger_profile is not None
+    has_client = advertiser_profile is not None
     
     keyboard = []
     
     if has_worker:
-        keyboard.append([InlineKeyboardButton("🧰 Меню мастера", callback_data="show_worker_menu")])
+        keyboard.append([InlineKeyboardButton("🧰 Меню блогера", callback_data="show_blogger_menu")])
     
     if has_client:
-        keyboard.append([InlineKeyboardButton("🏠 Меню заказчика", callback_data="show_client_menu")])
+        keyboard.append([InlineKeyboardButton("🏠 Меню рекламодательа", callback_data="show_advertiser_menu")])
     
     # Кнопка для создания второго профиля
     if not has_worker:
-        keyboard.append([InlineKeyboardButton("➕ Стать мастером", callback_data="role_worker")])
+        keyboard.append([InlineKeyboardButton("➕ Стать блогером", callback_data="role_worker")])
     
     if not has_client:
-        keyboard.append([InlineKeyboardButton("➕ Стать заказчиком", callback_data="role_client")])
+        keyboard.append([InlineKeyboardButton("➕ Стать рекламодательом", callback_data="role_client")])
     
     message = "🏠 <b>Главное меню</b>\n\n"
     
     if has_worker and has_client:
         message += "У вас есть оба профиля.\nВыберите какой использовать:"
     elif has_worker:
-        message += "Вы зарегистрированы как мастер.\n\nХотите также стать заказчиком?"
+        message += "Вы зарегистрированы как блогер.\n\nХотите также стать рекламодательом?"
     elif has_client:
-        message += "Вы зарегистрированы как заказчик.\n\nХотите также стать мастером?"
+        message += "Вы зарегистрированы как рекламодатель.\n\nХотите также стать блогером?"
 
     # Удаляем старое сообщение и отправляем новое
     try:
@@ -8504,41 +8504,41 @@ async def go_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def add_second_role_worker(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Добавление роли мастера к существующему аккаунту"""
+    """Добавление роли блогера к существующему аккаунту"""
     query = update.callback_query
     await query.answer()
     
-    # Запускаем регистрацию мастера
+    # Запускаем регистрацию блогера
     await query.edit_message_text(
-        "🧰 <b>Регистрация мастера</b>\n\n"
+        "🧰 <b>Регистрация блогера</b>\n\n"
         "Как вас зовут? Введите ваше имя:",
         parse_mode="HTML"
     )
     
-    # Переходим в состояние ввода имени мастера
-    return REGISTER_MASTER_NAME
+    # Переходим в состояние ввода имени блогера
+    return REGISTER_BLOGGER_NAME
 
 
 async def add_second_role_client(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Добавление роли заказчика к существующему аккаунту"""
+    """Добавление роли рекламодательа к существующему аккаунту"""
     query = update.callback_query
     await query.answer()
     
-    # Запускаем регистрацию заказчика
+    # Запускаем регистрацию рекламодательа
     await query.edit_message_text(
-        "🏠 <b>Регистрация заказчика</b>\n\n"
+        "🏠 <b>Регистрация рекламодательа</b>\n\n"
         "Как вас зовут? Введите ваше имя:",
         parse_mode="HTML"
     )
     
     # Переходим в состояние ввода имени клиента
-    return REGISTER_CLIENT_NAME
+    return REGISTER_ADVERTISER_NAME
 
 
 # ------- СОЗДАНИЕ ЗАКАЗА -------
 
-async def client_create_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Начало создания заказа - выбор региона"""
+async def advertiser_create_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Начало создания кампанияа - выбор региона"""
     query = update.callback_query
     await query.answer()
 
@@ -8548,13 +8548,13 @@ async def client_create_order(update: Update, context: ContextTypes.DEFAULT_TYPE
         await query.edit_message_text("Ошибка: пользователь не найден")
         return ConversationHandler.END
 
-    client_profile = db.get_client_profile(user["id"])
-    if not client_profile:
+    advertiser_profile = db.get_client_profile(user["id"])
+    if not advertiser_profile:
         await query.edit_message_text("Ошибка: профиль клиента не найден")
         return ConversationHandler.END
 
-    # Сохраняем client_id
-    context.user_data["order_client_id"] = client_profile["id"]
+    # Сохраняем advertiser_id
+    context.user_data["campaign_client_id"] = advertiser_profile["id"]
 
     # Показываем регионы Беларуси
     keyboard = []
@@ -8565,16 +8565,16 @@ async def client_create_order(update: Update, context: ContextTypes.DEFAULT_TYPE
         )])
 
     await query.edit_message_text(
-        "📝 <b>Создание заказа</b>\n\n"
+        "📝 <b>Создание кампанияа</b>\n\n"
         "🏙 <b>Шаг 1:</b> Где нужна работа? Выберите регион или город:",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
-    return CREATE_ORDER_REGION_SELECT
+    return CREATE_CAMPAIGN_REGION_SELECT
 
 
-async def create_order_region_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка выбора региона для заказа"""
+async def create_campaign_region_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка выбора региона для кампанияа"""
     query = update.callback_query
     await query.answer()
 
@@ -8583,24 +8583,24 @@ async def create_order_region_select(update: Update, context: ContextTypes.DEFAU
 
     if not region_data:
         await query.edit_message_text("❌ Ошибка выбора региона. Попробуйте снова.")
-        return CREATE_ORDER_REGION_SELECT
+        return CREATE_CAMPAIGN_REGION_SELECT
 
-    context.user_data["order_region"] = region
+    context.user_data["campaign_region"] = region
 
     # Если выбран Минск или "Вся Беларусь" - сохраняем и переходим к выбору категорий
     if region_data["type"] in ["city", "country"]:
-        context.user_data["order_city"] = region
+        context.user_data["campaign_city"] = region
 
         # Переходим к выбору категорий
         keyboard = []
         for cat_id, category_data in WORK_CATEGORIES.items():
             keyboard.append([InlineKeyboardButton(
                 category_data["name"],
-                callback_data=f"order_maincat_{cat_id}"
+                callback_data=f"campaign_maincat_{cat_id}"
             )])
 
         # Добавляем кнопку "Назад"
-        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_order_back_to_region")])
+        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_campaign_back_to_region")])
 
         await query.edit_message_text(
             f"🏙 Город: {region_data['display']}\n\n"
@@ -8608,7 +8608,7 @@ async def create_order_region_select(update: Update, context: ContextTypes.DEFAU
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-        return CREATE_ORDER_MAIN_CATEGORY
+        return CREATE_CAMPAIGN_MAIN_CATEGORY
 
     # Если выбрана область - показываем города
     else:
@@ -8625,8 +8625,8 @@ async def create_order_region_select(update: Update, context: ContextTypes.DEFAU
 
         # Добавляем кнопку "Другой город в области"
         # ЛОГИКА "ДРУГОЙ ГОРОД":
-        # - Заказчик может указать любой город, не входящий в основной список
-        # - Мастера, работающие в этом городе, увидят заказ
+        # - Рекламодатель может указать любой город, не входящий в основной список
+        # - Блогера, работающие в этом городе, увидят кампания
         # - Это полезно для небольших городов и посёлков
         keyboard.append([InlineKeyboardButton(
             f"📍 Другой город в области",
@@ -8634,7 +8634,7 @@ async def create_order_region_select(update: Update, context: ContextTypes.DEFAU
         )])
 
         # Добавляем кнопку "Назад"
-        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_order_back_to_region")])
+        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_campaign_back_to_region")])
 
         await query.edit_message_text(
             f"📍 Область: {region_data['display']}\n\n"
@@ -8642,11 +8642,11 @@ async def create_order_region_select(update: Update, context: ContextTypes.DEFAU
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-        return CREATE_ORDER_CITY
+        return CREATE_CAMPAIGN_CITY
 
 
-async def create_order_city_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка выбора города для заказа"""
+async def create_campaign_city_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка выбора города для кампанияа"""
     query = update.callback_query
     await query.answer()
 
@@ -8656,20 +8656,20 @@ async def create_order_city_select(update: Update, context: ContextTypes.DEFAULT
         await query.edit_message_text(
             "🏙 Напишите название города:"
         )
-        return CREATE_ORDER_CITY
+        return CREATE_CAMPAIGN_CITY
     else:
-        context.user_data["order_city"] = city
+        context.user_data["campaign_city"] = city
 
         # Переходим к выбору основной категории
         keyboard = []
         for cat_id, category_data in WORK_CATEGORIES.items():
             keyboard.append([InlineKeyboardButton(
                 category_data["name"],
-                callback_data=f"order_maincat_{cat_id}"
+                callback_data=f"campaign_maincat_{cat_id}"
             )])
 
         # Добавляем кнопку "Назад"
-        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_order_back_to_city")])
+        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_campaign_back_to_city")])
 
         await query.edit_message_text(
             f"🏙 Город: <b>{city}</b>\n\n"
@@ -8677,17 +8677,17 @@ async def create_order_city_select(update: Update, context: ContextTypes.DEFAULT
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-        return CREATE_ORDER_MAIN_CATEGORY
+        return CREATE_CAMPAIGN_MAIN_CATEGORY
 
 
-async def create_order_main_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка выбора основной категории для заказа"""
+async def create_campaign_main_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка выбора основной категории для кампанияа"""
     query = update.callback_query
     await query.answer()
 
-    cat_id = query.data.replace("order_maincat_", "")
+    cat_id = query.data.replace("campaign_maincat_", "")
     category_name = WORK_CATEGORIES[cat_id]["name"]
-    context.user_data["order_main_category"] = cat_id
+    context.user_data["campaign_main_category"] = cat_id
 
     # Получаем подкатегории для выбранной категории
     subcategories = WORK_CATEGORIES[cat_id]["subcategories"]
@@ -8696,7 +8696,7 @@ async def create_order_main_category(update: Update, context: ContextTypes.DEFAU
     keyboard = []
     row = []
     for idx, subcat in enumerate(subcategories):
-        row.append(InlineKeyboardButton(subcat, callback_data=f"order_subcat_{cat_id}:{idx}"))
+        row.append(InlineKeyboardButton(subcat, callback_data=f"campaign_subcat_{cat_id}:{idx}"))
         if len(row) == 2:
             keyboard.append(row)
             row = []
@@ -8704,42 +8704,42 @@ async def create_order_main_category(update: Update, context: ContextTypes.DEFAU
         keyboard.append(row)
 
     # Добавляем кнопку "Назад"
-    keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_order_back_to_maincat")])
+    keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_campaign_back_to_maincat")])
 
-    city = context.user_data.get("order_city", "")
+    city = context.user_data.get("campaign_city", "")
     emoji = WORK_CATEGORIES[cat_id]["emoji"]
 
     await query.edit_message_text(
         f"🏙 Город: {city}\n"
         f"{emoji} Категория: {category_name}\n\n"
         "🔧 <b>Шаг 3:</b> Выберите подкатегорию работ:\n\n"
-        "Выберите одну подкатегорию, которая наиболее точно описывает ваш заказ.",
+        "Выберите одну подкатегорию, которая наиболее точно описывает ваш кампания.",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
-    return CREATE_ORDER_SUBCATEGORY_SELECT
+    return CREATE_CAMPAIGN_SUBCATEGORY_SELECT
 
 
-async def create_order_subcategory_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка выбора подкатегории для заказа"""
+async def create_campaign_subcategory_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка выбора подкатегории для кампанияа"""
     query = update.callback_query
     await query.answer()
 
     # Парсим cat_id:index из callback_data
-    selected = query.data.replace("order_subcat_", "")
+    selected = query.data.replace("campaign_subcat_", "")
     cat_id, idx_str = selected.split(":")
     idx = int(idx_str)
     subcategory = WORK_CATEGORIES[cat_id]["subcategories"][idx]
 
-    context.user_data["order_category"] = subcategory
+    context.user_data["campaign_category"] = subcategory
 
     # Переходим к описанию
     main_category_name = WORK_CATEGORIES[cat_id]["name"]
     await query.edit_message_text(
-        f"Город: <b>{context.user_data['order_city']}</b>\n"
+        f"Город: <b>{context.user_data['campaign_city']}</b>\n"
         f"Категория: <b>{main_category_name} → {subcategory}</b>\n\n"
         "📝 <b>Шаг 4:</b> Опишите что нужно сделать\n\n"
-        "💡 <b>Важно!</b> Мастера будут предлагать свою цену за услуги, поэтому укажите:\n"
+        "💡 <b>Важно!</b> Блогера будут предлагать свою цену за услуги, поэтому укажите:\n"
         "✓ Объём работ (сколько розеток, метраж, количество)\n"
         "✓ Размеры и особенности (толщина стен, высота потолков)\n"
         "✓ Материалы (есть свои или нужна закупка)\n"
@@ -8751,51 +8751,51 @@ async def create_order_subcategory_select(update: Update, context: ContextTypes.
         "Чем точнее описание - тем точнее цена и меньше недопониманий!",
         parse_mode="HTML"
     )
-    return CREATE_ORDER_DESCRIPTION
+    return CREATE_CAMPAIGN_DESCRIPTION
 
 
 
 
-async def create_order_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка описания заказа"""
+async def create_campaign_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка описания кампанияа"""
     description = update.message.text.strip()
     
     if len(description) < 10:
         await update.message.reply_text(
             "⚠️ Опишите подробнее (минимум 10 символов)"
         )
-        return CREATE_ORDER_DESCRIPTION
+        return CREATE_CAMPAIGN_DESCRIPTION
     
-    context.user_data["order_description"] = description
+    context.user_data["campaign_description"] = description
 
     # Предлагаем загрузить фото и видео
-    keyboard = [[InlineKeyboardButton("⏭ Пропустить", callback_data="order_skip_photos")]]
+    keyboard = [[InlineKeyboardButton("⏭ Пропустить", callback_data="campaign_skip_photos")]]
 
     await update.message.reply_text(
         "📸 <b>Шаг 4:</b> Загрузите фото или видео объекта\n\n"
         "📷 Фото: до 10 штук\n"
         "🎥 Видео: до 3 штук (макс. 50 МБ каждое)\n\n"
-        "Фото и видео помогут мастеру точнее оценить работу и сделать правильное предложение.\n\n"
+        "Фото и видео помогут блогеру точнее оценить работу и сделать правильное предложение.\n\n"
         "Когда закончите загрузку, отправьте команду /done или нажмите кнопку ниже.",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-    context.user_data["order_photos"] = []
-    context.user_data["order_videos"] = []
-    return CREATE_ORDER_PHOTOS
+    context.user_data["campaign_photos"] = []
+    context.user_data["campaign_videos"] = []
+    return CREATE_CAMPAIGN_PHOTOS
 
 
-async def create_order_photo_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка загрузки фото и видео для заказа"""
+async def create_campaign_photo_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка загрузки фото и видео для кампанияа"""
 
-    if "order_photos" not in context.user_data:
-        context.user_data["order_photos"] = []
-    if "order_videos" not in context.user_data:
-        context.user_data["order_videos"] = []
+    if "campaign_photos" not in context.user_data:
+        context.user_data["campaign_photos"] = []
+    if "campaign_videos" not in context.user_data:
+        context.user_data["campaign_videos"] = []
 
-    photos = context.user_data["order_photos"]
-    videos = context.user_data["order_videos"]
+    photos = context.user_data["campaign_photos"]
+    videos = context.user_data["campaign_videos"]
 
     # Обработка фото
     if update.message.photo:
@@ -8803,27 +8803,27 @@ async def create_order_photo_upload(update: Update, context: ContextTypes.DEFAUL
             await update.message.reply_text(
                 "⚠️ Максимум 10 фото.\n\nМожете добавить видео или завершить командой /done"
             )
-            return CREATE_ORDER_PHOTOS
+            return CREATE_CAMPAIGN_PHOTOS
 
         # Получаем file_id
         file_id = update.message.photo[-1].file_id
 
         # КРИТИЧНО: Валидация file_id
         if not validate_file_id(file_id):
-            logger.error(f"❌ Невалидный file_id при загрузке фото заказа: {file_id}")
-            keyboard = [[InlineKeyboardButton("✅ Завершить и опубликовать", callback_data="order_publish")]]
+            logger.error(f"❌ Невалидный file_id при загрузке фото кампанияа: {file_id}")
+            keyboard = [[InlineKeyboardButton("✅ Завершить и опубликовать", callback_data="campaign_publish")]]
             await update.message.reply_text(
                 "❌ Ошибка при обработке фото.\n\n"
                 "Попробуйте отправить фото еще раз или используйте другое изображение.\n\n"
-                "Или завершите создание заказа без этого фото.",
+                "Или завершите создание кампанияа без этого фото.",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
-            return CREATE_ORDER_PHOTOS
+            return CREATE_CAMPAIGN_PHOTOS
 
         # Сохраняем file_id
         photos.append(file_id)
 
-        keyboard = [[InlineKeyboardButton("✅ Завершить и опубликовать", callback_data="order_publish")]]
+        keyboard = [[InlineKeyboardButton("✅ Завершить и опубликовать", callback_data="campaign_publish")]]
 
         await update.message.reply_text(
             f"✅ Фото {len(photos)}/10 добавлено!\n\n"
@@ -8833,7 +8833,7 @@ async def create_order_photo_upload(update: Update, context: ContextTypes.DEFAUL
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-        return CREATE_ORDER_PHOTOS
+        return CREATE_CAMPAIGN_PHOTOS
 
     # Обработка видео
     elif update.message.video:
@@ -8841,7 +8841,7 @@ async def create_order_photo_upload(update: Update, context: ContextTypes.DEFAUL
             await update.message.reply_text(
                 "⚠️ Максимум 3 видео.\n\nМожете добавить фото или завершить командой /done"
             )
-            return CREATE_ORDER_PHOTOS
+            return CREATE_CAMPAIGN_PHOTOS
 
         # Проверка размера видео (50 МБ = 50 * 1024 * 1024 байт)
         video_size = update.message.video.file_size
@@ -8853,27 +8853,27 @@ async def create_order_photo_upload(update: Update, context: ContextTypes.DEFAUL
                 f"Максимальный размер: 50 МБ.\n\n"
                 f"Попробуйте сжать видео или отправьте другое."
             )
-            return CREATE_ORDER_PHOTOS
+            return CREATE_CAMPAIGN_PHOTOS
 
         # Получаем file_id
         file_id = update.message.video.file_id
 
         # КРИТИЧНО: Валидация file_id
         if not validate_file_id(file_id):
-            logger.error(f"❌ Невалидный file_id при загрузке видео заказа: {file_id}")
-            keyboard = [[InlineKeyboardButton("✅ Завершить и опубликовать", callback_data="order_publish")]]
+            logger.error(f"❌ Невалидный file_id при загрузке видео кампанияа: {file_id}")
+            keyboard = [[InlineKeyboardButton("✅ Завершить и опубликовать", callback_data="campaign_publish")]]
             await update.message.reply_text(
                 "❌ Ошибка при обработке видео.\n\n"
                 "Попробуйте отправить видео еще раз или используйте другой файл.\n\n"
-                "Или завершите создание заказа без этого видео.",
+                "Или завершите создание кампанияа без этого видео.",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
-            return CREATE_ORDER_PHOTOS
+            return CREATE_CAMPAIGN_PHOTOS
 
         # Сохраняем file_id
         videos.append(file_id)
 
-        keyboard = [[InlineKeyboardButton("✅ Завершить и опубликовать", callback_data="order_publish")]]
+        keyboard = [[InlineKeyboardButton("✅ Завершить и опубликовать", callback_data="campaign_publish")]]
 
         await update.message.reply_text(
             f"✅ Видео {len(videos)}/3 добавлено!\n\n"
@@ -8883,32 +8883,32 @@ async def create_order_photo_upload(update: Update, context: ContextTypes.DEFAUL
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-        return CREATE_ORDER_PHOTOS
+        return CREATE_CAMPAIGN_PHOTOS
 
-    return CREATE_ORDER_PHOTOS
+    return CREATE_CAMPAIGN_PHOTOS
 
 
-async def create_order_done_uploading(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def create_campaign_done_uploading(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Завершение загрузки фото и видео по команде /done"""
-    return await create_order_publish(update, context)
+    return await create_campaign_publish(update, context)
 
 
-async def create_order_skip_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def create_campaign_skip_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Пропуск загрузки фото и видео"""
     query = update.callback_query
     await query.answer()
 
-    context.user_data["order_photos"] = []
-    context.user_data["order_videos"] = []
+    context.user_data["campaign_photos"] = []
+    context.user_data["campaign_videos"] = []
 
-    return await create_order_publish(update, context)
+    return await create_campaign_publish(update, context)
 
 
 
 
 # ------- ОБРАБОТЧИКИ КНОПОК "НАЗАД" ДЛЯ СОЗДАНИЯ ЗАКАЗА -------
 
-async def create_order_back_to_region(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def create_campaign_back_to_region(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Возврат к выбору региона"""
     query = update.callback_query
     await query.answer()
@@ -8922,31 +8922,31 @@ async def create_order_back_to_region(update: Update, context: ContextTypes.DEFA
         )])
 
     await query.edit_message_text(
-        "📝 <b>Создание заказа</b>\n\n"
+        "📝 <b>Создание кампанияа</b>\n\n"
         "🏙 <b>Шаг 1:</b> Где нужна работа? Выберите регион или город:",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
-    return CREATE_ORDER_REGION_SELECT
+    return CREATE_CAMPAIGN_REGION_SELECT
 
 
-async def create_order_back_to_city(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def create_campaign_back_to_city(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Возврат к выбору города"""
     query = update.callback_query
     await query.answer()
 
-    region = context.user_data.get("order_region")
+    region = context.user_data.get("campaign_region")
     if not region:
         # Если региона нет, возвращаемся к выбору региона
-        return await create_order_back_to_region(update, context)
+        return await create_campaign_back_to_region(update, context)
 
     region_data = BELARUS_REGIONS.get(region)
     if not region_data:
-        return await create_order_back_to_region(update, context)
+        return await create_campaign_back_to_region(update, context)
 
     # Если это был Минск или Вся Беларусь - возвращаемся к выбору региона
     if region_data["type"] in ["city", "country"]:
-        return await create_order_back_to_region(update, context)
+        return await create_campaign_back_to_region(update, context)
 
     # Показываем города области
     cities = region_data.get("cities", [])
@@ -8964,7 +8964,7 @@ async def create_order_back_to_city(update: Update, context: ContextTypes.DEFAUL
         f"📍 Другой город в области",
         callback_data="ordercity_other"
     )])
-    keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_order_back_to_region")])
+    keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_campaign_back_to_region")])
 
     await query.edit_message_text(
         f"📍 Область: {region_data['display']}\n\n"
@@ -8972,24 +8972,24 @@ async def create_order_back_to_city(update: Update, context: ContextTypes.DEFAUL
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
-    return CREATE_ORDER_CITY
+    return CREATE_CAMPAIGN_CITY
 
 
-async def create_order_back_to_maincat(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def create_campaign_back_to_maincat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Возврат к выбору основной категории"""
     query = update.callback_query
     await query.answer()
 
-    city = context.user_data.get("order_city", "")
+    city = context.user_data.get("campaign_city", "")
 
     keyboard = []
     for cat_id, category_data in WORK_CATEGORIES.items():
         keyboard.append([InlineKeyboardButton(
             category_data["name"],
-            callback_data=f"order_maincat_{cat_id}"
+            callback_data=f"campaign_maincat_{cat_id}"
         )])
 
-    keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_order_back_to_city")])
+    keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_campaign_back_to_city")])
 
     await query.edit_message_text(
         f"🏙 Город: <b>{city}</b>\n\n"
@@ -8997,11 +8997,11 @@ async def create_order_back_to_maincat(update: Update, context: ContextTypes.DEF
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
-    return CREATE_ORDER_MAIN_CATEGORY
+    return CREATE_CAMPAIGN_MAIN_CATEGORY
 
 
-async def create_order_city_other(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка ввода города вручную при создании заказа"""
+async def create_campaign_city_other(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка ввода города вручную при создании кампанияа"""
     if update.callback_query:
         # Это callback от кнопки "Другой город"
         await update.callback_query.answer()
@@ -9013,21 +9013,21 @@ async def create_order_city_other(update: Update, context: ContextTypes.DEFAULT_
             "Или нажмите /cancel для отмены.",
             parse_mode="HTML"
         )
-        return CREATE_ORDER_CITY  # Ожидаем текстовое сообщение
+        return CREATE_CAMPAIGN_CITY  # Ожидаем текстовое сообщение
     else:
         # Это текстовое сообщение с названием города
         city = update.message.text.strip()
-        context.user_data["order_city"] = city
+        context.user_data["campaign_city"] = city
 
         # Переходим к выбору категорий
         keyboard = []
         for cat_id, category_data in WORK_CATEGORIES.items():
             keyboard.append([InlineKeyboardButton(
                 category_data["name"],
-                callback_data=f"order_maincat_{cat_id}"
+                callback_data=f"campaign_maincat_{cat_id}"
             )])
 
-        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_order_back_to_city")])
+        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_campaign_back_to_city")])
 
         await update.message.reply_text(
             f"🏙 Город: <b>{city}</b>\n\n"
@@ -9035,13 +9035,13 @@ async def create_order_city_other(update: Update, context: ContextTypes.DEFAULT_
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-        return CREATE_ORDER_MAIN_CATEGORY
+        return CREATE_CAMPAIGN_MAIN_CATEGORY
 
 
 
-async def create_order_publish(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def create_campaign_publish(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    Публикация заказа.
+    Публикация кампанияа.
     ИСПРАВЛЕНО: Валидация обязательных полей перед созданием.
     """
 
@@ -9053,56 +9053,56 @@ async def create_order_publish(update: Update, context: ContextTypes.DEFAULT_TYP
         message = update.message
 
     # КРИТИЧНО: Проверяем наличие всех обязательных полей
-    required_fields = ["order_client_id", "order_city", "order_category", "order_description"]
+    required_fields = ["campaign_client_id", "campaign_city", "campaign_category", "campaign_description"]
     ok, missing = validate_required_fields(context, required_fields)
 
     if not ok:
         logger.error(f"Missing required fields in create_order: {missing}")
         keyboard = [[InlineKeyboardButton("🏠 Главное меню", callback_data="go_main_menu")]]
         await message.reply_text(
-            "❌ Ошибка: недостаточно данных для создания заказа.\n\n"
-            "Пожалуйста, начните создание заказа заново.",
+            "❌ Ошибка: недостаточно данных для создания кампанияа.\n\n"
+            "Пожалуйста, начните создание кампанияа заново.",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
         context.user_data.clear()
         return ConversationHandler.END
 
     try:
-        logger.info("=== Публикация заказа ===")
-        logger.info(f"client_id: {context.user_data.get('order_client_id')}")
-        logger.info(f"city: {context.user_data.get('order_city')}")
-        logger.info(f"category: {context.user_data.get('order_category')}")
-        logger.info(f"description: {context.user_data.get('order_description')}")
-        logger.info(f"photos: {len(context.user_data.get('order_photos', []))}")
-        logger.info(f"videos: {len(context.user_data.get('order_videos', []))}")
+        logger.info("=== Публикация кампанияа ===")
+        logger.info(f"advertiser_id: {context.user_data.get('campaign_client_id')}")
+        logger.info(f"city: {context.user_data.get('campaign_city')}")
+        logger.info(f"category: {context.user_data.get('campaign_category')}")
+        logger.info(f"description: {context.user_data.get('campaign_description')}")
+        logger.info(f"photos: {len(context.user_data.get('campaign_photos', []))}")
+        logger.info(f"videos: {len(context.user_data.get('campaign_videos', []))}")
 
-        # КРИТИЧНО: Валидация file_id перед сохранением заказа
-        order_photos = context.user_data.get("order_photos", [])
-        valid_order_photos = [fid for fid in order_photos if validate_file_id(fid)]
-        if len(valid_order_photos) < len(order_photos):
-            removed_count = len(order_photos) - len(valid_order_photos)
-            logger.warning(f"⚠️ Удалено {removed_count} невалидных file_id из фото заказа")
+        # КРИТИЧНО: Валидация file_id перед сохранением кампанияа
+        campaign_photos = context.user_data.get("campaign_photos", [])
+        valid_order_photos = [fid for fid in campaign_photos if validate_file_id(fid)]
+        if len(valid_order_photos) < len(campaign_photos):
+            removed_count = len(campaign_photos) - len(valid_order_photos)
+            logger.warning(f"⚠️ Удалено {removed_count} невалидных file_id из фото кампанияа")
 
         # Валидация file_id для видео
-        order_videos = context.user_data.get("order_videos", [])
-        valid_order_videos = [fid for fid in order_videos if validate_file_id(fid)]
-        if len(valid_order_videos) < len(order_videos):
-            removed_count = len(order_videos) - len(valid_order_videos)
-            logger.warning(f"⚠️ Удалено {removed_count} невалидных file_id из видео заказа")
+        campaign_videos = context.user_data.get("campaign_videos", [])
+        valid_order_videos = [fid for fid in campaign_videos if validate_file_id(fid)]
+        if len(valid_order_videos) < len(campaign_videos):
+            removed_count = len(campaign_videos) - len(valid_order_videos)
+            logger.warning(f"⚠️ Удалено {removed_count} невалидных file_id из видео кампанияа")
 
-        # Создаём заказ в БД (может вызвать ValueError при rate limiting)
+        # Создаём кампания в БД (может вызвать ValueError при rate limiting)
         try:
-            order_id = db.create_order(
-                client_id=context.user_data["order_client_id"],
-                city=context.user_data["order_city"],
-                categories=context.user_data["order_category"],
-                description=context.user_data["order_description"],
+            campaign_id = db.create_order(
+                advertiser_id=context.user_data["campaign_client_id"],
+                city=context.user_data["campaign_city"],
+                categories=context.user_data["campaign_category"],
+                description=context.user_data["campaign_description"],
                 photos=valid_order_photos,
                 videos=valid_order_videos
             )
         except ValueError as e:
             # Rate limiting error
-            keyboard = [[InlineKeyboardButton("⬅️ В меню", callback_data="show_client_menu")]]
+            keyboard = [[InlineKeyboardButton("⬅️ В меню", callback_data="show_advertiser_menu")]]
             await message.reply_text(
                 str(e),
                 reply_markup=InlineKeyboardMarkup(keyboard)
@@ -9110,53 +9110,53 @@ async def create_order_publish(update: Update, context: ContextTypes.DEFAULT_TYP
             context.user_data.clear()
             return ConversationHandler.END
 
-        logger.info(f"✅ Заказ #{order_id} успешно сохранён в БД!")
+        logger.info(f"✅ Кампания #{campaign_id} успешно сохранён в БД!")
 
         # КРИТИЧНО: Логирование для диагностики уведомлений
-        logger.info(f"🔔 НАЧИНАЮ ОТПРАВКУ УВЕДОМЛЕНИЙ для заказа #{order_id}")
+        logger.info(f"🔔 НАЧИНАЮ ОТПРАВКУ УВЕДОМЛЕНИЙ для кампанияа #{campaign_id}")
 
-        # Получаем созданный заказ для отправки уведомлений
-        order = db.get_order_by_id(order_id)
-        logger.info(f"🔔 Заказ получен из БД: {order is not None}")
-        if order:
-            order_dict = dict(order)
+        # Получаем созданный кампания для отправки уведомлений
+        campaign = db.get_order_by_id(campaign_id)
+        logger.info(f"🔔 Кампания получен из БД: {campaign is not None}")
+        if campaign:
+            campaign_dict = dict(campaign)
 
-            # Находим всех мастеров в нужной категории И городе и отправляем уведомления
-            order_city = context.user_data['order_city']
-            category = context.user_data["order_category"]
+            # Находим всех блогеров в нужной категории И городе и отправляем уведомления
+            campaign_city = context.user_data['campaign_city']
+            category = context.user_data["campaign_category"]
 
-            # ВАЖНО: фильтруем мастеров по городу И категории
-            workers = db.get_all_workers(city=order_city, category=category)
-            logger.info(f"📢 Найдено {len(workers)} мастеров для уведомления (город: {order_city}, категория: {category})")
+            # ВАЖНО: фильтруем блогеров по городу И категории
+            bloggers = db.get_all_workers(city=campaign_city, category=category)
+            logger.info(f"📢 Найдено {len(bloggers)} блогеров для уведомления (город: {campaign_city}, категория: {category})")
 
             notified_count = 0
-            for worker in workers:
-                worker_dict = dict(worker)
+            for blogger in bloggers:
+                blogger_dict = dict(blogger)
 
-                worker_user = db.get_user_by_id(worker_dict['user_id'])
-                if worker_user:
-                    # Проверяем включены ли уведомления у мастера
-                    notifications_enabled = db.are_notifications_enabled(worker_dict['user_id'])
-                    logger.info(f"🔔 Мастер {worker_dict['user_id']}: уведомления {'включены' if notifications_enabled else 'отключены'}")
+                blogger_user = db.get_user_by_id(blogger_dict['user_id'])
+                if blogger_user:
+                    # Проверяем включены ли уведомления у блогера
+                    notifications_enabled = db.are_notifications_enabled(blogger_dict['user_id'])
+                    logger.info(f"🔔 Блогер {blogger_dict['user_id']}: уведомления {'включены' if notifications_enabled else 'отключены'}")
 
                     if notifications_enabled:
                         await notify_worker_new_order(
                             context,
-                            worker_user['telegram_id'],
-                            worker_dict['user_id'],
-                            order_dict
+                            blogger_user['telegram_id'],
+                            blogger_dict['user_id'],
+                            campaign_dict
                         )
                         notified_count += 1
 
-            logger.info(f"✅ Отправлено уведомлений: {notified_count} из {len(workers)} мастеров")
+            logger.info(f"✅ Отправлено уведомлений: {notified_count} из {len(bloggers)} блогеров")
 
-        categories_text = context.user_data["order_category"]
-        photos_count = len(context.user_data.get("order_photos", []))
-        videos_count = len(context.user_data.get("order_videos", []))
+        categories_text = context.user_data["campaign_category"]
+        photos_count = len(context.user_data.get("campaign_photos", []))
+        videos_count = len(context.user_data.get("campaign_videos", []))
 
         keyboard = [
-            [InlineKeyboardButton("📂 Мои заказы", callback_data="client_my_orders")],
-            [InlineKeyboardButton("⬅️ В меню", callback_data="show_client_menu")],
+            [InlineKeyboardButton("📂 Мои кампанияы", callback_data="advertiser_my_orders")],
+            [InlineKeyboardButton("⬅️ В меню", callback_data="show_advertiser_menu")],
         ]
 
         media_info = ""
@@ -9166,12 +9166,12 @@ async def create_order_publish(update: Update, context: ContextTypes.DEFAULT_TYP
             media_info += f"🎥 Видео: {videos_count}\n"
 
         await message.reply_text(
-            "🎉 <b>Заказ опубликован!</b>\n\n"
-            f"📍 Город: {context.user_data['order_city']}\n"
+            "🎉 <b>Кампания опубликован!</b>\n\n"
+            f"📍 Город: {context.user_data['campaign_city']}\n"
             f"🔧 Категории: {categories_text}\n"
             f"{media_info}"
-            f"📝 Описание: {context.user_data['order_description'][:50]}...\n\n"
-            "Мастера получили уведомления о вашем заказе и скоро начнут откликаться!\n"
+            f"📝 Описание: {context.user_data['campaign_description'][:50]}...\n\n"
+            "Блогера получили уведомления о вашем кампанияе и скоро начнут предложениеаться!\n"
             "Вы сможете выбрать лучшего!",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
@@ -9182,12 +9182,12 @@ async def create_order_publish(update: Update, context: ContextTypes.DEFAULT_TYP
         return ConversationHandler.END
         
     except Exception as e:
-        logger.error(f"Ошибка создания заказа: {e}", exc_info=True)
+        logger.error(f"Ошибка создания кампанияа: {e}", exc_info=True)
         
-        keyboard = [[InlineKeyboardButton("⬅️ В меню", callback_data="show_client_menu")]]
+        keyboard = [[InlineKeyboardButton("⬅️ В меню", callback_data="show_advertiser_menu")]]
         
         await message.reply_text(
-            f"❌ Ошибка при создании заказа:\n{str(e)}\n\nПопробуйте ещё раз или обратитесь в поддержку.",
+            f"❌ Ошибка при создании кампанияа:\n{str(e)}\n\nПопробуйте ещё раз или обратитесь в поддержку.",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
         context.user_data.clear()
@@ -9198,41 +9198,41 @@ async def create_order_publish(update: Update, context: ContextTypes.DEFAULT_TYP
 # ЗАВЕРШЕНИЕ ЗАКАЗА И СИСТЕМА ОТЗЫВОВ
 # ============================================
 
-async def client_complete_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def advertiser_complete_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    ИСПРАВЛЕНО: Клиент завершает заказ.
-    Заказ сразу получает статус 'completed', обе стороны могут оставить отзыв.
+    ИСПРАВЛЕНО: Клиент завершает кампания.
+    Кампания сразу получает статус 'completed', обе стороны могут оставить отзыв.
     """
     query = update.callback_query
     await query.answer()
 
-    order_id = int(query.data.replace("complete_order_", ""))
+    campaign_id = int(query.data.replace("complete_campaign_", ""))
 
-    # ИСПРАВЛЕНО: Заказ завершается сразу (не требуется подтверждение от обеих сторон)
-    db.mark_order_completed_by_client(order_id)
+    # ИСПРАВЛЕНО: Кампания завершается сразу (не требуется подтверждение от обеих сторон)
+    db.mark_order_completed_by_client(campaign_id)
 
-    # Получаем информацию о заказе и мастере
-    order = db.get_order_by_id(order_id)
-    worker_info = db.get_worker_info_for_order(order_id)
+    # Получаем информацию о кампанияе и блогере
+    campaign = db.get_order_by_id(campaign_id)
+    blogger_info = db.get_worker_info_for_order(campaign_id)
 
-    if order and worker_info:
-        order_dict = dict(order)
-        worker_dict = dict(worker_info)
+    if campaign and blogger_info:
+        campaign_dict = dict(campaign)
+        blogger_dict = dict(blogger_info)
 
         # Уведомляем клиента
         await query.edit_message_text(
-            "✅ <b>Заказ завершен!</b>\n\n"
-            "Заказ перемещен во вкладку \"Завершенные заказы\".\n\n"
-            "💡 Оставьте отзыв о работе мастера - это поможет другим заказчикам выбрать проверенного специалиста!",
+            "✅ <b>Кампания завершен!</b>\n\n"
+            "Кампания перемещен во вкладку \"Завершенные кампанияы\".\n\n"
+            "💡 Оставьте отзыв о работе блогера - это поможет другим рекламодательам выбрать проверенного специалиста!",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("⭐ Оценить мастера", callback_data=f"leave_review_{order_id}")],
-                [InlineKeyboardButton("📂 Мои заказы", callback_data="client_my_orders")]
+                [InlineKeyboardButton("⭐ Оценить блогера", callback_data=f"leave_review_{campaign_id}")],
+                [InlineKeyboardButton("📂 Мои кампанияы", callback_data="advertiser_my_orders")]
             ])
         )
 
-        # Уведомляем мастера о завершении заказа
-        user_id = worker_dict['user_id']
+        # Уведомляем блогера о завершении кампанияа
+        user_id = blogger_dict['user_id']
         user = db.get_user_by_id(user_id)
         if user:
             user_dict = dict(user)
@@ -9240,68 +9240,68 @@ async def client_complete_order(update: Update, context: ContextTypes.DEFAULT_TY
             try:
                 await context.bot.send_message(
                     chat_id=telegram_id,
-                    text=f"✅ <b>Заказ #{order_id} завершен!</b>\n\n"
-                         f"Клиент завершил заказ.\n"
-                         f"Заказ перемещен во вкладку \"Завершенные заказы\".\n\n"
+                    text=f"✅ <b>Кампания #{campaign_id} завершен!</b>\n\n"
+                         f"Клиент завершил кампания.\n"
+                         f"Кампания перемещен во вкладку \"Завершенные кампанияы\".\n\n"
                          f"💡 Оставьте отзыв о работе с клиентом!",
                     parse_mode="HTML",
                     reply_markup=InlineKeyboardMarkup([
-                        [InlineKeyboardButton("⭐ Оценить заказчика", callback_data=f"leave_review_{order_id}")],
-                        [InlineKeyboardButton("📦 Мои заказы", callback_data="worker_my_orders")]
+                        [InlineKeyboardButton("⭐ Оценить рекламодательа", callback_data=f"leave_review_{campaign_id}")],
+                        [InlineKeyboardButton("📦 Мои кампанияы", callback_data="blogger_my_orders")]
                     ])
                 )
             except Exception as e:
-                logger.error(f"Не удалось отправить уведомление мастеру: {e}")
+                logger.error(f"Не удалось отправить уведомление блогеру: {e}")
 
 
-async def worker_complete_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_complete_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    ИСПРАВЛЕНО: Мастер завершает заказ.
-    Заказ сразу получает статус 'completed', обе стороны могут оставить отзыв.
+    ИСПРАВЛЕНО: Блогер завершает кампания.
+    Кампания сразу получает статус 'completed', обе стороны могут оставить отзыв.
     """
     query = update.callback_query
     await query.answer()
 
-    order_id = int(query.data.replace("worker_complete_order_", ""))
+    campaign_id = int(query.data.replace("blogger_complete_order_", ""))
 
-    # ИСПРАВЛЕНО: Заказ завершается сразу (не требуется подтверждение от обеих сторон)
-    db.mark_order_completed_by_worker(order_id)
+    # ИСПРАВЛЕНО: Кампания завершается сразу (не требуется подтверждение от обеих сторон)
+    db.mark_order_completed_by_worker(campaign_id)
 
-    # Получаем информацию о заказе
-    order = db.get_order_by_id(order_id)
+    # Получаем информацию о кампанияе
+    campaign = db.get_order_by_id(campaign_id)
 
-    if order:
-        order_dict = dict(order)
+    if campaign:
+        campaign_dict = dict(campaign)
 
-        # Уведомляем мастера
+        # Уведомляем блогера
         await query.edit_message_text(
-            "✅ <b>Заказ завершен!</b>\n\n"
-            "Заказ перемещен во вкладку \"Завершенные заказы\".\n\n"
-            "💡 Оставьте отзыв о работе с заказчиком!",
+            "✅ <b>Кампания завершен!</b>\n\n"
+            "Кампания перемещен во вкладку \"Завершенные кампанияы\".\n\n"
+            "💡 Оставьте отзыв о работе с рекламодательом!",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("⭐ Оценить заказчика", callback_data=f"leave_review_{order_id}")],
-                [InlineKeyboardButton("📦 Мои заказы", callback_data="worker_my_orders")]
+                [InlineKeyboardButton("⭐ Оценить рекламодательа", callback_data=f"leave_review_{campaign_id}")],
+                [InlineKeyboardButton("📦 Мои кампанияы", callback_data="blogger_my_orders")]
             ])
         )
 
-        # Уведомляем клиента о завершении заказа
-        client_user_id = order_dict['client_user_id']
-        user = db.get_user_by_id(client_user_id)
+        # Уведомляем клиента о завершении кампанияа
+        advertiser_user_id = campaign_dict['advertiser_user_id']
+        user = db.get_user_by_id(advertiser_user_id)
         if user:
             user_dict = dict(user)
             telegram_id = user_dict['telegram_id']
             try:
                 await context.bot.send_message(
                     chat_id=telegram_id,
-                    text=f"✅ <b>Заказ #{order_id} завершен!</b>\n\n"
-                         f"Мастер завершил заказ.\n"
-                         f"Заказ перемещен во вкладку \"Завершенные заказы\".\n\n"
-                         f"💡 Оставьте отзыв о работе мастера!",
+                    text=f"✅ <b>Кампания #{campaign_id} завершен!</b>\n\n"
+                         f"Блогер завершил кампания.\n"
+                         f"Кампания перемещен во вкладку \"Завершенные кампанияы\".\n\n"
+                         f"💡 Оставьте отзыв о работе блогера!",
                     parse_mode="HTML",
                     reply_markup=InlineKeyboardMarkup([
-                        [InlineKeyboardButton("⭐ Оценить мастера", callback_data=f"leave_review_{order_id}")],
-                        [InlineKeyboardButton("📂 Мои заказы", callback_data="client_my_orders")]
+                        [InlineKeyboardButton("⭐ Оценить блогера", callback_data=f"leave_review_{campaign_id}")],
+                        [InlineKeyboardButton("📂 Мои кампанияы", callback_data="advertiser_my_orders")]
                     ])
                 )
             except Exception as e:
@@ -9313,7 +9313,7 @@ async def start_review(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    order_id = int(query.data.replace("leave_review_", ""))
+    campaign_id = int(query.data.replace("leave_review_", ""))
     user_telegram_id = update.effective_user.id
     user = db.get_user(user_telegram_id)
 
@@ -9324,20 +9324,20 @@ async def start_review(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_dict = dict(user)
     user_id = user_dict['id']
 
-    # Получаем информацию о заказе
-    order = db.get_order_by_id(order_id)
-    if not order:
-        await query.edit_message_text("❌ Заказ не найден")
+    # Получаем информацию о кампанияе
+    campaign = db.get_order_by_id(campaign_id)
+    if not campaign:
+        await query.edit_message_text("❌ Кампания не найден")
         return ConversationHandler.END
 
-    order_dict = dict(order)
+    campaign_dict = dict(campaign)
 
-    # 🛡️ ЗАЩИТА 1: Проверяем статус заказа - только completed
-    if order_dict['status'] != 'completed':
+    # 🛡️ ЗАЩИТА 1: Проверяем статус кампанияа - только completed
+    if campaign_dict['status'] != 'completed':
         await query.edit_message_text(
-            "⚠️ <b>Отзыв можно оставить только после завершения заказа</b>\n\n"
-            f"Текущий статус: {order_dict['status']}\n\n"
-            "Сначала завершите заказ!",
+            "⚠️ <b>Отзыв можно оставить только после завершения кампанияа</b>\n\n"
+            f"Текущий статус: {campaign_dict['status']}\n\n"
+            "Сначала завершите кампания!",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([[
                 InlineKeyboardButton("⬅️ Назад", callback_data="go_main_menu")
@@ -9345,21 +9345,21 @@ async def start_review(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return ConversationHandler.END
 
-    # 🛡️ ЗАЩИТА 2: Проверяем что пользователь - участник заказа
-    client_user_id = order_dict['client_user_id']
-    worker_info = db.get_worker_info_for_order(order_id)
+    # 🛡️ ЗАЩИТА 2: Проверяем что пользователь - участник кампанияа
+    advertiser_user_id = campaign_dict['advertiser_user_id']
+    blogger_info = db.get_worker_info_for_order(campaign_id)
 
-    is_client = (user_id == client_user_id)
+    is_client = (user_id == advertiser_user_id)
     is_worker = False
-    if worker_info:
-        worker_dict = dict(worker_info)
-        is_worker = (user_id == worker_dict['user_id'])
+    if blogger_info:
+        blogger_dict = dict(blogger_info)
+        is_worker = (user_id == blogger_dict['user_id'])
 
     if not is_client and not is_worker:
         await query.edit_message_text(
             "⚠️ <b>Ошибка доступа</b>\n\n"
-            "Вы не являетесь участником этого заказа.\n"
-            "Оставить отзыв могут только клиент и мастер.",
+            "Вы не являетесь участником этого кампанияа.\n"
+            "Оставить отзыв могут только клиент и блогер.",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([[
                 InlineKeyboardButton("⬅️ Назад", callback_data="go_main_menu")
@@ -9369,33 +9369,33 @@ async def start_review(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # 🛡️ ЗАЩИТА 3: Минимальное время между принятием ставки и завершением (1 час)
     from datetime import datetime, timedelta
-    if order_dict.get('accepted_at'):
-        accepted_at = datetime.fromisoformat(order_dict['accepted_at'])
-        completed_at = datetime.fromisoformat(order_dict['completed_at'])
+    if campaign_dict.get('accepted_at'):
+        accepted_at = datetime.fromisoformat(campaign_dict['accepted_at'])
+        completed_at = datetime.fromisoformat(campaign_dict['completed_at'])
         time_diff = (completed_at - accepted_at).total_seconds() / 3600  # в часах
 
         MIN_HOURS = 1
         if time_diff < MIN_HOURS:
             await query.edit_message_text(
                 "⚠️ <b>Подозрительно быстрое завершение</b>\n\n"
-                f"Заказ был завершен слишком быстро (менее {MIN_HOURS} часа после принятия ставки).\n\n"
-                "Отзывы для такихзаказов недоступны для предотвращения накрутки рейтинга.\n\n"
+                f"Кампания был завершен слишком быстро (менее {MIN_HOURS} часа после принятия ставки).\n\n"
+                "Отзывы для такихкампанияов недоступны для предотвращения накрутки рейтинга.\n\n"
                 "💡 Если это ошибка, обратитесь в поддержку.",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup([[
                     InlineKeyboardButton("⬅️ Назад", callback_data="go_main_menu")
                 ]])
             )
-            logger.warning(f"🛡️ [ANTI-FRAUD] Заказ #{order_id} завершен за {time_diff:.2f}ч - отзыв ЗАБЛОКИРОВАН")
+            logger.warning(f"🛡️ [ANTI-FRAUD] Кампания #{campaign_id} завершен за {time_diff:.2f}ч - отзыв ЗАБЛОКИРОВАН")
             return ConversationHandler.END
 
-    # 🛡️ ЗАЩИТА 4: Лимит заказов между одними и теми же пользователями (макс 5 за неделю)
+    # 🛡️ ЗАЩИТА 4: Лимит кампанияов между одними и теми же пользователями (макс 5 за неделю)
     # Определяем второго участника для проверки
     partner_user_id = None
-    if is_client and worker_info:
-        partner_user_id = worker_dict['user_id']
+    if is_client and blogger_info:
+        partner_user_id = blogger_dict['user_id']
     elif is_worker:
-        partner_user_id = client_user_id
+        partner_user_id = advertiser_user_id
 
     if partner_user_id:
         orders_count = db.count_orders_between_users(user_id, partner_user_id, days=7)
@@ -9403,9 +9403,9 @@ async def start_review(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if orders_count > MAX_ORDERS_PER_WEEK:
             await query.edit_message_text(
-                "⚠️ <b>Превышен лимит заказов</b>\n\n"
-                f"Вы выполнили слишком много заказов ({orders_count}) с этим партнером за последнюю неделю.\n\n"
-                f"Лимит отзывов: {MAX_ORDERS_PER_WEEK} заказов/неделю между одними и теми же пользователями.\n\n"
+                "⚠️ <b>Превышен лимит кампанияов</b>\n\n"
+                f"Вы выполнили слишком много кампанияов ({orders_count}) с этим партнером за последнюю неделю.\n\n"
+                f"Лимит отзывов: {MAX_ORDERS_PER_WEEK} кампанияов/неделю между одними и теми же пользователями.\n\n"
                 "Эта мера защищает от накрутки рейтинга.\n\n"
                 "💡 Если это ошибка, обратитесь в поддержку.",
                 parse_mode="HTML",
@@ -9415,14 +9415,14 @@ async def start_review(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             logger.warning(
                 f"🛡️ [ANTI-FRAUD] Между user_id={user_id} и user_id={partner_user_id} "
-                f"уже {orders_count} заказов за неделю - отзыв ЗАБЛОКИРОВАН"
+                f"уже {orders_count} кампанияов за неделю - отзыв ЗАБЛОКИРОВАН"
             )
             return ConversationHandler.END
 
     # Проверяем не оставлен ли уже отзыв
-    if db.check_review_exists(order_id, user_id):
+    if db.check_review_exists(campaign_id, user_id):
         await query.edit_message_text(
-            "ℹ️ Вы уже оставили отзыв по этому заказу.",
+            "ℹ️ Вы уже оставили отзыв по этому кампанияу.",
             reply_markup=InlineKeyboardMarkup([[
                 InlineKeyboardButton("⬅️ Назад", callback_data="go_main_menu")
             ]])
@@ -9430,27 +9430,27 @@ async def start_review(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return ConversationHandler.END
 
     # Сохраняем информацию в контексте
-    context.user_data['review_order_id'] = order_id
+    context.user_data['review_order_id'] = campaign_id
     context.user_data['review_from_user_id'] = user_id
 
-    # Определяем кого оцениваем (клиент или мастер)
-    if user_id == client_user_id:
-        # Клиент оценивает мастера
-        if worker_info:
-            worker_dict = dict(worker_info)
-            context.user_data['review_to_user_id'] = worker_dict['user_id']
-            context.user_data['review_role_from'] = 'client'
-            context.user_data['review_role_to'] = 'worker'
-            reviewer_name = worker_dict['name']
+    # Определяем кого оцениваем (клиент или блогер)
+    if user_id == advertiser_user_id:
+        # Клиент оценивает блогера
+        if blogger_info:
+            blogger_dict = dict(blogger_info)
+            context.user_data['review_to_user_id'] = blogger_dict['user_id']
+            context.user_data['review_role_from'] = 'advertiser'
+            context.user_data['review_role_to'] = 'blogger'
+            reviewer_name = blogger_dict['name']
         else:
-            await query.edit_message_text("❌ Информация о мастере не найдена")
+            await query.edit_message_text("❌ Информация о блогере не найдена")
             return ConversationHandler.END
     else:
-        # Мастер оценивает клиента
-        context.user_data['review_to_user_id'] = client_user_id
-        context.user_data['review_role_from'] = 'worker'
-        context.user_data['review_role_to'] = 'client'
-        reviewer_name = order_dict['client_name']
+        # Блогер оценивает клиента
+        context.user_data['review_to_user_id'] = advertiser_user_id
+        context.user_data['review_role_from'] = 'blogger'
+        context.user_data['review_role_to'] = 'advertiser'
+        reviewer_name = campaign_dict['advertiser_name']
 
     # Показываем выбор звезд
     keyboard = [
@@ -9536,17 +9536,17 @@ async def save_review(update: Update, context: ContextTypes.DEFAULT_TYPE, query=
     try:
         from_user_id = context.user_data['review_from_user_id']
         to_user_id = context.user_data['review_to_user_id']
-        order_id = context.user_data['review_order_id']
+        campaign_id = context.user_data['review_order_id']
         role_from = context.user_data['review_role_from']
         role_to = context.user_data['review_role_to']
         rating = context.user_data['review_rating']
         comment = context.user_data.get('review_comment', '')
 
         # Сохраняем отзыв
-        success = db.add_review(from_user_id, to_user_id, order_id, role_from, role_to, rating, comment)
+        success = db.add_review(from_user_id, to_user_id, campaign_id, role_from, role_to, rating, comment)
 
         # Определяем меню для возврата на основе роли
-        menu_callback = "show_worker_menu" if role_from == "worker" else "show_client_menu"
+        menu_callback = "show_blogger_menu" if role_from == "blogger" else "show_advertiser_menu"
 
         if success:
             stars = "⭐" * rating
@@ -9572,7 +9572,7 @@ async def save_review(update: Update, context: ContextTypes.DEFAULT_TYPE, query=
                     reply_markup=InlineKeyboardMarkup(keyboard)
                 )
         else:
-            error_message = "❌ Не удалось сохранить отзыв. Возможно вы уже оставляли отзыв по этому заказу."
+            error_message = "❌ Не удалось сохранить отзыв. Возможно вы уже оставляли отзыв по этому кампанияу."
             keyboard = [[InlineKeyboardButton("🏠 В главное меню", callback_data=menu_callback)]]
             if query:
                 await query.edit_message_text(error_message, reply_markup=InlineKeyboardMarkup(keyboard))
@@ -9583,8 +9583,8 @@ async def save_review(update: Update, context: ContextTypes.DEFAULT_TYPE, query=
         logger.error(f"Ошибка при сохранении отзыва: {e}", exc_info=True)
         error_message = f"❌ Произошла ошибка при сохранении отзыва: {str(e)}"
         # Определяем меню для возврата
-        role_from = context.user_data.get('review_role_from', 'worker')
-        menu_callback = "show_worker_menu" if role_from == "worker" else "show_client_menu"
+        role_from = context.user_data.get('review_role_from', 'blogger')
+        menu_callback = "show_blogger_menu" if role_from == "blogger" else "show_advertiser_menu"
         keyboard = [[InlineKeyboardButton("🏠 В главное меню", callback_data=menu_callback)]]
         if query:
             await query.edit_message_text(error_message, reply_markup=InlineKeyboardMarkup(keyboard))
@@ -9621,7 +9621,7 @@ async def show_reviews(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         # Извлекаем user_id из callback_data (формат: show_reviews_worker_123 или show_reviews_client_123)
         parts = query.data.split("_")
-        role = parts[2]  # worker или client
+        role = parts[2]  # blogger или advertiser
         profile_user_id = int(parts[3])
 
         logger.info(f"Показываю отзывы для user_id={profile_user_id}, role={role}")
@@ -9641,10 +9641,10 @@ async def show_reviews(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Определяем callback для кнопки "Назад"
             if is_own_profile:
                 # Если смотрим свой профиль - возврат в меню
-                back_callback = "show_worker_menu" if role == "worker" else "show_client_menu"
+                back_callback = "show_blogger_menu" if role == "blogger" else "show_advertiser_menu"
             else:
                 # Если смотрим чужой профиль - возврат в профиль
-                back_callback = "worker_profile" if role == "worker" else "show_client_menu"
+                back_callback = "blogger_profile" if role == "blogger" else "show_advertiser_menu"
 
             await safe_edit_message(
                 query,
@@ -9682,10 +9682,10 @@ async def show_reviews(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Определяем callback для кнопки "Назад"
         if is_own_profile:
             # Если смотрим свой профиль - возврат в меню
-            back_callback = "show_worker_menu" if role == "worker" else "show_client_menu"
+            back_callback = "show_blogger_menu" if role == "blogger" else "show_advertiser_menu"
         else:
             # Если смотрим чужой профиль - возврат в профиль
-            back_callback = "worker_profile" if role == "worker" else "show_client_menu"
+            back_callback = "blogger_profile" if role == "blogger" else "show_advertiser_menu"
 
         await safe_edit_message(
             query,
@@ -9705,7 +9705,7 @@ async def show_reviews(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Попробуйте позже или обратитесь к администратору.",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("⬅️ Назад", callback_data="show_worker_menu")
+                InlineKeyboardButton("⬅️ Назад", callback_data="show_blogger_menu")
             ]])
         )
 
@@ -9722,50 +9722,50 @@ async def show_reviews(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ===== NOTIFICATION HELPERS =====
 
 def declension_orders(count):
-    """Склонение слова 'заказ' в зависимости от числа"""
+    """Склонение слова 'кампания' в зависимости от числа"""
     if count % 10 == 1 and count % 100 != 11:
-        return "доступный заказ"
+        return "доступный кампания"
     elif count % 10 in [2, 3, 4] and count % 100 not in [12, 13, 14]:
-        return "доступных заказа"
+        return "доступных кампанияа"
     else:
-        return "доступных заказов"
+        return "доступных кампанияов"
 
 
 def declension_bids(count):
-    """Склонение слова 'отклик' в зависимости от числа"""
+    """Склонение слова 'предложение' в зависимости от числа"""
     if count % 10 == 1 and count % 100 != 11:
-        return "новый отклик"
+        return "новый предложение"
     elif count % 10 in [2, 3, 4] and count % 100 not in [12, 13, 14]:
-        return "новых отклика"
+        return "новых предложениеа"
     else:
-        return "новых откликов"
+        return "новых предложениеов"
 
 
-async def notify_worker_new_order(context, worker_telegram_id, worker_user_id, order_dict):
+async def notify_worker_new_order(context, blogger_telegram_id, blogger_user_id, campaign_dict):
     """
-    Уведомление мастеру о новом заказе - ОБНОВЛЯЕТ существующее сообщение.
+    Уведомление блогеру о новом кампанияе - ОБНОВЛЯЕТ существующее сообщение.
     Вместо спама отдельными сообщениями показывает одно обновляемое сообщение с количеством.
     """
     try:
-        # Проверяем включены ли уведомления у мастера
-        if not db.are_notifications_enabled(worker_user_id):
-            logger.info(f"Уведомления отключены для мастера {worker_user_id}, пропускаем отправку")
+        # Проверяем включены ли уведомления у блогера
+        if not db.are_notifications_enabled(blogger_user_id):
+            logger.info(f"Уведомления отключены для блогера {blogger_user_id}, пропускаем отправку")
             return False
 
-        # Подсчитываем все доступные заказы для этого мастера
-        available_orders_count = db.count_available_orders_for_worker(worker_user_id)
+        # Подсчитываем все доступные кампанияы для этого блогера
+        available_orders_count = db.count_available_orders_for_worker(blogger_user_id)
 
         text = (
             f"🔔 <b>У вас {available_orders_count} {declension_orders(available_orders_count)}!</b>\n\n"
-            f"📍 Последний: {order_dict.get('city', 'Не указан')} · {order_dict.get('category', 'Не указана')}\n\n"
-            f"👇 Нажмите кнопку чтобы посмотреть все доступные заказы"
+            f"📍 Последний: {campaign_dict.get('city', 'Не указан')} · {campaign_dict.get('category', 'Не указана')}\n\n"
+            f"👇 Нажмите кнопку чтобы посмотреть все доступные кампанияы"
         )
 
-        keyboard = [[InlineKeyboardButton("📋 Посмотреть заказы", callback_data="worker_view_orders")]]
+        keyboard = [[InlineKeyboardButton("📋 Посмотреть кампанияы", callback_data="blogger_view_orders")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         # Пытаемся получить существующее уведомление
-        notification = db.get_worker_notification(worker_user_id)
+        notification = db.get_worker_notification(blogger_user_id)
 
         try:
             # НОВАЯ ЛОГИКА: Удаляем старое уведомление, отправляем новое (всегда со звуком!)
@@ -9776,20 +9776,20 @@ async def notify_worker_new_order(context, worker_telegram_id, worker_user_id, o
                         chat_id=notification['notification_chat_id'],
                         message_id=notification['notification_message_id']
                     )
-                    logger.info(f"🗑 Удалено старое уведомление для мастера {worker_user_id}")
+                    logger.info(f"🗑 Удалено старое уведомление для блогера {blogger_user_id}")
                 except Exception as delete_error:
                     logger.warning(f"Не удалось удалить старое уведомление: {delete_error}")
 
             # Отправляем НОВОЕ уведомление (всегда со звуком!)
             msg = await context.bot.send_message(
-                chat_id=worker_telegram_id,
+                chat_id=blogger_telegram_id,
                 text=text,
                 reply_markup=reply_markup,
                 parse_mode="HTML"
             )
             # Сохраняем message_id для следующего удаления
-            db.save_worker_notification(worker_user_id, msg.message_id, worker_telegram_id, available_orders_count)
-            logger.info(f"✅ Отправлено новое уведомление мастеру {worker_user_id}: {available_orders_count} заказов")
+            db.save_worker_notification(blogger_user_id, msg.message_id, blogger_telegram_id, available_orders_count)
+            logger.info(f"✅ Отправлено новое уведомление блогеру {blogger_user_id}: {available_orders_count} кампанияов")
 
         except Exception as send_error:
             logger.error(f"Ошибка при отправке нового уведомления: {send_error}")
@@ -9797,36 +9797,36 @@ async def notify_worker_new_order(context, worker_telegram_id, worker_user_id, o
 
         return True
     except Exception as e:
-        logger.error(f"Ошибка при отправке уведомления мастеру {worker_telegram_id}: {e}")
+        logger.error(f"Ошибка при отправке уведомления блогеру {blogger_telegram_id}: {e}")
         return False
 
 
-async def notify_client_new_bid(context, client_telegram_id, client_user_id, order_id, worker_name, price, currency):
+async def notify_client_new_bid(context, advertiser_telegram_id, advertiser_user_id, campaign_id, blogger_name, price, currency):
     """
-    Уведомление клиенту о новом отклике - ОБНОВЛЯЕТ существующее сообщение.
+    Уведомление клиенту о новом предложениее - ОБНОВЛЯЕТ существующее сообщение.
     Вместо спама отдельными сообщениями показывает одно обновляемое сообщение.
     """
     try:
         # Проверяем включены ли уведомления у клиента
-        if not db.are_client_notifications_enabled(client_user_id):
-            logger.info(f"Уведомления отключены для клиента {client_user_id}, пропускаем отправку")
+        if not db.are_client_notifications_enabled(advertiser_user_id):
+            logger.info(f"Уведомления отключены для клиента {advertiser_user_id}, пропускаем отправку")
             return False
 
-        # Подсчитываем общее количество непрочитанных откликов
-        orders_with_bids = db.get_orders_with_unread_bids(client_user_id)
-        total_bids = sum(order.get('bid_count', 0) for order in orders_with_bids)
+        # Подсчитываем общее количество непрочитанных предложениеов
+        orders_with_bids = db.get_orders_with_unread_bids(advertiser_user_id)
+        total_bids = sum(campaign.get('offer_count', 0) for campaign in orders_with_bids)
 
         text = (
             f"🔔 <b>У вас {total_bids} {declension_bids(total_bids)}!</b>\n\n"
-            f"📍 Последний: Заказ #{order_id} от {worker_name} ({price} {currency})\n\n"
-            f"👇 Нажмите кнопку чтобы посмотреть все отклики"
+            f"📍 Последний: Кампания #{campaign_id} от {blogger_name} ({price} {currency})\n\n"
+            f"👇 Нажмите кнопку чтобы посмотреть все предложениеи"
         )
 
-        keyboard = [[InlineKeyboardButton("📂 Мои заказы", callback_data="client_my_orders")]]
+        keyboard = [[InlineKeyboardButton("📂 Мои кампанияы", callback_data="advertiser_my_orders")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         # Пытаемся получить существующее уведомление
-        notification = db.get_client_notification(client_user_id)
+        notification = db.get_client_notification(advertiser_user_id)
 
         try:
             # НОВАЯ ЛОГИКА: Удаляем старое уведомление, отправляем новое (всегда со звуком!)
@@ -9837,20 +9837,20 @@ async def notify_client_new_bid(context, client_telegram_id, client_user_id, ord
                         chat_id=notification['notification_chat_id'],
                         message_id=notification['notification_message_id']
                     )
-                    logger.info(f"🗑 Удалено старое уведомление для клиента {client_user_id}")
+                    logger.info(f"🗑 Удалено старое уведомление для клиента {advertiser_user_id}")
                 except Exception as delete_error:
                     logger.warning(f"Не удалось удалить старое уведомление: {delete_error}")
 
             # Отправляем НОВОЕ уведомление (всегда со звуком!)
             msg = await context.bot.send_message(
-                chat_id=client_telegram_id,
+                chat_id=advertiser_telegram_id,
                 text=text,
                 reply_markup=reply_markup,
                 parse_mode="HTML"
             )
             # Сохраняем message_id для следующего удаления
-            db.save_client_notification(client_user_id, msg.message_id, client_telegram_id, total_bids)
-            logger.info(f"✅ Отправлено новое уведомление клиенту {client_user_id}: {total_bids} откликов")
+            db.save_client_notification(advertiser_user_id, msg.message_id, advertiser_telegram_id, total_bids)
+            logger.info(f"✅ Отправлено новое уведомление клиенту {advertiser_user_id}: {total_bids} предложениеов")
 
         except Exception as send_error:
             logger.error(f"Ошибка при отправке нового уведомления: {send_error}")
@@ -9858,67 +9858,67 @@ async def notify_client_new_bid(context, client_telegram_id, client_user_id, ord
 
         return True
     except Exception as e:
-        logger.error(f"Ошибка при отправке уведомления клиенту {client_telegram_id}: {e}")
+        logger.error(f"Ошибка при отправке уведомления клиенту {advertiser_telegram_id}: {e}")
         return False
 
 
-async def notify_worker_selected(context, worker_telegram_id, order_id, client_name, client_phone):
-    """Уведомление мастеру что его выбрали для заказа"""
+async def notify_worker_selected(context, blogger_telegram_id, campaign_id, advertiser_name, advertiser_phone):
+    """Уведомление блогеру что его выбрали для кампанияа"""
     try:
         text = (
             f"🎉 <b>Вас выбрали!</b>\n\n"
-            f"Клиент выбрал вас для выполнения заказа #{order_id}\n\n"
+            f"Клиент выбрал вас для выполнения кампанияа #{campaign_id}\n\n"
             f"📞 <b>Контакт клиента:</b>\n"
-            f"Имя: {client_name}\n"
-            f"Телефон: <code>{client_phone}</code>\n\n"
-            f"✅ Свяжитесь с клиентом и обсудите детали заказа!\n\n"
-            f"💡 После завершения работы не забудьте отметить заказ как выполненный."
+            f"Имя: {advertiser_name}\n"
+            f"Телефон: <code>{advertiser_phone}</code>\n\n"
+            f"✅ Свяжитесь с клиентом и обсудите детали кампанияа!\n\n"
+            f"💡 После завершения работы не забудьте отметить кампания как выполненный."
         )
 
         await context.bot.send_message(
-            chat_id=worker_telegram_id,
+            chat_id=blogger_telegram_id,
             text=text,
             parse_mode="HTML"
         )
         return True
     except Exception as e:
-        logger.error(f"Ошибка при отправке уведомления мастеру {worker_telegram_id}: {e}")
+        logger.error(f"Ошибка при отправке уведомления блогеру {blogger_telegram_id}: {e}")
         return False
 
 
-async def notify_client_master_selected(context, client_telegram_id, order_id, worker_name, worker_phone):
-    """Уведомление клиенту что он успешно выбрал мастера"""
+async def notify_client_master_selected(context, advertiser_telegram_id, campaign_id, blogger_name, blogger_phone):
+    """Уведомление клиенту что он успешно выбрал блогера"""
     try:
         text = (
-            f"✅ <b>Мастер выбран!</b>\n\n"
-            f"Вы выбрали мастера для заказа #{order_id}\n\n"
-            f"👤 <b>Контакт мастера:</b>\n"
-            f"Имя: {worker_name}\n"
-            f"Телефон: <code>{worker_phone}</code>\n\n"
-            f"✅ Свяжитесь с мастером и обсудите детали заказа!\n\n"
-            f"💡 После завершения работы не забудьте отметить заказ как выполненный и оставить отзыв."
+            f"✅ <b>Блогер выбран!</b>\n\n"
+            f"Вы выбрали блогера для кампанияа #{campaign_id}\n\n"
+            f"👤 <b>Контакт блогера:</b>\n"
+            f"Имя: {blogger_name}\n"
+            f"Телефон: <code>{blogger_phone}</code>\n\n"
+            f"✅ Свяжитесь с блогером и обсудите детали кампанияа!\n\n"
+            f"💡 После завершения работы не забудьте отметить кампания как выполненный и оставить отзыв."
         )
 
         await context.bot.send_message(
-            chat_id=client_telegram_id,
+            chat_id=advertiser_telegram_id,
             text=text,
             parse_mode="HTML"
         )
         return True
     except Exception as e:
-        logger.error(f"Ошибка при отправке уведомления клиенту {client_telegram_id}: {e}")
+        logger.error(f"Ошибка при отправке уведомления клиенту {advertiser_telegram_id}: {e}")
         return False
 
 
-async def notify_completion_request(context, recipient_telegram_id, order_id, requester_role):
-    """Уведомление о том что другая сторона отметила заказ как завершённый"""
-    role_text = "Клиент" if requester_role == "client" else "Мастер"
+async def notify_completion_request(context, recipient_telegram_id, campaign_id, requester_role):
+    """Уведомление о том что другая сторона отметила кампания как завершённый"""
+    role_text = "Клиент" if requester_role == "advertiser" else "Блогер"
 
     try:
         text = (
-            f"✅ <b>Запрос на завершение заказа #{order_id}</b>\n\n"
-            f"{role_text} отметил заказ как выполненный.\n\n"
-            f"Если работа действительно завершена, подтвердите завершение в разделе «Мои заказы».\n\n"
+            f"✅ <b>Запрос на завершение кампанияа #{campaign_id}</b>\n\n"
+            f"{role_text} отметил кампания как выполненный.\n\n"
+            f"Если работа действительно завершена, подтвердите завершение в разделе «Мои кампанияы».\n\n"
             f"💡 После подтверждения обеих сторон вы сможете оставить отзыв."
         )
 
@@ -9933,13 +9933,13 @@ async def notify_completion_request(context, recipient_telegram_id, order_id, re
         return False
 
 
-async def notify_order_completed(context, telegram_id, order_id, role):
-    """Уведомление об успешном завершении заказа"""
+async def notify_order_completed(context, telegram_id, campaign_id, role):
+    """Уведомление об успешном завершении кампанияа"""
     try:
         text = (
-            f"🎉 <b>Заказ #{order_id} завершён!</b>\n\n"
-            f"Обе стороны подтвердили завершение заказа.\n\n"
-            f"💬 Не забудьте оставить отзыв о {'мастере' if role == 'client' else 'клиенте'}!\n\n"
+            f"🎉 <b>Кампания #{campaign_id} завершён!</b>\n\n"
+            f"Обе стороны подтвердили завершение кампанияа.\n\n"
+            f"💬 Не забудьте оставить отзыв о {'блогере' if role == 'advertiser' else 'клиенте'}!\n\n"
             f"Это поможет другим пользователям сделать правильный выбор. 🤝"
         )
 
@@ -9954,7 +9954,7 @@ async def notify_order_completed(context, telegram_id, order_id, role):
         return False
 
 
-async def notify_new_review(context, telegram_id, reviewer_name, rating, order_id):
+async def notify_new_review(context, telegram_id, reviewer_name, rating, campaign_id):
     """Уведомление о получении нового отзыва"""
     stars = "⭐" * int(rating)
 
@@ -9963,7 +9963,7 @@ async def notify_new_review(context, telegram_id, reviewer_name, rating, order_i
             f"📝 <b>Новый отзыв!</b>\n\n"
             f"👤 От: {reviewer_name}\n"
             f"{stars} {rating}/5\n"
-            f"📋 Заказ: #{order_id}\n\n"
+            f"📋 Кампания: #{campaign_id}\n\n"
             f"Посмотрите отзыв в своём профиле!"
         )
 
@@ -9995,8 +9995,8 @@ async def enable_premium_command(update: Update, context: ContextTypes.DEFAULT_T
     await update.message.reply_text(
         "✅ <b>Premium функции включены!</b>\n\n"
         "Теперь доступны:\n"
-        "• Поднятие заказов в топ\n"
-        "• Premium профили мастеров\n"
+        "• Поднятие кампанияов в топ\n"
+        "• Premium профили блогеров\n"
         "• Выделение в списках\n\n"
         "💡 Используйте /disable_premium для отключения",
         parse_mode="HTML"
@@ -10215,14 +10215,14 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"📊 <b>Статистика бота</b>\n\n"
         f"👥 <b>Пользователи:</b>\n"
         f"• Всего: {stats['total_users']}\n"
-        f"• Мастеров: {stats['total_workers']}\n"
+        f"• Блогеров: {stats['total_workers']}\n"
         f"• Клиентов: {stats['total_clients']}\n"
         f"• Забанено: {stats['banned_users']}\n\n"
-        f"📋 <b>Заказы:</b>\n"
+        f"📋 <b>Кампанияы:</b>\n"
         f"• Всего: {stats['total_orders']}\n"
         f"• Активных: {stats['active_orders']}\n"
         f"• Завершённых: {stats['completed_orders']}\n\n"
-        f"💼 <b>Отклики:</b>\n"
+        f"💼 <b>Предложениеи:</b>\n"
         f"• Всего: {stats['total_bids']}\n"
         f"• Активных: {stats['active_bids']}\n\n"
         f"⭐ <b>Отзывы:</b> {stats['total_reviews']}\n\n"
@@ -10299,7 +10299,7 @@ async def announce_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def check_expired_chats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    Команда /check_expired_chats для проверки и обработки чатов где мастер не ответил в течение 24 часов.
+    Команда /check_expired_chats для проверки и обработки чатов где блогер не ответил в течение 24 часов.
     Эта команда также может быть запущена автоматически по расписанию (cron/scheduler).
     """
     user_telegram_id = update.effective_user.id
@@ -10309,11 +10309,11 @@ async def check_expired_chats_command(update: Update, context: ContextTypes.DEFA
         await update.message.reply_text("❌ У вас нет прав администратора.")
         return
 
-    # Получаем все просроченные чаты (где мастер не ответил в течение 24 часов)
+    # Получаем все просроченные чаты (где блогер не ответил в течение 24 часов)
     expired_chats = db.get_expired_chats(hours=24)
 
     if not expired_chats:
-        await update.message.reply_text("✅ Нет просроченных чатов (все мастера отвечают вовремя).")
+        await update.message.reply_text("✅ Нет просроченных чатов (все блогера отвечают вовремя).")
         return
 
     await update.message.reply_text(
@@ -10328,74 +10328,74 @@ async def check_expired_chats_command(update: Update, context: ContextTypes.DEFA
     for chat in expired_chats:
         try:
             chat_id = chat['id']
-            order_id = chat['order_id']
-            client_user_id = chat['client_user_id']
-            worker_user_id = chat['worker_user_id']
-            bid_id = chat['bid_id']
+            campaign_id = chat['campaign_id']
+            advertiser_user_id = chat['advertiser_user_id']
+            blogger_user_id = chat['blogger_user_id']
+            offer_id = chat['offer_id']
 
-            # Получаем информацию о заказе
-            order = db.get_order_by_id(order_id)
-            if not order:
-                logger.warning(f"Заказ {order_id} не найден для чата {chat_id}")
+            # Получаем информацию о кампанияе
+            campaign = db.get_order_by_id(campaign_id)
+            if not campaign:
+                logger.warning(f"Кампания {campaign_id} не найден для чата {chat_id}")
                 error_count += 1
                 continue
 
-            # Получаем информацию о клиенте и мастере
-            client = db.get_user_by_id(client_user_id)
-            worker_user = db.get_user_by_id(worker_user_id)
+            # Получаем информацию о клиенте и блогере
+            advertiser = db.get_user_by_id(advertiser_user_id)
+            blogger_user = db.get_user_by_id(blogger_user_id)
 
-            if not client or not worker_user:
+            if not advertiser or not blogger_user:
                 logger.warning(f"Пользователи не найдены для чата {chat_id}")
                 error_count += 1
                 continue
 
-            # 1. Снижаем рейтинг мастера (добавляем негативную оценку 1.0 из 5.0)
-            db.update_user_rating(worker_user_id, 1.0, "worker")
+            # 1. Снижаем рейтинг блогера (добавляем негативную оценку 1.0 из 5.0)
+            db.update_user_rating(blogger_user_id, 1.0, "blogger")
 
-            # 2. Возвращаем заказ в статус "open" (клиент может выбрать другого мастера)
-            db.update_order_status(order_id, "open")
+            # 2. Возвращаем кампания в статус "open" (клиент может выбрать другого блогера)
+            db.update_order_status(campaign_id, "open")
 
-            # 3. Отмечаем отклик как отклоненный (чтобы не показывался как выбранный)
-            # Но НЕ удаляем его - клиент может увидеть, что этот мастер не ответил
-            db.update_bid_status(bid_id, "rejected")
+            # 3. Отмечаем предложение как отклоненный (чтобы не показывался как выбранный)
+            # Но НЕ удаляем его - клиент может увидеть, что этот блогер не ответил
+            db.update_bid_status(offer_id, "rejected")
 
-            # 4. Уведомляем клиента что мастер не ответил и он может выбрать другого БЕЗ доп. оплаты
+            # 4. Уведомляем клиента что блогер не ответил и он может выбрать другого БЕЗ доп. оплаты
             try:
                 await context.bot.send_message(
-                    chat_id=client['telegram_id'],
+                    chat_id=advertiser['telegram_id'],
                     text=(
-                        f"⚠️ <b>Мастер не ответил в течение 24 часов</b>\n\n"
-                        f"📋 Заказ: {order['title']}\n\n"
-                        f"Ваш заказ снова открыт для выбора другого мастера.\n"
+                        f"⚠️ <b>Блогер не ответил в течение 24 часов</b>\n\n"
+                        f"📋 Кампания: {campaign['title']}\n\n"
+                        f"Ваш кампания снова открыт для выбора другого блогера.\n"
                         f"💰 Дополнительная оплата НЕ требуется - ваша предыдущая оплата остается активной.\n\n"
-                        f"Просто выберите другого мастера из списка откликов."
+                        f"Просто выберите другого блогера из списка предложениеов."
                     ),
                     parse_mode="HTML",
                     reply_markup=InlineKeyboardMarkup([[
-                        InlineKeyboardButton("📋 Мои заказы", callback_data="client_my_orders")
+                        InlineKeyboardButton("📋 Мои кампанияы", callback_data="advertiser_my_orders")
                     ]])
                 )
             except Exception as e:
-                logger.warning(f"Не удалось отправить уведомление клиенту {client['telegram_id']}: {e}")
+                logger.warning(f"Не удалось отправить уведомление клиенту {advertiser['telegram_id']}: {e}")
 
-            # 5. Уведомляем мастера о снижении рейтинга
+            # 5. Уведомляем блогера о снижении рейтинга
             try:
                 await context.bot.send_message(
-                    chat_id=worker_user['telegram_id'],
+                    chat_id=blogger_user['telegram_id'],
                     text=(
                         f"⚠️ <b>Ваш рейтинг снижен!</b>\n\n"
-                        f"📋 Заказ: {order['title']}\n\n"
-                        f"Вы не ответили клиенту в течение 24 часов после того, как ваш отклик был выбран.\n"
+                        f"📋 Кампания: {campaign['title']}\n\n"
+                        f"Вы не ответили клиенту в течение 24 часов после того, как ваш предложение был выбран.\n"
                         f"📉 Ваш рейтинг был снижен.\n\n"
                         f"⚡ <b>Совет:</b> Отвечайте клиентам быстрее, чтобы поддерживать высокий рейтинг!"
                     ),
                     parse_mode="HTML"
                 )
             except Exception as e:
-                logger.warning(f"Не удалось отправить уведомление мастеру {worker_user['telegram_id']}: {e}")
+                logger.warning(f"Не удалось отправить уведомление блогеру {blogger_user['telegram_id']}: {e}")
 
             processed_count += 1
-            logger.info(f"Обработан просроченный чат {chat_id} (заказ {order_id})")
+            logger.info(f"Обработан просроченный чат {chat_id} (кампания {campaign_id})")
 
         except Exception as e:
             logger.error(f"Ошибка при обработке чата {chat.get('id', 'unknown')}: {e}")
@@ -10459,9 +10459,9 @@ async def show_news_and_ads(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_dict = dict(user)
 
     # Определяем роль пользователя для правильной кнопки "Назад"
-    role = user_dict.get('role', 'client')
-    back_callback = "show_worker_menu" if role == 'worker' else "show_client_menu"
-    back_text = "🔙 Назад в меню мастера" if role == 'worker' else "🔙 Назад в меню"
+    role = user_dict.get('role', 'advertiser')
+    back_callback = "show_blogger_menu" if role == 'blogger' else "show_advertiser_menu"
+    back_text = "🔙 Назад в меню блогера" if role == 'blogger' else "🔙 Назад в меню"
 
     # Получаем ВСЕ активные рекламы для баннера в меню с фильтрацией по роли
     ads = db.get_active_ads('menu_banner', user_id=user_dict['id'], user_role=role)
@@ -10622,15 +10622,15 @@ async def receive_suggestion_text(update: Update, context: ContextTypes.DEFAULT_
     user_dict = dict(user)
 
     # Определяем роль пользователя
-    worker_profile = db.get_worker_profile(user_dict['id'])
-    client_profile = db.get_client_profile(user_dict['id'])
+    blogger_profile = db.get_worker_profile(user_dict['id'])
+    advertiser_profile = db.get_client_profile(user_dict['id'])
 
-    if worker_profile and client_profile:
+    if blogger_profile and advertiser_profile:
         user_role = 'both'
-    elif worker_profile:
-        user_role = 'worker'
-    elif client_profile:
-        user_role = 'client'
+    elif blogger_profile:
+        user_role = 'blogger'
+    elif advertiser_profile:
+        user_role = 'advertiser'
     else:
         user_role = 'unknown'
 
@@ -10642,7 +10642,7 @@ async def receive_suggestion_text(update: Update, context: ContextTypes.DEFAULT_
         # Флаг уже очищен в начале функции
 
         # Определяем правильное меню для возврата
-        menu_callback = "show_worker_menu" if user_role in ['worker', 'both'] else "show_client_menu"
+        menu_callback = "show_blogger_menu" if user_role in ['blogger', 'both'] else "show_advertiser_menu"
 
         logger.info(f"📤 Отправка подтверждения пользователю {update.effective_user.id} о получении предложения #{suggestion_id}")
 
@@ -10667,7 +10667,7 @@ async def receive_suggestion_text(update: Update, context: ContextTypes.DEFAULT_
         # Флаг уже очищен в начале функции
 
         # Определяем правильное меню для возврата
-        menu_callback = "show_worker_menu" if user_role in ['worker', 'both'] else "show_client_menu"
+        menu_callback = "show_blogger_menu" if user_role in ['blogger', 'both'] else "show_advertiser_menu"
 
         await message.reply_text(
             "❌ Произошла ошибка при отправке предложения.\n\n"
@@ -10689,12 +10689,12 @@ async def cancel_suggestion(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Определяем меню для возврата
     user = db.get_user_by_telegram_id(update.effective_user.id)
-    menu_callback = "show_worker_menu"
+    menu_callback = "show_blogger_menu"
     if user:
         user_dict = dict(user)
-        client_profile = db.get_client_profile(user_dict['id'])
-        if client_profile and not db.get_worker_profile(user_dict['id']):
-            menu_callback = "show_client_menu"
+        advertiser_profile = db.get_client_profile(user_dict['id'])
+        if advertiser_profile and not db.get_worker_profile(user_dict['id']):
+            menu_callback = "show_advertiser_menu"
 
     await query.edit_message_text(
         "❌ Отправка предложения отменена.\n\n"
@@ -10810,7 +10810,7 @@ async def admin_broadcast_start(update: Update, context: ContextTypes.DEFAULT_TY
 
     keyboard = [
         [InlineKeyboardButton("👥 Всем", callback_data="broadcast_all")],
-        [InlineKeyboardButton("👷 Только мастерам", callback_data="broadcast_workers")],
+        [InlineKeyboardButton("👷 Только блогерам", callback_data="broadcast_workers")],
         [InlineKeyboardButton("📋 Только клиентам", callback_data="broadcast_clients")],
         [InlineKeyboardButton("⬅️ Назад", callback_data="admin_back")],
     ]
@@ -10845,8 +10845,8 @@ async def admin_broadcast_select_audience(update: Update, context: ContextTypes.
 
     audience_text = {
         'all': '👥 Всем пользователям',
-        'workers': '👷 Только мастерам',
-        'clients': '📋 Только клиентам'
+        'bloggers': '👷 Только блогерам',
+        'advertisers': '📋 Только клиентам'
     }.get(audience, 'Неизвестно')
 
     keyboard = [[InlineKeyboardButton("🔙 Назад", callback_data="admin_broadcast_start")]]
@@ -10908,13 +10908,13 @@ async def admin_broadcast_send(update: Update, context: ContextTypes.DEFAULT_TYP
             continue
 
         # Проверяем аудиторию
-        if audience == 'workers':
-            worker = db.get_worker_profile(user_dict['id'])
-            if not worker:
+        if audience == 'bloggers':
+            blogger = db.get_worker_profile(user_dict['id'])
+            if not blogger:
                 continue
-        elif audience == 'clients':
-            client = db.get_client_profile(user_dict['id'])
-            if not client:
+        elif audience == 'advertisers':
+            advertiser = db.get_client_profile(user_dict['id'])
+            if not advertiser:
                 continue
 
         # Отправляем сообщение
@@ -11093,7 +11093,7 @@ async def admin_ad_button_text(update: Update, context: ContextTypes.DEFAULT_TYP
             InlineKeyboardButton("👥 Всем", callback_data="ad_audience_all"),
         ],
         [
-            InlineKeyboardButton("🔧 Только мастерам", callback_data="ad_audience_workers"),
+            InlineKeyboardButton("🔧 Только блогерам", callback_data="ad_audience_workers"),
             InlineKeyboardButton("👤 Только клиентам", callback_data="ad_audience_clients"),
         ],
         [InlineKeyboardButton("❌ Отмена", callback_data="ad_confirm_no")]
@@ -11128,10 +11128,10 @@ async def admin_ad_audience(update: Update, context: ContextTypes.DEFAULT_TYPE):
         target_audience = "all"
         audience_text = "👥 Всем"
     elif query.data == "ad_audience_workers":
-        target_audience = "workers"
-        audience_text = "🔧 Только мастерам"
+        target_audience = "bloggers"
+        audience_text = "🔧 Только блогерам"
     elif query.data == "ad_audience_clients":
-        target_audience = "clients"
+        target_audience = "advertisers"
         audience_text = "👤 Только клиентам"
     else:
         await query.edit_message_text("❌ Неверный выбор аудитории")
@@ -11198,8 +11198,8 @@ async def admin_ad_duration(update: Update, context: ContextTypes.DEFAULT_TYPE):
     target_audience = context.user_data['ad_data'].get('target_audience', 'all')
     if target_audience == 'all':
         audience_text = "👥 Всем"
-    elif target_audience == 'workers':
-        audience_text = "🔧 Только мастерам"
+    elif target_audience == 'bloggers':
+        audience_text = "🔧 Только блогерам"
     else:
         audience_text = "👤 Только клиентам"
 
@@ -11280,8 +11280,8 @@ async def admin_ad_start_date(update: Update, context: ContextTypes.DEFAULT_TYPE
     target_audience = ad_data.get('target_audience', 'all')
     if target_audience == 'all':
         audience_text = "👥 Всем"
-    elif target_audience == 'workers':
-        audience_text = "🔧 Только мастерам"
+    elif target_audience == 'bloggers':
+        audience_text = "🔧 Только блогерам"
     else:
         audience_text = "👤 Только клиентам"
 
@@ -11438,8 +11438,8 @@ async def admin_ad_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if target_audience == 'all':
             audience_text = "👥 Всем"
-        elif target_audience == 'workers':
-            audience_text = "🔧 Только мастерам"
+        elif target_audience == 'bloggers':
+            audience_text = "🔧 Только блогерам"
         else:
             audience_text = "👤 Только клиентам"
 
@@ -12016,12 +12016,12 @@ async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Пользователи
     text += "👥 <b>ПОЛЬЗОВАТЕЛИ:</b>\n"
     text += f"• Всего: {stats['total_users']}\n"
-    text += f"• Мастеров: {stats['total_workers']}\n"
+    text += f"• Блогеров: {stats['total_workers']}\n"
     text += f"• Клиентов: {stats['total_clients']}\n"
     text += f"• С двумя профилями: {stats['dual_profile_users']}\n"
     text += f"• Забанено: {stats['banned_users']}\n\n"
 
-    # Заказы
+    # Кампанияы
     text += "📦 <b>ЗАКАЗЫ:</b>\n"
     text += f"• Всего создано: {stats['total_orders']}\n"
     text += f"• Открытые: {stats['open_orders']}\n"
@@ -12029,9 +12029,9 @@ async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text += f"• Завершённые: {stats['completed_orders']}\n"
     text += f"• Отменённые: {stats['canceled_orders']}\n\n"
 
-    # Отклики
+    # Предложениеи
     text += "💼 <b>ОТКЛИКИ:</b>\n"
-    text += f"• Всего откликов: {stats['total_bids']}\n"
+    text += f"• Всего предложениеов: {stats['total_bids']}\n"
     text += f"• Ожидают ответа: {stats['pending_bids']}\n"
     text += f"• Приняты: {stats['selected_bids']}\n"
     text += f"• Отклонены: {stats['rejected_bids']}\n\n"
@@ -12045,7 +12045,7 @@ async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Активность
     text += "📈 <b>АКТИВНОСТЬ:</b>\n"
-    text += f"• Заказов за последние 24ч: {stats['orders_last_24h']}\n"
+    text += f"• Кампанияов за последние 24ч: {stats['orders_last_24h']}\n"
     text += f"• Новых пользователей за 7 дней: {stats['users_last_7days']}"
 
     keyboard = [
@@ -12073,8 +12073,8 @@ async def admin_export_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     keyboard = [
         [InlineKeyboardButton("👥 Экспорт пользователей", callback_data="admin_export_users")],
-        [InlineKeyboardButton("📦 Экспорт заказов", callback_data="admin_export_orders")],
-        [InlineKeyboardButton("💼 Экспорт откликов", callback_data="admin_export_bids")],
+        [InlineKeyboardButton("📦 Экспорт кампанияов", callback_data="admin_export_orders")],
+        [InlineKeyboardButton("💼 Экспорт предложениеов", callback_data="admin_export_bids")],
         [InlineKeyboardButton("⭐ Экспорт отзывов", callback_data="admin_export_reviews")],
         [InlineKeyboardButton("📊 Сводная статистика", callback_data="admin_export_stats")],
         [InlineKeyboardButton("⬅️ Назад", callback_data="admin_stats")]
@@ -12127,51 +12127,51 @@ async def admin_export_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
             filename = f"users_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
             caption = f"📊 Экспорт пользователей ({len(users)} записей)"
 
-        elif export_type == "orders":
-            orders = db.get_all_orders_for_export()
-            writer.writerow(["ID заказа", "Клиент ID", "Название", "Категория", "Город", "Статус", "Дата создания", "Описание"])
-            for order in orders:
-                order_dict = dict(order)
-                created_at = order_dict.get('created_at', '')
+        elif export_type == "campaigns":
+            campaigns = db.get_all_orders_for_export()
+            writer.writerow(["ID кампанияа", "Клиент ID", "Название", "Категория", "Город", "Статус", "Дата создания", "Описание"])
+            for campaign in campaigns:
+                campaign_dict = dict(campaign)
+                created_at = campaign_dict.get('created_at', '')
                 if isinstance(created_at, datetime):
                     created_at = created_at.strftime('%Y-%m-%d %H:%M:%S')
                 writer.writerow([
-                    order_dict.get('id', ''),
-                    order_dict.get('client_id', ''),
-                    order_dict.get('title', ''),
-                    order_dict.get('category', ''),
-                    order_dict.get('city', ''),
-                    order_dict.get('status', ''),
+                    campaign_dict.get('id', ''),
+                    campaign_dict.get('advertiser_id', ''),
+                    campaign_dict.get('title', ''),
+                    campaign_dict.get('category', ''),
+                    campaign_dict.get('city', ''),
+                    campaign_dict.get('status', ''),
                     created_at,
-                    order_dict.get('description', '')[:100]
+                    campaign_dict.get('description', '')[:100]
                 ])
             filename = f"orders_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-            caption = f"📦 Экспорт заказов ({len(orders)} записей)"
+            caption = f"📦 Экспорт кампанияов ({len(campaigns)} записей)"
 
-        elif export_type == "bids":
-            bids = db.get_all_bids_for_export()
-            writer.writerow(["ID отклика", "Заказ ID", "Мастер ID", "Цена", "Валюта", "Дней до готовности", "Статус", "Дата создания"])
-            for bid in bids:
-                bid_dict = dict(bid)
-                created_at = bid_dict.get('created_at', '')
+        elif export_type == "offers":
+            offers = db.get_all_bids_for_export()
+            writer.writerow(["ID предложениеа", "Кампания ID", "Блогер ID", "Цена", "Валюта", "Дней до готовности", "Статус", "Дата создания"])
+            for offer in offers:
+                offer_dict = dict(offer)
+                created_at = offer_dict.get('created_at', '')
                 if isinstance(created_at, datetime):
                     created_at = created_at.strftime('%Y-%m-%d %H:%M:%S')
                 writer.writerow([
-                    bid_dict.get('id', ''),
-                    bid_dict.get('order_id', ''),
-                    bid_dict.get('worker_id', ''),
-                    bid_dict.get('price', ''),
-                    bid_dict.get('currency', ''),
-                    bid_dict.get('ready_days', ''),
-                    bid_dict.get('status', ''),
+                    offer_dict.get('id', ''),
+                    offer_dict.get('campaign_id', ''),
+                    offer_dict.get('blogger_id', ''),
+                    offer_dict.get('price', ''),
+                    offer_dict.get('currency', ''),
+                    offer_dict.get('ready_days', ''),
+                    offer_dict.get('status', ''),
                     created_at
                 ])
             filename = f"bids_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-            caption = f"💼 Экспорт откликов ({len(bids)} записей)"
+            caption = f"💼 Экспорт предложениеов ({len(offers)} записей)"
 
         elif export_type == "reviews":
             reviews = db.get_all_reviews_for_export()
-            writer.writerow(["ID отзыва", "Заказ ID", "От пользователя", "К пользователю", "Рейтинг", "Комментарий", "Дата"])
+            writer.writerow(["ID отзыва", "Кампания ID", "От пользователя", "К пользователю", "Рейтинг", "Комментарий", "Дата"])
             for review in reviews:
                 review_dict = dict(review)
                 created_at = review_dict.get('created_at', '')
@@ -12179,7 +12179,7 @@ async def admin_export_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     created_at = created_at.strftime('%Y-%m-%d %H:%M:%S')
                 writer.writerow([
                     review_dict.get('id', ''),
-                    review_dict.get('order_id', ''),
+                    review_dict.get('campaign_id', ''),
                     review_dict.get('from_user_id', ''),
                     review_dict.get('to_user_id', ''),
                     review_dict.get('rating', ''),
@@ -12193,16 +12193,16 @@ async def admin_export_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
             stats = db.get_analytics_stats()
             writer.writerow(["Метрика", "Значение"])
             writer.writerow(["Всего пользователей", stats['total_users']])
-            writer.writerow(["Мастеров", stats['total_workers']])
+            writer.writerow(["Блогеров", stats['total_workers']])
             writer.writerow(["Клиентов", stats['total_clients']])
             writer.writerow(["С двумя профилями", stats['dual_profile_users']])
             writer.writerow(["Забанено", stats['banned_users']])
-            writer.writerow(["Всего заказов", stats['total_orders']])
-            writer.writerow(["Открытые заказы", stats['open_orders']])
-            writer.writerow(["Активные заказы", stats['active_orders']])
-            writer.writerow(["Завершённые заказы", stats['completed_orders']])
-            writer.writerow(["Отменённые заказы", stats['canceled_orders']])
-            writer.writerow(["Всего откликов", stats['total_bids']])
+            writer.writerow(["Всего кампанияов", stats['total_orders']])
+            writer.writerow(["Открытые кампанияы", stats['open_orders']])
+            writer.writerow(["Активные кампанияы", stats['active_orders']])
+            writer.writerow(["Завершённые кампанияы", stats['completed_orders']])
+            writer.writerow(["Отменённые кампанияы", stats['canceled_orders']])
+            writer.writerow(["Всего предложениеов", stats['total_bids']])
             writer.writerow(["Ожидают ответа", stats['pending_bids']])
             writer.writerow(["Приняты", stats['selected_bids']])
             writer.writerow(["Отклонены", stats['rejected_bids']])
@@ -12210,7 +12210,7 @@ async def admin_export_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
             writer.writerow(["Всего сообщений", stats['total_messages']])
             writer.writerow(["Всего отзывов", stats['total_reviews']])
             writer.writerow(["Средний рейтинг", f"{stats['average_rating']:.2f}"])
-            writer.writerow(["Заказов за 24ч", stats['orders_last_24h']])
+            writer.writerow(["Кампанияов за 24ч", stats['orders_last_24h']])
             writer.writerow(["Новых пользователей за 7 дней", stats['users_last_7days']])
             filename = f"stats_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
             caption = "📊 Сводная статистика платформы"
@@ -12346,12 +12346,12 @@ async def admin_city_activity(update: Update, context: ContextTypes.DEFAULT_TYPE
         if reports['city_activity']:
             for i, city_data in enumerate(reports['city_activity'][:10], 1):
                 city = city_data['city']
-                orders = city_data['orders']
-                workers = city_data['workers']
+                campaigns = city_data['campaigns']
+                bloggers = city_data['bloggers']
                 total = city_data['total']
                 text += f"{i}. <b>{city}</b>\n"
-                text += f"   📦 Заказов: {orders}\n"
-                text += f"   👷 Мастеров: {workers}\n"
+                text += f"   📦 Кампанияов: {campaigns}\n"
+                text += f"   👷 Блогеров: {bloggers}\n"
                 text += f"   📊 Всего активности: {total}\n\n"
         else:
             text += "Нет данных\n"
@@ -12385,17 +12385,17 @@ async def admin_avg_prices(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reports = db.get_category_reports()
 
         text = "💰 <b>СРЕДНИЕ ЦЕНЫ ПО КАТЕГОРИЯМ</b>\n\n"
-        text += "<i>(Только для категорий с минимум 3 откликами в BYN)</i>\n\n"
+        text += "<i>(Только для категорий с минимум 3 предложениеами в BYN)</i>\n\n"
 
         if reports['avg_prices_by_category']:
             for i, row in enumerate(reports['avg_prices_by_category'][:10], 1):
                 row_dict = dict(row)
                 category = row_dict.get('category', 'Неизвестно')
                 avg_price = row_dict.get('avg_price', 0)
-                bid_count = row_dict.get('bid_count', 0)
+                offer_count = row_dict.get('offer_count', 0)
                 text += f"{i}. <b>{category}</b>\n"
                 text += f"   Средняя цена: {avg_price:.2f} BYN\n"
-                text += f"   Откликов: {bid_count}\n\n"
+                text += f"   Предложениеов: {offer_count}\n\n"
         else:
             text += "Недостаточно данных для анализа\n"
 
@@ -12420,7 +12420,7 @@ async def admin_avg_prices(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def admin_category_statuses(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Статусы заказов по категориям"""
+    """Статусы кампанияов по категориям"""
     query = update.callback_query
     await query.answer()
 
@@ -12477,14 +12477,14 @@ async def admin_users_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = "👥 <b>УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ</b>\n\n"
     text += f"Всего пользователей: {stats['total_users']}\n"
-    text += f"Мастеров: {stats['total_workers']}\n"
+    text += f"Блогеров: {stats['total_workers']}\n"
     text += f"Клиентов: {stats['total_clients']}\n"
     text += f"Забанено: {stats['banned_users']}\n\n"
     text += "Выберите фильтр или воспользуйтесь поиском:"
 
     keyboard = [
         [InlineKeyboardButton("👤 Все пользователи", callback_data="admin_users_list_all")],
-        [InlineKeyboardButton("👷 Только мастера", callback_data="admin_users_list_workers")],
+        [InlineKeyboardButton("👷 Только блогера", callback_data="admin_users_list_workers")],
         [InlineKeyboardButton("📋 Только клиенты", callback_data="admin_users_list_clients")],
         [InlineKeyboardButton("🔄 Оба профиля", callback_data="admin_users_list_dual")],
         [InlineKeyboardButton("🚫 Забаненные", callback_data="admin_users_list_banned")],
@@ -12524,8 +12524,8 @@ async def admin_users_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     filter_names = {
         'all': 'Все пользователи',
-        'workers': 'Мастера',
-        'clients': 'Клиенты',
+        'bloggers': 'Блогера',
+        'advertisers': 'Клиенты',
         'dual': 'С двумя профилями',
         'banned': 'Забаненные'
     }
@@ -12544,11 +12544,11 @@ async def admin_users_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Тип профиля
         profile_type = ""
-        if user_dict.get('worker_id') and user_dict.get('client_id'):
+        if user_dict.get('blogger_id') and user_dict.get('advertiser_id'):
             profile_type = "👷📋"
-        elif user_dict.get('worker_id'):
+        elif user_dict.get('blogger_id'):
             profile_type = "👷"
-        elif user_dict.get('client_id'):
+        elif user_dict.get('advertiser_id'):
             profile_type = "📋"
 
         button_text = f"{status_emoji}{profile_type} {name[:25]}"
@@ -12613,8 +12613,8 @@ async def admin_user_view(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return ADMIN_MENU
 
     user = details['user']
-    worker = details['worker_profile']
-    client = details['client_profile']
+    blogger = details['blogger_profile']
+    advertiser = details['advertiser_profile']
     stats = details['stats']
 
     # Форматируем информацию
@@ -12638,21 +12638,21 @@ async def admin_user_view(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Профили
     text += f"\n<b>ПРОФИЛИ:</b>\n"
-    if worker:
-        text += f"👷 <b>Мастер</b>\n"
-        text += f"  • Специализация: {worker.get('specialization', 'Не указана')}\n"
+    if blogger:
+        text += f"👷 <b>Блогер</b>\n"
+        text += f"  • Специализация: {blogger.get('specialization', 'Не указана')}\n"
         if stats.get('total_bids'):
-            text += f"  • Откликов: {stats['total_bids']} (принято: {stats.get('accepted_bids', 0)})\n"
-        if stats.get('worker_rating'):
-            text += f"  • Рейтинг: {stats['worker_rating']:.1f} ⭐\n"
+            text += f"  • Предложениеов: {stats['total_bids']} (принято: {stats.get('accepted_bids', 0)})\n"
+        if stats.get('blogger_rating'):
+            text += f"  • Рейтинг: {stats['blogger_rating']:.1f} ⭐\n"
 
-    if client:
+    if advertiser:
         text += f"📋 <b>Клиент</b>\n"
         if stats.get('total_orders'):
-            text += f"  • Заказов создано: {stats['total_orders']}\n"
+            text += f"  • Кампанияов создано: {stats['total_orders']}\n"
             text += f"  • Завершено: {stats.get('completed_orders', 0)}\n"
 
-    if not worker and not client:
+    if not blogger and not advertiser:
         text += "❌ Нет активных профилей\n"
 
     # Кнопки действий
@@ -12809,11 +12809,11 @@ async def admin_user_search_execute(update: Update, context: ContextTypes.DEFAUL
 
         # Тип профиля
         profile_type = ""
-        if user_dict.get('worker_id') and user_dict.get('client_id'):
+        if user_dict.get('blogger_id') and user_dict.get('advertiser_id'):
             profile_type = "👷📋"
-        elif user_dict.get('worker_id'):
+        elif user_dict.get('blogger_id'):
             profile_type = "👷"
-        elif user_dict.get('client_id'):
+        elif user_dict.get('advertiser_id'):
             profile_type = "📋"
 
         button_text = f"{status_emoji}{profile_type} {name[:25]} (ID: {telegram_id})"
@@ -12870,7 +12870,7 @@ async def admin_suggestions(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for i, suggestion in enumerate(suggestions[:10], 1):
         suggestion_dict = dict(suggestion)
         status_emoji = {"new": "🆕", "viewed": "👁", "resolved": "✅"}.get(suggestion_dict['status'], "")
-        role_emoji = {"worker": "🔧", "client": "👤", "both": "🔧👤"}.get(suggestion_dict['user_role'], "")
+        role_emoji = {"blogger": "🔧", "advertiser": "👤", "both": "🔧👤"}.get(suggestion_dict['user_role'], "")
 
         # Экранируем пользовательский текст для безопасности
         message_text = html.escape(suggestion_dict["message"])
@@ -12952,7 +12952,7 @@ async def admin_suggestions_filter(update: Update, context: ContextTypes.DEFAULT
 
     for i, suggestion in enumerate(suggestions[:20], 1):
         suggestion_dict = dict(suggestion)
-        role_emoji = {"worker": "🔧", "client": "👤", "both": "🔧👤"}.get(suggestion_dict['user_role'], "")
+        role_emoji = {"blogger": "🔧", "advertiser": "👤", "both": "🔧👤"}.get(suggestion_dict['user_role'], "")
 
         # Экранируем пользовательский текст для безопасности
         message_text = html.escape(suggestion_dict["message"])
@@ -12991,20 +12991,20 @@ async def admin_close(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = db.get_user(update.effective_user.id)
     if user:
         user_dict = dict(user)
-        worker_profile = db.get_worker_by_user_id(user_dict['id'])
-        client_profile = db.get_client_by_user_id(user_dict['id'])
+        blogger_profile = db.get_worker_by_user_id(user_dict['id'])
+        advertiser_profile = db.get_client_by_user_id(user_dict['id'])
 
         context.user_data.clear()
 
         # Возвращаем в соответствующее меню
-        if worker_profile:
+        if blogger_profile:
             await query.edit_message_text("✅ Админ-панель закрыта.")
-            # Вызываем меню мастера
-            await show_worker_menu(update, context)
-        elif client_profile:
+            # Вызываем меню блогера
+            await show_blogger_menu(update, context)
+        elif advertiser_profile:
             await query.edit_message_text("✅ Админ-панель закрыта.")
             # Вызываем меню клиента
-            await show_client_menu(update, context)
+            await show_advertiser_menu(update, context)
         else:
             await query.edit_message_text("✅ Админ-панель закрыта.")
     else:
