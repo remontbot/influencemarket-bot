@@ -462,7 +462,7 @@ def init_db():
 
         # Мастера
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS workers (
+            CREATE TABLE IF NOT EXISTS bloggers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER UNIQUE NOT NULL,
                 name TEXT,
@@ -482,7 +482,7 @@ def init_db():
 
         # Заказчики
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS clients (
+            CREATE TABLE IF NOT EXISTS advertisers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER UNIQUE NOT NULL,
                 name TEXT,
@@ -497,9 +497,9 @@ def init_db():
 
         # Заказы
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS orders (
+            CREATE TABLE IF NOT EXISTS campaigns (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                client_id INTEGER NOT NULL,
+                advertiser_id INTEGER NOT NULL,
                 title TEXT,
                 description TEXT,
                 city TEXT,
@@ -512,24 +512,24 @@ def init_db():
                 videos TEXT DEFAULT '',
                 status TEXT NOT NULL, -- 'open', 'pending_choice', 'master_selected', 'contact_shared', 'done', 'canceled', 'cancelled', 'expired'
                 created_at TEXT NOT NULL,
-                FOREIGN KEY (client_id) REFERENCES clients(id)
+                FOREIGN KEY (advertiser_id) REFERENCES advertisers(id)
             );
         """)
 
         # Отклики мастеров
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS bids (
+            CREATE TABLE IF NOT EXISTS offers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                order_id INTEGER NOT NULL,
-                worker_id INTEGER NOT NULL,
+                campaign_id INTEGER NOT NULL,
+                blogger_id INTEGER NOT NULL,
                 proposed_price REAL,
                 currency TEXT DEFAULT 'BYN',
                 proposed_deadline TEXT,
                 comment TEXT,
                 created_at TEXT NOT NULL,
                 status TEXT NOT NULL, -- 'active', 'rejected', 'selected', 'expired'
-                FOREIGN KEY (order_id) REFERENCES orders(id),
-                FOREIGN KEY (worker_id) REFERENCES workers(id)
+                FOREIGN KEY (campaign_id) REFERENCES campaigns(id),
+                FOREIGN KEY (blogger_id) REFERENCES bloggers(id)
             );
         """)
 
@@ -537,12 +537,12 @@ def init_db():
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS declined_orders (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                worker_id INTEGER NOT NULL,
-                order_id INTEGER NOT NULL,
+                blogger_id INTEGER NOT NULL,
+                campaign_id INTEGER NOT NULL,
                 declined_at TEXT NOT NULL,
-                UNIQUE (worker_id, order_id),
-                FOREIGN KEY (worker_id) REFERENCES workers(id),
-                FOREIGN KEY (order_id) REFERENCES orders(id)
+                UNIQUE (blogger_id, campaign_id),
+                FOREIGN KEY (blogger_id) REFERENCES bloggers(id),
+                FOREIGN KEY (campaign_id) REFERENCES campaigns(id)
             );
         """)
 
@@ -550,14 +550,14 @@ def init_db():
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS contacts_access (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                order_id INTEGER NOT NULL,
-                worker_id INTEGER NOT NULL,
-                client_id INTEGER NOT NULL,
+                campaign_id INTEGER NOT NULL,
+                blogger_id INTEGER NOT NULL,
+                advertiser_id INTEGER NOT NULL,
                 paid INTEGER DEFAULT 0,
                 created_at TEXT NOT NULL,
-                FOREIGN KEY (order_id) REFERENCES orders(id),
-                FOREIGN KEY (worker_id) REFERENCES workers(id),
-                FOREIGN KEY (client_id) REFERENCES clients(id)
+                FOREIGN KEY (campaign_id) REFERENCES campaigns(id),
+                FOREIGN KEY (blogger_id) REFERENCES bloggers(id),
+                FOREIGN KEY (advertiser_id) REFERENCES advertisers(id)
             );
         """)
 
@@ -567,16 +567,16 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 from_user_id INTEGER NOT NULL,
                 to_user_id INTEGER NOT NULL,
-                order_id INTEGER NOT NULL,
+                campaign_id INTEGER NOT NULL,
                 role_from TEXT NOT NULL,
                 role_to TEXT NOT NULL,
                 rating INTEGER NOT NULL,
                 comment TEXT,
                 created_at TEXT NOT NULL,
-                UNIQUE (order_id, from_user_id, to_user_id),
+                UNIQUE (campaign_id, from_user_id, to_user_id),
                 FOREIGN KEY (from_user_id) REFERENCES users(id),
                 FOREIGN KEY (to_user_id) REFERENCES users(id),
-                FOREIGN KEY (order_id) REFERENCES orders(id)
+                FOREIGN KEY (campaign_id) REFERENCES campaigns(id)
             );
         """)
 
@@ -584,14 +584,14 @@ def init_db():
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS completed_work_photos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                order_id INTEGER NOT NULL,
-                worker_id INTEGER NOT NULL,
+                campaign_id INTEGER NOT NULL,
+                blogger_id INTEGER NOT NULL,
                 photo_id TEXT NOT NULL,
                 verified BOOLEAN DEFAULT FALSE,
                 verified_at TEXT,
                 created_at TEXT NOT NULL,
-                FOREIGN KEY (order_id) REFERENCES orders(id),
-                FOREIGN KEY (worker_id) REFERENCES workers(id)
+                FOREIGN KEY (campaign_id) REFERENCES campaigns(id),
+                FOREIGN KEY (blogger_id) REFERENCES bloggers(id)
             );
         """)
 
@@ -625,7 +625,7 @@ def init_db():
             CREATE TABLE IF NOT EXISTS suggestions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL,
-                user_role TEXT NOT NULL,           -- 'worker', 'client' или 'both'
+                user_role TEXT NOT NULL,           -- 'blogger', 'advertiser' или 'both'
                 message TEXT NOT NULL,
                 created_at TEXT NOT NULL,
                 status TEXT DEFAULT 'new',         -- 'new', 'viewed', 'resolved'
@@ -639,7 +639,7 @@ def init_db():
             CREATE TABLE IF NOT EXISTS active_chats (
                 telegram_id INTEGER PRIMARY KEY,
                 chat_id INTEGER NOT NULL,
-                role TEXT NOT NULL,                -- 'client' или 'worker'
+                role TEXT NOT NULL,                -- 'advertiser' или 'blogger'
                 updated_at TEXT NOT NULL
             );
         """)
@@ -658,13 +658,13 @@ def migrate_add_portfolio_photos():
         cursor = get_cursor(conn)
 
         # Проверяем существует ли колонка (только для SQLite)
-        cursor.execute("PRAGMA table_info(workers)")
+        cursor.execute("PRAGMA table_info(bloggers)")
         columns = [column[1] for column in cursor.fetchall()]
 
         if 'portfolio_photos' not in columns:
             print("⚠️  Колонка 'portfolio_photos' отсутствует, добавляю...")
             cursor.execute("""
-                ALTER TABLE workers
+                ALTER TABLE bloggers
                 ADD COLUMN portfolio_photos TEXT DEFAULT ''
             """)
             conn.commit()
@@ -733,78 +733,78 @@ def delete_user_profile(telegram_id):
             logger.info(f"🗑️ Начинаем ПОЛНОЕ удаление профиля: telegram_id={telegram_id}, user_id={user_id}")
 
             # === УДАЛЕНИЕ ПРОФИЛЯ МАСТЕРА (если существует) ===
-            cursor.execute("SELECT id FROM workers WHERE user_id = ?", (user_id,))
-            worker_row = cursor.fetchone()
+            cursor.execute("SELECT id FROM bloggers WHERE user_id = ?", (user_id,))
+            blogger_row = cursor.fetchone()
 
-            if worker_row:
-                worker_id = worker_row['id']
-                logger.info(f"🔍 Найден профиль мастера: worker_id={worker_id}")
+            if blogger_row:
+                blogger_id = blogger_row['id']
+                logger.info(f"🔍 Найден профиль мастера: blogger_id={blogger_id}")
 
                 # 1. Удаляем категории мастера
-                cursor.execute("DELETE FROM worker_categories WHERE worker_id = ?", (worker_id,))
+                cursor.execute("DELETE FROM blogger_categories WHERE blogger_id = ?", (blogger_id,))
                 logger.info(f"✅ Удалены категории мастера")
 
                 # 2. Удаляем города мастера
-                cursor.execute("DELETE FROM worker_cities WHERE worker_id = ?", (worker_id,))
+                cursor.execute("DELETE FROM blogger_cities WHERE blogger_id = ?", (blogger_id,))
                 logger.info(f"✅ Удалены города мастера")
 
                 # 3. Удаляем фотографии завершённых работ
-                cursor.execute("DELETE FROM completed_work_photos WHERE worker_id = ?", (worker_id,))
+                cursor.execute("DELETE FROM completed_work_photos WHERE blogger_id = ?", (blogger_id,))
                 logger.info(f"✅ Удалены фотографии работ")
 
                 # 4. Удаляем отклики мастера
-                cursor.execute("DELETE FROM bids WHERE worker_id = ?", (worker_id,))
+                cursor.execute("DELETE FROM offers WHERE blogger_id = ?", (blogger_id,))
                 logger.info(f"✅ Удалены отклики мастера")
 
                 # 5. Удаляем настройки уведомлений
-                cursor.execute("DELETE FROM worker_notifications WHERE worker_id = ?", (worker_id,))
+                cursor.execute("DELETE FROM blogger_notifications WHERE blogger_id = ?", (blogger_id,))
                 logger.info(f"✅ Удалены настройки уведомлений")
 
                 # 6. Удаляем профиль мастера
-                cursor.execute("DELETE FROM workers WHERE id = ?", (worker_id,))
-                logger.info(f"✅ Удалён профиль мастера worker_id={worker_id}")
+                cursor.execute("DELETE FROM bloggers WHERE id = ?", (blogger_id,))
+                logger.info(f"✅ Удалён профиль мастера blogger_id={blogger_id}")
 
             # === УДАЛЕНИЕ ПРОФИЛЯ КЛИЕНТА (если существует) ===
-            cursor.execute("SELECT id FROM clients WHERE user_id = ?", (user_id,))
-            client_row = cursor.fetchone()
+            cursor.execute("SELECT id FROM advertisers WHERE user_id = ?", (user_id,))
+            advertiser_row = cursor.fetchone()
 
-            if client_row:
-                client_id = client_row['id']
-                logger.info(f"🔍 Найден профиль клиента: client_id={client_id}")
+            if advertiser_row:
+                advertiser_id = advertiser_row['id']
+                logger.info(f"🔍 Найден профиль клиента: advertiser_id={advertiser_id}")
 
                 # 1. Получаем все заказы клиента
-                cursor.execute("SELECT id FROM orders WHERE client_id = ?", (client_id,))
-                orders = cursor.fetchall()
+                cursor.execute("SELECT id FROM campaigns WHERE advertiser_id = ?", (advertiser_id,))
+                campaigns = cursor.fetchall()
 
-                for order in orders:
-                    order_id = order['id']
-                    logger.info(f"🔍 Удаляем заказ order_id={order_id}")
+                for campaign in campaigns:
+                    campaign_id = campaign['id']
+                    logger.info(f"🔍 Удаляем заказ campaign_id={campaign_id}")
 
                     # Удаляем отклики на заказ
-                    cursor.execute("DELETE FROM bids WHERE order_id = ?", (order_id,))
+                    cursor.execute("DELETE FROM offers WHERE campaign_id = ?", (campaign_id,))
 
                     # Удаляем отзывы на заказ
-                    cursor.execute("DELETE FROM reviews WHERE order_id = ?", (order_id,))
+                    cursor.execute("DELETE FROM reviews WHERE campaign_id = ?", (campaign_id,))
 
                     # Удаляем фотографии завершённых работ
-                    cursor.execute("DELETE FROM completed_work_photos WHERE order_id = ?", (order_id,))
+                    cursor.execute("DELETE FROM completed_work_photos WHERE campaign_id = ?", (campaign_id,))
 
                     # Удаляем сообщения чата
-                    cursor.execute("DELETE FROM chat_messages WHERE order_id = ?", (order_id,))
+                    cursor.execute("DELETE FROM chat_messages WHERE campaign_id = ?", (campaign_id,))
 
                     # Удаляем чаты
-                    cursor.execute("DELETE FROM chats WHERE order_id = ?", (order_id,))
+                    cursor.execute("DELETE FROM chats WHERE campaign_id = ?", (campaign_id,))
 
                 # 2. Удаляем все заказы
-                cursor.execute("DELETE FROM orders WHERE client_id = ?", (client_id,))
+                cursor.execute("DELETE FROM campaigns WHERE advertiser_id = ?", (advertiser_id,))
                 logger.info(f"✅ Удалены заказы клиента")
 
                 # 3. Удаляем профиль клиента
-                cursor.execute("DELETE FROM clients WHERE id = ?", (client_id,))
-                logger.info(f"✅ Удалён профиль клиента client_id={client_id}")
+                cursor.execute("DELETE FROM advertisers WHERE id = ?", (advertiser_id,))
+                logger.info(f"✅ Удалён профиль клиента advertiser_id={advertiser_id}")
 
             # === УДАЛЕНИЕ ОТЗЫВОВ ПОЛЬЗОВАТЕЛЯ ===
-            # ИСПРАВЛЕНО: Таблица reviews не имеет поля worker_id!
+            # ИСПРАВЛЕНО: Таблица reviews не имеет поля blogger_id!
             # Удаляем все отзывы, где пользователь - отправитель или получатель
             cursor.execute("DELETE FROM reviews WHERE from_user_id = ? OR to_user_id = ?", (user_id, user_id))
             logger.info(f"✅ Удалены отзывы пользователя")
@@ -840,7 +840,7 @@ def delete_user_profile(telegram_id):
 
 def create_worker_profile(user_id, name, phone, city, regions, categories, experience, description, portfolio_photos="", profile_photo="", cities=None):
     """
-    ОБНОВЛЕНО: Добавляет категории в нормализованную таблицу worker_categories.
+    ОБНОВЛЕНО: Добавляет категории в нормализованную таблицу blogger_categories.
     ОБНОВЛЕНО: Поддержка множественного выбора городов через параметр cities.
     ОБНОВЛЕНО: Поддержка profile_photo - фото профиля мастера.
     ИСПРАВЛЕНО: Валидация file_id для portfolio_photos.
@@ -876,24 +876,24 @@ def create_worker_profile(user_id, name, phone, city, regions, categories, exper
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         cursor.execute("""
-            INSERT INTO workers (user_id, name, phone, city, regions, categories, experience, description, portfolio_photos, profile_photo)
+            INSERT INTO bloggers (user_id, name, phone, city, regions, categories, experience, description, portfolio_photos, profile_photo)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (user_id, name, phone, city, regions, categories, experience, description, portfolio_photos, profile_photo))
-        worker_id = cursor.lastrowid
+        blogger_id = cursor.lastrowid
         conn.commit()  # КРИТИЧНО: Без этого транзакция не фиксируется!
-        logger.info(f"✅ Создан профиль мастера: ID={worker_id}, User={user_id}, Имя={name}, Город={city}")
+        logger.info(f"✅ Создан профиль мастера: ID={blogger_id}, User={user_id}, Имя={name}, Город={city}")
 
     # ИСПРАВЛЕНИЕ: Добавляем категории в нормализованную таблицу
     if categories:
         categories_list = [cat.strip() for cat in categories.split(',') if cat.strip()]
-        add_worker_categories(worker_id, categories_list)
-        logger.info(f"📋 Добавлены категории для мастера {worker_id}: {categories_list}")
+        add_worker_categories(blogger_id, categories_list)
+        logger.info(f"📋 Добавлены категории для мастера {blogger_id}: {categories_list}")
 
-    # НОВОЕ: Добавляем города в таблицу worker_cities
+    # НОВОЕ: Добавляем города в таблицу blogger_cities
     if cities and isinstance(cities, list):
         for city_name in cities:
-            add_worker_city(worker_id, city_name)
-        logger.info(f"🏙 Добавлено {len(cities)} городов для мастера {worker_id}: {cities}")
+            add_worker_city(blogger_id, city_name)
+        logger.info(f"🏙 Добавлено {len(cities)} городов для мастера {blogger_id}: {cities}")
 
 
 def create_client_profile(user_id, name, phone, city, description, regions=None):
@@ -920,12 +920,12 @@ def create_client_profile(user_id, name, phone, city, description, regions=None)
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         cursor.execute("""
-            INSERT INTO clients (user_id, name, phone, city, description, regions)
+            INSERT INTO advertisers (user_id, name, phone, city, description, regions)
             VALUES (?, ?, ?, ?, ?, ?)
         """, (user_id, name, phone, city, description, regions))
-        client_id = cursor.lastrowid
+        advertiser_id = cursor.lastrowid
         conn.commit()
-        logger.info(f"✅ Создан профиль клиента: ID={client_id}, User={user_id}, Имя={name}, Город={city}, Регион={regions}")
+        logger.info(f"✅ Создан профиль клиента: ID={advertiser_id}, User={user_id}, Имя={name}, Город={city}, Регион={regions}")
 
 
 def get_worker_profile(user_id):
@@ -935,7 +935,7 @@ def get_worker_profile(user_id):
         cursor = get_cursor(conn)
         cursor.execute("""
             SELECT w.*, u.telegram_id
-            FROM workers w
+            FROM bloggers w
             JOIN users u ON w.user_id = u.id
             WHERE w.user_id = ?
         """, (user_id,))
@@ -948,25 +948,25 @@ def get_worker_by_user_id(user_id):
     return get_worker_profile(user_id)
 
 
-def get_worker_profile_by_id(worker_id):
-    """Возвращает профиль мастера по id записи в таблице workers"""
+def get_worker_profile_by_id(blogger_id):
+    """Возвращает профиль мастера по id записи в таблице bloggers"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         cursor.execute("""
             SELECT w.*, u.telegram_id
-            FROM workers w
+            FROM bloggers w
             JOIN users u ON w.user_id = u.id
             WHERE w.id = ?
-        """, (worker_id,))
+        """, (blogger_id,))
         return cursor.fetchone()
 
 
-def get_worker_completed_orders_count(worker_user_id):
+def get_worker_completed_orders_count(blogger_user_id):
     """
     Подсчитывает количество завершенных заказов мастера (status='completed').
 
     Args:
-        worker_user_id: ID пользователя-мастера
+        blogger_user_id: ID пользователя-мастера
 
     Returns:
         int: Количество завершенных заказов
@@ -975,9 +975,9 @@ def get_worker_completed_orders_count(worker_user_id):
         cursor = get_cursor(conn)
         cursor.execute("""
             SELECT COUNT(*)
-            FROM orders
+            FROM campaigns
             WHERE selected_worker_id = ? AND status = 'completed'
-        """, (worker_user_id,))
+        """, (blogger_user_id,))
         result = cursor.fetchone()
         if not result:
             return 0
@@ -988,7 +988,7 @@ def get_worker_completed_orders_count(worker_user_id):
             return result[0]
 
 
-def calculate_photo_limit(worker_user_id):
+def calculate_photo_limit(blogger_user_id):
     """
     Рассчитывает максимальное количество фото для портфолио мастера.
 
@@ -997,7 +997,7 @@ def calculate_photo_limit(worker_user_id):
     - Подтвержденные фото работ хранятся отдельно (до 90 фото)
 
     Args:
-        worker_user_id: ID пользователя-мастера
+        blogger_user_id: ID пользователя-мастера
 
     Returns:
         int: Максимальное количество фото в портфолио (10)
@@ -1013,21 +1013,21 @@ def get_client_profile(user_id):
         cursor = get_cursor(conn)
         cursor.execute("""
             SELECT c.*, u.telegram_id
-            FROM clients c
+            FROM advertisers c
             JOIN users u ON c.user_id = u.id
             WHERE c.user_id = ?
         """, (user_id,))
         return cursor.fetchone()
 
 
-def get_client_by_id(client_id):
-    """Возвращает профиль заказчика по client_id"""
+def get_client_by_id(advertiser_id):
+    """Возвращает профиль заказчика по advertiser_id"""
     with get_db_connection() as conn:
         
         cursor = get_cursor(conn)
         cursor.execute("""
-            SELECT * FROM clients WHERE id = ?
-        """, (client_id,))
+            SELECT * FROM advertisers WHERE id = ?
+        """, (advertiser_id,))
         return cursor.fetchone()
 
 
@@ -1045,10 +1045,10 @@ def update_user_rating(user_id, new_rating, role_to):
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
 
-        if role_to == "worker":
+        if role_to == "blogger":
             # Атомарный UPDATE: вычисление происходит в БД, не в Python
             cursor.execute("""
-                UPDATE workers
+                UPDATE bloggers
                 SET
                     rating = CASE
                         WHEN rating_count = 0 THEN ?
@@ -1058,10 +1058,10 @@ def update_user_rating(user_id, new_rating, role_to):
                 WHERE user_id = ?
             """, (new_rating, new_rating, user_id))
 
-        elif role_to == "client":
+        elif role_to == "advertiser":
             # Атомарный UPDATE для клиентов
             cursor.execute("""
-                UPDATE clients
+                UPDATE advertisers
                 SET
                     rating = CASE
                         WHEN rating_count = 0 THEN ?
@@ -1074,10 +1074,10 @@ def update_user_rating(user_id, new_rating, role_to):
         conn.commit()
 
 
-def add_review(from_user_id, to_user_id, order_id, role_from, role_to, rating, comment):
+def add_review(from_user_id, to_user_id, campaign_id, role_from, role_to, rating, comment):
     """
     Добавляет отзыв и обновляет рейтинг пользователя.
-    Если роль получателя - worker, увеличивает счетчик verified_reviews.
+    Если роль получателя - blogger, увеличивает счетчик verified_reviews.
     """
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
@@ -1085,14 +1085,14 @@ def add_review(from_user_id, to_user_id, order_id, role_from, role_to, rating, c
         try:
             cursor.execute("""
                 INSERT INTO reviews
-                (from_user_id, to_user_id, order_id, role_from, role_to, rating, comment, created_at)
+                (from_user_id, to_user_id, campaign_id, role_from, role_to, rating, comment, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (from_user_id, to_user_id, order_id, role_from, role_to, rating, comment, created_at))
+            """, (from_user_id, to_user_id, campaign_id, role_from, role_to, rating, comment, created_at))
             conn.commit()
             update_user_rating(to_user_id, rating, role_to)
 
             # Увеличиваем счетчик проверенных отзывов для мастеров
-            if role_to == "worker":
+            if role_to == "blogger":
                 increment_verified_reviews(to_user_id)
 
             return True
@@ -1107,7 +1107,7 @@ def get_reviews_for_user(user_id, role):
 
     Args:
         user_id: ID пользователя
-        role: Роль пользователя ('worker' или 'client')
+        role: Роль пользователя ('blogger' или 'advertiser')
 
     Returns:
         List of reviews with reviewer info
@@ -1121,23 +1121,23 @@ def get_reviews_for_user(user_id, role):
                 r.rating,
                 r.comment,
                 r.created_at,
-                r.order_id,
+                r.campaign_id,
                 r.role_from,
                 CASE
-                    WHEN r.role_from = 'worker' THEN w.name
-                    WHEN r.role_from = 'client' THEN c.name
+                    WHEN r.role_from = 'blogger' THEN w.name
+                    WHEN r.role_from = 'advertiser' THEN c.name
                 END as reviewer_name
             FROM reviews r
-            LEFT JOIN workers w ON r.from_user_id = w.user_id AND r.role_from = 'worker'
-            LEFT JOIN clients c ON r.from_user_id = c.user_id AND r.role_from = 'client'
+            LEFT JOIN bloggers w ON r.from_user_id = w.user_id AND r.role_from = 'blogger'
+            LEFT JOIN advertisers c ON r.from_user_id = c.user_id AND r.role_from = 'advertiser'
             WHERE r.to_user_id = ? AND r.role_to = ?
-            ORDER BY r.created_at DESC
+            CAMPAIGN BY r.created_at DESC
         """, (user_id, role))
 
         return cursor.fetchall()
 
 
-def check_review_exists(order_id, from_user_id):
+def check_review_exists(campaign_id, from_user_id):
     """
     Проверяет, оставил ли пользователь уже отзыв по этому заказу.
 
@@ -1148,8 +1148,8 @@ def check_review_exists(order_id, from_user_id):
         cursor = get_cursor(conn)
         cursor.execute("""
             SELECT COUNT(*) FROM reviews
-            WHERE order_id = ? AND from_user_id = ?
-        """, (order_id, from_user_id))
+            WHERE campaign_id = ? AND from_user_id = ?
+        """, (campaign_id, from_user_id))
 
         count = cursor.fetchone()
         if USE_POSTGRES:
@@ -1180,14 +1180,14 @@ def count_orders_between_users(user1_id, user2_id, days=7):
 
         # Считаем заказы где user1 клиент, а user2 мастер ИЛИ наоборот
         cursor.execute("""
-            SELECT COUNT(*) FROM orders o
-            LEFT JOIN bids b ON o.accepted_bid_id = b.id
+            SELECT COUNT(*) FROM campaigns o
+            LEFT JOIN offers b ON o.accepted_bid_id = b.id
             WHERE o.status = 'completed'
             AND o.completed_at >= ?
             AND (
-                (o.client_user_id = ? AND b.worker_id = ?)
+                (o.advertiser_user_id = ? AND b.blogger_id = ?)
                 OR
-                (o.client_user_id = ? AND b.worker_id = ?)
+                (o.advertiser_user_id = ? AND b.blogger_id = ?)
             )
         """, (cutoff_date, user1_id, user2_id, user2_id, user1_id))
 
@@ -1222,18 +1222,18 @@ def get_suspicious_activity_report(days=7, min_orders=3):
         # 1. Находим пары пользователей с большим количеством заказов друг с другом
         cursor.execute("""
             SELECT
-                o.client_user_id,
-                b.worker_id,
-                COUNT(*) as order_count,
+                o.advertiser_user_id,
+                b.blogger_id,
+                COUNT(*) as campaign_count,
                 MAX(o.completed_at) as last_order
-            FROM orders o
-            LEFT JOIN bids b ON o.accepted_bid_id = b.id
+            FROM campaigns o
+            LEFT JOIN offers b ON o.accepted_bid_id = b.id
             WHERE o.status = 'completed'
             AND o.completed_at >= ?
-            AND b.worker_id IS NOT NULL
-            GROUP BY o.client_user_id, b.worker_id
+            AND b.blogger_id IS NOT NULL
+            GROUP BY o.advertiser_user_id, b.blogger_id
             HAVING COUNT(*) >= ?
-            ORDER BY order_count DESC
+            CAMPAIGN BY campaign_count DESC
         """, (cutoff_date, min_orders))
 
         repeated_orders = cursor.fetchall()
@@ -1241,19 +1241,19 @@ def get_suspicious_activity_report(days=7, min_orders=3):
         # 2. Находим заказы, завершенные слишком быстро (менее 1 часа)
         cursor.execute("""
             SELECT
-                o.id as order_id,
-                o.client_user_id,
-                b.worker_id,
+                o.id as campaign_id,
+                o.advertiser_user_id,
+                b.blogger_id,
                 o.accepted_at,
                 o.completed_at,
                 CAST((julianday(o.completed_at) - julianday(o.accepted_at)) * 24 AS REAL) as hours_diff
-            FROM orders o
-            LEFT JOIN bids b ON o.accepted_bid_id = b.id
+            FROM campaigns o
+            LEFT JOIN offers b ON o.accepted_bid_id = b.id
             WHERE o.status = 'completed'
             AND o.completed_at >= ?
             AND o.accepted_at IS NOT NULL
             AND (julianday(o.completed_at) - julianday(o.accepted_at)) * 24 < 1
-            ORDER BY hours_diff ASC
+            CAMPAIGN BY hours_diff ASC
         """, (cutoff_date,))
 
         quick_completions = cursor.fetchall()
@@ -1271,7 +1271,7 @@ def get_suspicious_activity_report(days=7, min_orders=3):
             GROUP BY r.to_user_id, r.role_to
             HAVING COUNT(*) >= 3
             AND (CAST(SUM(CASE WHEN r.rating = 5 THEN 1 ELSE 0 END) AS REAL) / COUNT(*) * 100) = 100
-            ORDER BY total_reviews DESC
+            CAMPAIGN BY total_reviews DESC
         """, (cutoff_date,))
 
         perfect_ratings = cursor.fetchall()
@@ -1283,7 +1283,7 @@ def get_suspicious_activity_report(days=7, min_orders=3):
         }
 
 
-def update_review_comment(order_id, from_user_id, comment):
+def update_review_comment(campaign_id, from_user_id, comment):
     """Обновляет комментарий существующего отзыва."""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
@@ -1291,8 +1291,8 @@ def update_review_comment(order_id, from_user_id, comment):
             cursor.execute("""
                 UPDATE reviews
                 SET comment = ?
-                WHERE order_id = ? AND from_user_id = ?
-            """, (comment, order_id, from_user_id))
+                WHERE campaign_id = ? AND from_user_id = ?
+            """, (comment, campaign_id, from_user_id))
             conn.commit()
             return cursor.rowcount > 0
         except Exception as e:
@@ -1307,7 +1307,7 @@ def increment_verified_reviews(user_id):
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         cursor.execute("""
-            UPDATE workers
+            UPDATE bloggers
             SET verified_reviews = verified_reviews + 1
             WHERE user_id = ?
         """, (user_id,))
@@ -1316,13 +1316,13 @@ def increment_verified_reviews(user_id):
 
 # --- НОВОЕ: Фотографии завершённых работ ---
 
-def add_completed_work_photo(order_id, worker_id, photo_id):
+def add_completed_work_photo(campaign_id, blogger_id, photo_id):
     """
     Добавляет фотографию завершённой работы от мастера.
 
     Args:
-        order_id: ID заказа
-        worker_id: ID мастера
+        campaign_id: ID заказа
+        blogger_id: ID мастера
         photo_id: Telegram file_id фотографии
 
     Returns:
@@ -1335,15 +1335,15 @@ def add_completed_work_photo(order_id, worker_id, photo_id):
             if USE_POSTGRES:
                 cursor.execute("""
                     INSERT INTO completed_work_photos
-                    (order_id, worker_id, photo_id, verified, created_at)
+                    (campaign_id, blogger_id, photo_id, verified, created_at)
                     VALUES (%s, %s, %s, FALSE, %s)
-                """, (order_id, worker_id, photo_id, created_at))
+                """, (campaign_id, blogger_id, photo_id, created_at))
             else:
                 cursor.execute("""
                     INSERT INTO completed_work_photos
-                    (order_id, worker_id, photo_id, verified, created_at)
+                    (campaign_id, blogger_id, photo_id, verified, created_at)
                     VALUES (?, ?, ?, 0, ?)
-                """, (order_id, worker_id, photo_id, created_at))
+                """, (campaign_id, blogger_id, photo_id, created_at))
             conn.commit()
 
             if USE_POSTGRES:
@@ -1381,7 +1381,7 @@ def verify_completed_work_photo(photo_id):
         try:
             # 1. Получаем информацию о фото
             cursor.execute("""
-                SELECT photo_id, worker_id FROM completed_work_photos
+                SELECT photo_id, blogger_id FROM completed_work_photos
                 WHERE id = ?
             """, (photo_id,))
             photo_info = cursor.fetchone()
@@ -1391,7 +1391,7 @@ def verify_completed_work_photo(photo_id):
                 return False
 
             photo_file_id = photo_info['photo_id']
-            worker_id = photo_info['worker_id']
+            blogger_id = photo_info['blogger_id']
 
             # 2. Подтверждаем фото (ИСПРАВЛЕНО: PostgreSQL boolean совместимость)
             cursor.execute("""
@@ -1402,12 +1402,12 @@ def verify_completed_work_photo(photo_id):
 
             # 3. Добавляем фото в портфолио мастера
             cursor.execute("""
-                SELECT portfolio_photos FROM workers WHERE id = ?
-            """, (worker_id,))
-            worker = cursor.fetchone()
+                SELECT portfolio_photos FROM bloggers WHERE id = ?
+            """, (blogger_id,))
+            blogger = cursor.fetchone()
 
-            if worker:
-                current_portfolio = worker['portfolio_photos'] or ""
+            if blogger:
+                current_portfolio = blogger['portfolio_photos'] or ""
                 portfolio_list = [p.strip() for p in current_portfolio.split(',') if p.strip()]
 
                 # Добавляем фото если его ещё нет
@@ -1416,12 +1416,12 @@ def verify_completed_work_photo(photo_id):
                     new_portfolio = ",".join(portfolio_list)
 
                     cursor.execute("""
-                        UPDATE workers
+                        UPDATE bloggers
                         SET portfolio_photos = ?
                         WHERE id = ?
-                    """, (new_portfolio, worker_id))
+                    """, (new_portfolio, blogger_id))
 
-                    logger.info(f"✅ Подтверждённое фото {photo_file_id} добавлено в портфолио мастера {worker_id}")
+                    logger.info(f"✅ Подтверждённое фото {photo_file_id} добавлено в портфолио мастера {blogger_id}")
 
             conn.commit()
             return cursor.rowcount > 0
@@ -1430,12 +1430,12 @@ def verify_completed_work_photo(photo_id):
             return False
 
 
-def get_completed_work_photos(order_id):
+def get_completed_work_photos(campaign_id):
     """
     Получает все фотографии завершённой работы для заказа.
 
     Args:
-        order_id: ID заказа
+        campaign_id: ID заказа
 
     Returns:
         list: Список фотографий с информацией о подтверждении
@@ -1444,9 +1444,9 @@ def get_completed_work_photos(order_id):
         cursor = get_cursor(conn)
         cursor.execute("""
             SELECT * FROM completed_work_photos
-            WHERE order_id = ?
-            ORDER BY created_at DESC
-        """, (order_id,))
+            WHERE campaign_id = ?
+            CAMPAIGN BY created_at DESC
+        """, (campaign_id,))
         return cursor.fetchall()
 
 
@@ -1469,12 +1469,12 @@ def get_completed_work_photo_by_id(photo_id):
         return cursor.fetchone()
 
 
-def get_worker_verified_photos(worker_id, limit=20):
+def get_worker_verified_photos(blogger_id, limit=20):
     """
     Получает подтверждённые фотографии работ мастера для показа в профиле.
 
     Args:
-        worker_id: ID мастера
+        blogger_id: ID мастера
         limit: Максимальное количество фото (по умолчанию 20)
 
     Returns:
@@ -1485,16 +1485,16 @@ def get_worker_verified_photos(worker_id, limit=20):
         cursor.execute("""
             SELECT
                 cwp.*,
-                o.title as order_title,
-                o.category as order_category,
-                r.rating as order_rating
+                o.title as campaign_title,
+                o.category as campaign_category,
+                r.rating as campaign_rating
             FROM completed_work_photos cwp
-            JOIN orders o ON cwp.order_id = o.id
-            LEFT JOIN reviews r ON o.id = r.order_id AND r.role_to = 'worker'
-            WHERE cwp.worker_id = ? AND cwp.verified = TRUE
-            ORDER BY cwp.created_at DESC
+            JOIN campaigns o ON cwp.campaign_id = o.id
+            LEFT JOIN reviews r ON o.id = r.campaign_id AND r.role_to = 'blogger'
+            WHERE cwp.blogger_id = ? AND cwp.verified = TRUE
+            CAMPAIGN BY cwp.created_at DESC
             LIMIT ?
-        """, (worker_id, limit))
+        """, (blogger_id, limit))
         return cursor.fetchall()
 
 
@@ -1513,25 +1513,25 @@ def get_unverified_photos_for_client(user_id):
         cursor.execute("""
             SELECT
                 cwp.*,
-                o.title as order_title,
-                o.id as order_id,
-                w.name as worker_name
+                o.title as campaign_title,
+                o.id as campaign_id,
+                w.name as blogger_name
             FROM completed_work_photos cwp
-            JOIN orders o ON cwp.order_id = o.id
-            JOIN clients c ON o.client_id = c.id
-            JOIN workers w ON cwp.worker_id = w.id
+            JOIN campaigns o ON cwp.campaign_id = o.id
+            JOIN advertisers c ON o.advertiser_id = c.id
+            JOIN bloggers w ON cwp.blogger_id = w.id
             WHERE c.user_id = ? AND cwp.verified = FALSE
-            ORDER BY cwp.created_at DESC
+            CAMPAIGN BY cwp.created_at DESC
         """, (user_id,))
         return cursor.fetchall()
 
 
-def count_worker_completed_work_photos(worker_id):
+def count_worker_completed_work_photos(blogger_id):
     """
     Подсчитывает общее количество фотографий завершенных работ у мастера.
 
     Args:
-        worker_id: ID мастера
+        blogger_id: ID мастера
 
     Returns:
         int: Количество фотографий
@@ -1541,20 +1541,20 @@ def count_worker_completed_work_photos(worker_id):
         cursor.execute("""
             SELECT COUNT(*) as count
             FROM completed_work_photos
-            WHERE worker_id = ?
-        """, (worker_id,))
+            WHERE blogger_id = ?
+        """, (blogger_id,))
         result = cursor.fetchone()
         if result:
             return dict(result)['count'] if isinstance(result, dict) else result[0]
         return 0
 
 
-def get_all_worker_completed_photos(worker_id):
+def get_all_worker_completed_photos(blogger_id):
     """
     Получает все фотографии завершенных работ мастера с информацией о заказах.
 
     Args:
-        worker_id: ID мастера
+        blogger_id: ID мастера
 
     Returns:
         List of dicts: Список фотографий с информацией о заказах
@@ -1565,16 +1565,16 @@ def get_all_worker_completed_photos(worker_id):
             SELECT
                 cwp.id,
                 cwp.photo_id,
-                cwp.order_id,
+                cwp.campaign_id,
                 cwp.verified,
                 cwp.created_at,
-                o.title as order_title,
-                o.description as order_description
+                o.title as campaign_title,
+                o.description as campaign_description
             FROM completed_work_photos cwp
-            JOIN orders o ON cwp.order_id = o.id
-            WHERE cwp.worker_id = ?
-            ORDER BY cwp.created_at DESC
-        """, (worker_id,))
+            JOIN campaigns o ON cwp.campaign_id = o.id
+            WHERE cwp.blogger_id = ?
+            CAMPAIGN BY cwp.created_at DESC
+        """, (blogger_id,))
         return cursor.fetchall()
 
 
@@ -1598,7 +1598,7 @@ def delete_completed_work_photo(photo_db_id):
         return cursor.rowcount > 0
 
 
-def get_order_by_id(order_id):
+def get_order_by_id(campaign_id):
     """
     Получает заказ по ID со всей информацией о клиенте.
     """
@@ -1607,33 +1607,33 @@ def get_order_by_id(order_id):
         cursor.execute("""
             SELECT
                 o.*,
-                c.name as client_name,
-                c.phone as client_phone,
-                c.user_id as client_user_id,
-                c.rating as client_rating,
-                c.rating_count as client_rating_count
-            FROM orders o
-            JOIN clients c ON o.client_id = c.id
+                c.name as advertiser_name,
+                c.phone as advertiser_phone,
+                c.user_id as advertiser_user_id,
+                c.rating as advertiser_rating,
+                c.rating_count as advertiser_rating_count
+            FROM campaigns o
+            JOIN advertisers c ON o.advertiser_id = c.id
             WHERE o.id = ?
-        """, (order_id,))
+        """, (campaign_id,))
         return cursor.fetchone()
 
 
-def update_order_status(order_id, new_status):
+def update_order_status(campaign_id, new_status):
     """
     Обновляет статус заказа.
 
     Args:
-        order_id: ID заказа
+        campaign_id: ID заказа
         new_status: Новый статус ('open', 'in_progress', 'completed', 'canceled')
     """
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         cursor.execute("""
-            UPDATE orders
+            UPDATE campaigns
             SET status = ?
             WHERE id = ?
-        """, (new_status, order_id))
+        """, (new_status, campaign_id))
         conn.commit()
 
 
@@ -1655,21 +1655,21 @@ def get_all_user_telegram_ids():
             return [row[0] for row in results]
 
 
-def set_selected_worker(order_id, worker_id):
+def set_selected_worker(campaign_id, blogger_id):
     """
     Устанавливает выбранного мастера для заказа и меняет статус на 'in_progress'.
     """
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         cursor.execute("""
-            UPDATE orders
+            UPDATE campaigns
             SET selected_worker_id = ?, status = 'in_progress'
             WHERE id = ?
-        """, (worker_id, order_id))
+        """, (blogger_id, campaign_id))
         conn.commit()
 
 
-def mark_order_completed_by_client(order_id):
+def mark_order_completed_by_client(campaign_id):
     """
     ИСПРАВЛЕНО: Клиент завершает заказ.
     Заказ сразу получает статус 'completed' - не требуется подтверждение от мастера.
@@ -1683,18 +1683,18 @@ def mark_order_completed_by_client(order_id):
 
         # Помечаем что клиент завершил и сразу меняем статус
         cursor.execute("""
-            UPDATE orders
+            UPDATE campaigns
             SET completed_by_client = 1,
                 status = 'completed'
             WHERE id = ?
-        """, (order_id,))
+        """, (campaign_id,))
 
         conn.commit()
-        logger.info(f"✅ Заказ {order_id} завершен клиентом")
+        logger.info(f"✅ Заказ {campaign_id} завершен клиентом")
         return True
 
 
-def mark_order_completed_by_worker(order_id):
+def mark_order_completed_by_worker(campaign_id):
     """
     ИСПРАВЛЕНО: Мастер завершает заказ.
     Заказ сразу получает статус 'completed' - не требуется подтверждение от клиента.
@@ -1708,38 +1708,38 @@ def mark_order_completed_by_worker(order_id):
 
         # Помечаем что мастер завершил и сразу меняем статус
         cursor.execute("""
-            UPDATE orders
+            UPDATE campaigns
             SET completed_by_worker = 1,
                 status = 'completed'
             WHERE id = ?
-        """, (order_id,))
+        """, (campaign_id,))
 
         conn.commit()
-        logger.info(f"✅ Заказ {order_id} завершен мастером")
+        logger.info(f"✅ Заказ {campaign_id} завершен мастером")
         return True
 
 
-def get_worker_info_for_order(order_id):
+def get_worker_info_for_order(campaign_id):
     """
     Получает информацию о мастере, работающем над заказом.
 
     Returns:
-        dict with worker info or None
+        dict with blogger info or None
     """
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         cursor.execute("""
             SELECT
-                w.id as worker_id,
+                w.id as blogger_id,
                 w.user_id,
                 w.name,
                 w.phone,
                 w.rating,
                 w.rating_count
-            FROM orders o
-            JOIN workers w ON o.selected_worker_id = w.id
+            FROM campaigns o
+            JOIN bloggers w ON o.selected_worker_id = w.id
             WHERE o.id = ?
-        """, (order_id,))
+        """, (campaign_id,))
         return cursor.fetchone()
 
 
@@ -1804,7 +1804,7 @@ def update_worker_field(user_id, field_name, new_value):
         logger.info(f"🔍 Cursor получен: type={type(cursor)}, has_rowcount={hasattr(cursor, 'rowcount')}")
 
         # Безопасное построение запроса с явным whitelist
-        query = f"UPDATE workers SET {safe_field} = ? WHERE user_id = ?"
+        query = f"UPDATE bloggers SET {safe_field} = ? WHERE user_id = ?"
         logger.info(f"🔍 Выполняем UPDATE: {query}")
         cursor.execute(query, (new_value, user_id))
         logger.info(f"🔍 UPDATE выполнен")
@@ -1861,7 +1861,7 @@ def update_client_field(user_id, field_name, new_value):
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         # Безопасное построение запроса с явным whitelist
-        query = f"UPDATE clients SET {safe_field} = ? WHERE user_id = ?"
+        query = f"UPDATE advertisers SET {safe_field} = ? WHERE user_id = ?"
         cursor.execute(query, (new_value, user_id))
         conn.commit()
 
@@ -1872,8 +1872,8 @@ def update_client_field(user_id, field_name, new_value):
 
 def get_all_workers(city=None, category=None):
     """
-    ИСПРАВЛЕНО: Использует точный поиск по категориям через worker_categories.
-    FALLBACK: Если категории нет в worker_categories, ищет в поле categories (для старых мастеров).
+    ИСПРАВЛЕНО: Использует точный поиск по категориям через blogger_categories.
+    FALLBACK: Если категории нет в blogger_categories, ищет в поле categories (для старых мастеров).
 
     Получает список всех мастеров с фильтрами.
 
@@ -1882,7 +1882,7 @@ def get_all_workers(city=None, category=None):
         category: Фильтр по категории (опционально)
 
     Returns:
-        List of worker profiles with user info
+        List of blogger profiles with user info
     """
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
@@ -1891,19 +1891,19 @@ def get_all_workers(city=None, category=None):
             SELECT
                 w.*,
                 u.telegram_id
-            FROM workers w
+            FROM bloggers w
             JOIN users u ON w.user_id = u.id
             WHERE 1=1
         """
         params = []
 
-        # ИСПРАВЛЕНО: Поиск по городу через worker_cities ИЛИ через city (для старых записей)
+        # ИСПРАВЛЕНО: Поиск по городу через blogger_cities ИЛИ через city (для старых записей)
         if city:
             query += """
                 AND (
                     EXISTS (
-                        SELECT 1 FROM worker_cities wc
-                        WHERE wc.worker_id = w.id AND wc.city = ?
+                        SELECT 1 FROM blogger_cities wc
+                        WHERE wc.blogger_id = w.id AND wc.city = ?
                     )
                     OR w.city = ?
                 )
@@ -1912,12 +1912,12 @@ def get_all_workers(city=None, category=None):
             params.append(city)
 
         if category:
-            # ИСПРАВЛЕНО: Поиск по категории через worker_categories ИЛИ через categories (для старых записей)
+            # ИСПРАВЛЕНО: Поиск по категории через blogger_categories ИЛИ через categories (для старых записей)
             query += """
                 AND (
                     EXISTS (
-                        SELECT 1 FROM worker_categories wc
-                        WHERE wc.worker_id = w.id AND wc.category = ?
+                        SELECT 1 FROM blogger_categories wc
+                        WHERE wc.blogger_id = w.id AND wc.category = ?
                     )
                     OR w.categories LIKE ?
                 )
@@ -1925,7 +1925,7 @@ def get_all_workers(city=None, category=None):
             params.append(category)
             params.append(f"%{category}%")
 
-        query += " ORDER BY w.rating DESC, w.rating_count DESC"
+        query += " CAMPAIGN BY w.rating DESC, w.rating_count DESC"
 
         logger.info(f"🔍 Поиск мастеров: город={city}, категория={category}")
         cursor.execute(query, params)
@@ -1934,7 +1934,7 @@ def get_all_workers(city=None, category=None):
         return results
 
 
-def get_worker_by_id(worker_id):
+def get_worker_by_id(blogger_id):
     """Получает профиль мастера по ID"""
     with get_db_connection() as conn:
         
@@ -1944,22 +1944,22 @@ def get_worker_by_id(worker_id):
             SELECT 
                 w.*,
                 u.telegram_id
-            FROM workers w
+            FROM bloggers w
             JOIN users u ON w.user_id = u.id
             WHERE w.id = ?
-        """, (worker_id,))
+        """, (blogger_id,))
         
         return cursor.fetchone()
 
 
 # --- Категории мастеров (новая нормализованная система) ---
 
-def add_worker_categories(worker_id, categories_list):
+def add_worker_categories(blogger_id, categories_list):
     """
-    Добавляет категории для мастера в таблицу worker_categories.
+    Добавляет категории для мастера в таблицу blogger_categories.
 
     Args:
-        worker_id: ID мастера
+        blogger_id: ID мастера
         categories_list: список категорий ["Электрика", "Сантехника"]
     """
     with get_db_connection() as conn:
@@ -1971,9 +1971,9 @@ def add_worker_categories(worker_id, categories_list):
 
             try:
                 cursor.execute("""
-                    INSERT INTO worker_categories (worker_id, category)
+                    INSERT INTO blogger_categories (blogger_id, category)
                     VALUES (?, ?)
-                """, (worker_id, category.strip()))
+                """, (blogger_id, category.strip()))
             except:
                 # Игнорируем дубликаты (UNIQUE constraint)
                 pass
@@ -1981,7 +1981,7 @@ def add_worker_categories(worker_id, categories_list):
         conn.commit()
 
 
-def get_worker_categories(worker_id):
+def get_worker_categories(blogger_id):
     """
     Получает все категории мастера.
 
@@ -1991,42 +1991,42 @@ def get_worker_categories(worker_id):
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         cursor.execute("""
-            SELECT category FROM worker_categories
-            WHERE worker_id = ?
-            ORDER BY category
-        """, (worker_id,))
+            SELECT category FROM blogger_categories
+            WHERE blogger_id = ?
+            CAMPAIGN BY category
+        """, (blogger_id,))
 
         return [row[0] for row in cursor.fetchall()]
 
 
-def remove_worker_category(worker_id, category):
+def remove_worker_category(blogger_id, category):
     """Удаляет категорию у мастера"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         cursor.execute("""
-            DELETE FROM worker_categories
-            WHERE worker_id = ? AND category = ?
-        """, (worker_id, category))
+            DELETE FROM blogger_categories
+            WHERE blogger_id = ? AND category = ?
+        """, (blogger_id, category))
         conn.commit()
 
 
-def clear_worker_categories(worker_id):
+def clear_worker_categories(blogger_id):
     """Удаляет все категории мастера"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         cursor.execute("""
-            DELETE FROM worker_categories
-            WHERE worker_id = ?
-        """, (worker_id,))
+            DELETE FROM blogger_categories
+            WHERE blogger_id = ?
+        """, (blogger_id,))
         conn.commit()
 
 
-def add_order_categories(order_id, categories_list):
+def add_order_categories(campaign_id, categories_list):
     """
-    НОВОЕ: Добавляет категории для заказа в таблицу order_categories.
+    НОВОЕ: Добавляет категории для заказа в таблицу campaign_categories.
 
     Args:
-        order_id: ID заказа
+        campaign_id: ID заказа
         categories_list: список категорий ["Электрика", "Сантехника"]
     """
     with get_db_connection() as conn:
@@ -2038,9 +2038,9 @@ def add_order_categories(order_id, categories_list):
 
             try:
                 cursor.execute("""
-                    INSERT INTO order_categories (order_id, category)
+                    INSERT INTO campaign_categories (campaign_id, category)
                     VALUES (?, ?)
-                """, (order_id, category.strip()))
+                """, (campaign_id, category.strip()))
             except:
                 # Игнорируем дубликаты (UNIQUE constraint)
                 pass
@@ -2048,7 +2048,7 @@ def add_order_categories(order_id, categories_list):
         conn.commit()  # КРИТИЧНО: Фиксируем транзакцию
 
 
-def get_order_categories(order_id):
+def get_order_categories(campaign_id):
     """
     НОВОЕ: Получает все категории заказа.
 
@@ -2058,16 +2058,16 @@ def get_order_categories(order_id):
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         cursor.execute("""
-            SELECT category FROM order_categories
-            WHERE order_id = ?
-            ORDER BY category
-        """, (order_id,))
+            SELECT category FROM campaign_categories
+            WHERE campaign_id = ?
+            CAMPAIGN BY category
+        """, (campaign_id,))
 
         return [row[0] for row in cursor.fetchall()]
 
 
 def migrate_add_order_photos():
-    """Добавляет колонку photos в таблицу orders"""
+    """Добавляет колонку photos в таблицу campaigns"""
     # Для PostgreSQL миграции не нужны - таблицы создаются через init_db()
     if USE_POSTGRES:
         print("✅ Используется PostgreSQL, миграция не требуется")
@@ -2077,20 +2077,20 @@ def migrate_add_order_photos():
         cursor = get_cursor(conn)
 
         # Проверяем есть ли колонка photos (только для SQLite)
-        cursor.execute("PRAGMA table_info(orders)")
+        cursor.execute("PRAGMA table_info(campaigns)")
         columns = [column[1] for column in cursor.fetchall()]
 
         if 'photos' not in columns:
-            print("➕ Добавляем колонку 'photos' в таблицу orders...")
-            cursor.execute("ALTER TABLE orders ADD COLUMN photos TEXT DEFAULT ''")
+            print("➕ Добавляем колонку 'photos' в таблицу campaigns...")
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN photos TEXT DEFAULT ''")
             conn.commit()
-            print("✅ Колонка 'photos' успешно добавлена в orders!")
+            print("✅ Колонка 'photos' успешно добавлена в campaigns!")
         else:
-            print("✅ Колонка 'photos' уже существует в orders")
+            print("✅ Колонка 'photos' уже существует в campaigns")
 
 
 def migrate_add_currency_to_bids():
-    """Добавляет колонку currency в таблицу bids"""
+    """Добавляет колонку currency в таблицу offers"""
     # Для PostgreSQL миграции не нужны - таблицы создаются через init_db()
     if USE_POSTGRES:
         print("✅ Используется PostgreSQL, миграция не требуется")
@@ -2100,16 +2100,16 @@ def migrate_add_currency_to_bids():
         cursor = get_cursor(conn)
 
         # Проверяем есть ли колонка currency (только для SQLite)
-        cursor.execute("PRAGMA table_info(bids)")
+        cursor.execute("PRAGMA table_info(offers)")
         columns = [column[1] for column in cursor.fetchall()]
 
         if 'currency' not in columns:
-            print("➕ Добавляем колонку 'currency' в таблицу bids...")
-            cursor.execute("ALTER TABLE bids ADD COLUMN currency TEXT DEFAULT 'BYN'")
+            print("➕ Добавляем колонку 'currency' в таблицу offers...")
+            cursor.execute("ALTER TABLE offers ADD COLUMN currency TEXT DEFAULT 'BYN'")
             conn.commit()
-            print("✅ Колонка 'currency' успешно добавлена в bids!")
+            print("✅ Колонка 'currency' успешно добавлена в offers!")
         else:
-            print("✅ Колонка 'currency' уже существует в bids")
+            print("✅ Колонка 'currency' уже существует в offers")
 
 
 def migrate_add_cascading_deletes():
@@ -2138,9 +2138,9 @@ def migrate_add_cascading_deletes():
                         SELECT 1 FROM information_schema.table_constraints
                         WHERE constraint_name = 'workers_user_id_fkey'
                     ) THEN
-                        ALTER TABLE workers DROP CONSTRAINT workers_user_id_fkey;
+                        ALTER TABLE bloggers DROP CONSTRAINT workers_user_id_fkey;
                     END IF;
-                    ALTER TABLE workers ADD CONSTRAINT workers_user_id_fkey
+                    ALTER TABLE bloggers ADD CONSTRAINT workers_user_id_fkey
                         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
                 END $$;
             """)
@@ -2153,14 +2153,14 @@ def migrate_add_cascading_deletes():
                         SELECT 1 FROM information_schema.table_constraints
                         WHERE constraint_name = 'clients_user_id_fkey'
                     ) THEN
-                        ALTER TABLE clients DROP CONSTRAINT clients_user_id_fkey;
+                        ALTER TABLE advertisers DROP CONSTRAINT clients_user_id_fkey;
                     END IF;
-                    ALTER TABLE clients ADD CONSTRAINT clients_user_id_fkey
+                    ALTER TABLE advertisers ADD CONSTRAINT clients_user_id_fkey
                         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
                 END $$;
             """)
 
-            # Orders: client_id -> clients(id) ON DELETE CASCADE
+            # Orders: advertiser_id -> advertisers(id) ON DELETE CASCADE
             cursor.execute("""
                 DO $$
                 BEGIN
@@ -2168,14 +2168,14 @@ def migrate_add_cascading_deletes():
                         SELECT 1 FROM information_schema.table_constraints
                         WHERE constraint_name = 'orders_client_id_fkey'
                     ) THEN
-                        ALTER TABLE orders DROP CONSTRAINT orders_client_id_fkey;
+                        ALTER TABLE campaigns DROP CONSTRAINT orders_client_id_fkey;
                     END IF;
-                    ALTER TABLE orders ADD CONSTRAINT orders_client_id_fkey
-                        FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE;
+                    ALTER TABLE campaigns ADD CONSTRAINT orders_client_id_fkey
+                        FOREIGN KEY (advertiser_id) REFERENCES advertisers(id) ON DELETE CASCADE;
                 END $$;
             """)
 
-            # Bids: order_id -> orders(id) ON DELETE CASCADE
+            # Bids: campaign_id -> campaigns(id) ON DELETE CASCADE
             cursor.execute("""
                 DO $$
                 BEGIN
@@ -2183,14 +2183,14 @@ def migrate_add_cascading_deletes():
                         SELECT 1 FROM information_schema.table_constraints
                         WHERE constraint_name = 'bids_order_id_fkey'
                     ) THEN
-                        ALTER TABLE bids DROP CONSTRAINT bids_order_id_fkey;
+                        ALTER TABLE offers DROP CONSTRAINT bids_order_id_fkey;
                     END IF;
-                    ALTER TABLE bids ADD CONSTRAINT bids_order_id_fkey
-                        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE;
+                    ALTER TABLE offers ADD CONSTRAINT bids_order_id_fkey
+                        FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE;
                 END $$;
             """)
 
-            # Bids: worker_id -> workers(id) ON DELETE CASCADE
+            # Bids: blogger_id -> bloggers(id) ON DELETE CASCADE
             cursor.execute("""
                 DO $$
                 BEGIN
@@ -2198,10 +2198,10 @@ def migrate_add_cascading_deletes():
                         SELECT 1 FROM information_schema.table_constraints
                         WHERE constraint_name = 'bids_worker_id_fkey'
                     ) THEN
-                        ALTER TABLE bids DROP CONSTRAINT bids_worker_id_fkey;
+                        ALTER TABLE offers DROP CONSTRAINT bids_worker_id_fkey;
                     END IF;
-                    ALTER TABLE bids ADD CONSTRAINT bids_worker_id_fkey
-                        FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE CASCADE;
+                    ALTER TABLE offers ADD CONSTRAINT bids_worker_id_fkey
+                        FOREIGN KEY (blogger_id) REFERENCES bloggers(id) ON DELETE CASCADE;
                 END $$;
             """)
 
@@ -2234,7 +2234,7 @@ def migrate_add_cascading_deletes():
                         ALTER TABLE reviews DROP CONSTRAINT reviews_order_id_fkey;
                     END IF;
                     ALTER TABLE reviews ADD CONSTRAINT reviews_order_id_fkey
-                        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE;
+                        FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE;
                 END $$;
             """)
 
@@ -2262,25 +2262,25 @@ def migrate_add_order_completion_tracking():
                     BEGIN
                         IF NOT EXISTS (
                             SELECT 1 FROM information_schema.columns
-                            WHERE table_name = 'orders' AND column_name = 'selected_worker_id'
+                            WHERE table_name = 'campaigns' AND column_name = 'selected_worker_id'
                         ) THEN
-                            ALTER TABLE orders ADD COLUMN selected_worker_id INTEGER;
-                            ALTER TABLE orders ADD CONSTRAINT orders_selected_worker_id_fkey
-                                FOREIGN KEY (selected_worker_id) REFERENCES workers(id) ON DELETE SET NULL;
+                            ALTER TABLE campaigns ADD COLUMN selected_worker_id INTEGER;
+                            ALTER TABLE campaigns ADD CONSTRAINT orders_selected_worker_id_fkey
+                                FOREIGN KEY (selected_worker_id) REFERENCES bloggers(id) ON DELETE SET NULL;
                         END IF;
 
                         IF NOT EXISTS (
                             SELECT 1 FROM information_schema.columns
-                            WHERE table_name = 'orders' AND column_name = 'completed_by_client'
+                            WHERE table_name = 'campaigns' AND column_name = 'completed_by_client'
                         ) THEN
-                            ALTER TABLE orders ADD COLUMN completed_by_client INTEGER DEFAULT 0;
+                            ALTER TABLE campaigns ADD COLUMN completed_by_client INTEGER DEFAULT 0;
                         END IF;
 
                         IF NOT EXISTS (
                             SELECT 1 FROM information_schema.columns
-                            WHERE table_name = 'orders' AND column_name = 'completed_by_worker'
+                            WHERE table_name = 'campaigns' AND column_name = 'completed_by_worker'
                         ) THEN
-                            ALTER TABLE orders ADD COLUMN completed_by_worker INTEGER DEFAULT 0;
+                            ALTER TABLE campaigns ADD COLUMN completed_by_worker INTEGER DEFAULT 0;
                         END IF;
                     END $$;
                 """)
@@ -2289,20 +2289,20 @@ def migrate_add_order_completion_tracking():
 
             else:
                 # Для SQLite проверяем существование колонок
-                cursor.execute("PRAGMA table_info(orders)")
+                cursor.execute("PRAGMA table_info(campaigns)")
                 columns = [column[1] for column in cursor.fetchall()]
 
                 if 'selected_worker_id' not in columns:
                     print("📝 Добавление поля selected_worker_id...")
-                    cursor.execute("ALTER TABLE orders ADD COLUMN selected_worker_id INTEGER")
+                    cursor.execute("ALTER TABLE campaigns ADD COLUMN selected_worker_id INTEGER")
 
                 if 'completed_by_client' not in columns:
                     print("📝 Добавление поля completed_by_client...")
-                    cursor.execute("ALTER TABLE orders ADD COLUMN completed_by_client INTEGER DEFAULT 0")
+                    cursor.execute("ALTER TABLE campaigns ADD COLUMN completed_by_client INTEGER DEFAULT 0")
 
                 if 'completed_by_worker' not in columns:
                     print("📝 Добавление поля completed_by_worker...")
-                    cursor.execute("ALTER TABLE orders ADD COLUMN completed_by_worker INTEGER DEFAULT 0")
+                    cursor.execute("ALTER TABLE campaigns ADD COLUMN completed_by_worker INTEGER DEFAULT 0")
 
                 conn.commit()
                 print("✅ Поля отслеживания завершения успешно добавлены!")
@@ -2327,9 +2327,9 @@ def migrate_add_profile_photo():
                     BEGIN
                         IF NOT EXISTS (
                             SELECT 1 FROM information_schema.columns
-                            WHERE table_name = 'workers' AND column_name = 'profile_photo'
+                            WHERE table_name = 'bloggers' AND column_name = 'profile_photo'
                         ) THEN
-                            ALTER TABLE workers ADD COLUMN profile_photo TEXT;
+                            ALTER TABLE bloggers ADD COLUMN profile_photo TEXT;
                         END IF;
                     END $$;
                 """)
@@ -2338,12 +2338,12 @@ def migrate_add_profile_photo():
 
             else:
                 # Для SQLite проверяем существование колонки
-                cursor.execute("PRAGMA table_info(workers)")
+                cursor.execute("PRAGMA table_info(bloggers)")
                 columns = [column[1] for column in cursor.fetchall()]
 
                 if 'profile_photo' not in columns:
                     print("📝 Добавление поля profile_photo...")
-                    cursor.execute("ALTER TABLE workers ADD COLUMN profile_photo TEXT")
+                    cursor.execute("ALTER TABLE bloggers ADD COLUMN profile_photo TEXT")
                     conn.commit()
                     print("✅ Поле profile_photo успешно добавлено!")
                 else:
@@ -2357,8 +2357,8 @@ def migrate_add_premium_features():
     """
     Добавляет поля для premium функций:
     - premium_enabled (глобальный флаг в settings)
-    - is_premium_order (для orders)
-    - is_premium_worker (для workers)
+    - is_premium_order (для campaigns)
+    - is_premium_worker (для bloggers)
     """
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
@@ -2395,65 +2395,65 @@ def migrate_add_premium_features():
                     VALUES ('premium_enabled', 'false')
                 """)
 
-            # Добавляем поля для premium в orders
+            # Добавляем поля для premium в campaigns
             if USE_POSTGRES:
                 cursor.execute("""
                     DO $$
                     BEGIN
                         IF NOT EXISTS (
                             SELECT 1 FROM information_schema.columns
-                            WHERE table_name = 'orders' AND column_name = 'is_premium'
+                            WHERE table_name = 'campaigns' AND column_name = 'is_premium'
                         ) THEN
-                            ALTER TABLE orders ADD COLUMN is_premium BOOLEAN DEFAULT FALSE;
+                            ALTER TABLE campaigns ADD COLUMN is_premium BOOLEAN DEFAULT FALSE;
                         END IF;
 
                         IF NOT EXISTS (
                             SELECT 1 FROM information_schema.columns
-                            WHERE table_name = 'orders' AND column_name = 'premium_until'
+                            WHERE table_name = 'campaigns' AND column_name = 'premium_until'
                         ) THEN
-                            ALTER TABLE orders ADD COLUMN premium_until TIMESTAMP;
+                            ALTER TABLE campaigns ADD COLUMN premium_until TIMESTAMP;
                         END IF;
                     END $$;
                 """)
             else:
-                cursor.execute("PRAGMA table_info(orders)")
-                order_columns = [column[1] for column in cursor.fetchall()]
+                cursor.execute("PRAGMA table_info(campaigns)")
+                campaign_columns = [column[1] for column in cursor.fetchall()]
 
-                if 'is_premium' not in order_columns:
-                    cursor.execute("ALTER TABLE orders ADD COLUMN is_premium INTEGER DEFAULT 0")
+                if 'is_premium' not in campaign_columns:
+                    cursor.execute("ALTER TABLE campaigns ADD COLUMN is_premium INTEGER DEFAULT 0")
 
-                if 'premium_until' not in order_columns:
-                    cursor.execute("ALTER TABLE orders ADD COLUMN premium_until TIMESTAMP")
+                if 'premium_until' not in campaign_columns:
+                    cursor.execute("ALTER TABLE campaigns ADD COLUMN premium_until TIMESTAMP")
 
-            # Добавляем поля для premium в workers
+            # Добавляем поля для premium в bloggers
             if USE_POSTGRES:
                 cursor.execute("""
                     DO $$
                     BEGIN
                         IF NOT EXISTS (
                             SELECT 1 FROM information_schema.columns
-                            WHERE table_name = 'workers' AND column_name = 'is_premium'
+                            WHERE table_name = 'bloggers' AND column_name = 'is_premium'
                         ) THEN
-                            ALTER TABLE workers ADD COLUMN is_premium BOOLEAN DEFAULT FALSE;
+                            ALTER TABLE bloggers ADD COLUMN is_premium BOOLEAN DEFAULT FALSE;
                         END IF;
 
                         IF NOT EXISTS (
                             SELECT 1 FROM information_schema.columns
-                            WHERE table_name = 'workers' AND column_name = 'premium_until'
+                            WHERE table_name = 'bloggers' AND column_name = 'premium_until'
                         ) THEN
-                            ALTER TABLE workers ADD COLUMN premium_until TIMESTAMP;
+                            ALTER TABLE bloggers ADD COLUMN premium_until TIMESTAMP;
                         END IF;
                     END $$;
                 """)
             else:
-                cursor.execute("PRAGMA table_info(workers)")
-                worker_columns = [column[1] for column in cursor.fetchall()]
+                cursor.execute("PRAGMA table_info(bloggers)")
+                blogger_columns = [column[1] for column in cursor.fetchall()]
 
-                if 'is_premium' not in worker_columns:
-                    cursor.execute("ALTER TABLE workers ADD COLUMN is_premium INTEGER DEFAULT 0")
+                if 'is_premium' not in blogger_columns:
+                    cursor.execute("ALTER TABLE bloggers ADD COLUMN is_premium INTEGER DEFAULT 0")
 
-                if 'premium_until' not in worker_columns:
-                    cursor.execute("ALTER TABLE workers ADD COLUMN premium_until TIMESTAMP")
+                if 'premium_until' not in blogger_columns:
+                    cursor.execute("ALTER TABLE bloggers ADD COLUMN premium_until TIMESTAMP")
 
             conn.commit()
             print("✅ Premium features migration completed successfully!")
@@ -2477,17 +2477,17 @@ def migrate_add_chat_system():
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS chats (
                         id SERIAL PRIMARY KEY,
-                        order_id INTEGER NOT NULL,
-                        client_user_id INTEGER NOT NULL,
-                        worker_user_id INTEGER NOT NULL,
-                        bid_id INTEGER NOT NULL,
+                        campaign_id INTEGER NOT NULL,
+                        advertiser_user_id INTEGER NOT NULL,
+                        blogger_user_id INTEGER NOT NULL,
+                        offer_id INTEGER NOT NULL,
                         status VARCHAR(50) DEFAULT 'active',
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         last_message_at TIMESTAMP,
-                        worker_confirmed BOOLEAN DEFAULT FALSE,
-                        worker_confirmed_at TIMESTAMP,
-                        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-                        FOREIGN KEY (bid_id) REFERENCES bids(id) ON DELETE CASCADE
+                        blogger_confirmed BOOLEAN DEFAULT FALSE,
+                        blogger_confirmed_at TIMESTAMP,
+                        FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
+                        FOREIGN KEY (offer_id) REFERENCES offers(id) ON DELETE CASCADE
                     )
                 """)
 
@@ -2507,17 +2507,17 @@ def migrate_add_chat_system():
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS chats (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        order_id INTEGER NOT NULL,
-                        client_user_id INTEGER NOT NULL,
-                        worker_user_id INTEGER NOT NULL,
-                        bid_id INTEGER NOT NULL,
+                        campaign_id INTEGER NOT NULL,
+                        advertiser_user_id INTEGER NOT NULL,
+                        blogger_user_id INTEGER NOT NULL,
+                        offer_id INTEGER NOT NULL,
                         status TEXT DEFAULT 'active',
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         last_message_at TIMESTAMP,
-                        worker_confirmed INTEGER DEFAULT 0,
-                        worker_confirmed_at TIMESTAMP,
-                        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-                        FOREIGN KEY (bid_id) REFERENCES bids(id) ON DELETE CASCADE
+                        blogger_confirmed INTEGER DEFAULT 0,
+                        blogger_confirmed_at TIMESTAMP,
+                        FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
+                        FOREIGN KEY (offer_id) REFERENCES offers(id) ON DELETE CASCADE
                     )
                 """)
 
@@ -2556,8 +2556,8 @@ def migrate_add_transactions():
                     CREATE TABLE IF NOT EXISTS transactions (
                         id SERIAL PRIMARY KEY,
                         user_id INTEGER NOT NULL,
-                        order_id INTEGER,
-                        bid_id INTEGER,
+                        campaign_id INTEGER,
+                        offer_id INTEGER,
                         transaction_type VARCHAR(50) NOT NULL,
                         amount DECIMAL(10, 2) NOT NULL,
                         currency VARCHAR(10) DEFAULT 'BYN',
@@ -2567,8 +2567,8 @@ def migrate_add_transactions():
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         completed_at TIMESTAMP,
                         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL,
-                        FOREIGN KEY (bid_id) REFERENCES bids(id) ON DELETE SET NULL
+                        FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE SET NULL,
+                        FOREIGN KEY (offer_id) REFERENCES offers(id) ON DELETE SET NULL
                     )
                 """)
             else:
@@ -2576,8 +2576,8 @@ def migrate_add_transactions():
                     CREATE TABLE IF NOT EXISTS transactions (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         user_id INTEGER NOT NULL,
-                        order_id INTEGER,
-                        bid_id INTEGER,
+                        campaign_id INTEGER,
+                        offer_id INTEGER,
                         transaction_type TEXT NOT NULL,
                         amount REAL NOT NULL,
                         currency TEXT DEFAULT 'BYN',
@@ -2587,8 +2587,8 @@ def migrate_add_transactions():
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         completed_at TIMESTAMP,
                         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL,
-                        FOREIGN KEY (bid_id) REFERENCES bids(id) ON DELETE SET NULL
+                        FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE SET NULL,
+                        FOREIGN KEY (offer_id) REFERENCES offers(id) ON DELETE SET NULL
                     )
                 """)
 
@@ -2611,45 +2611,45 @@ def migrate_add_notification_settings():
 
         try:
             if USE_POSTGRES:
-                # Миграция для workers
+                # Миграция для bloggers
                 cursor.execute("""
                     DO $$
                     BEGIN
                         IF NOT EXISTS (
                             SELECT 1 FROM information_schema.columns
-                            WHERE table_name = 'workers' AND column_name = 'notifications_enabled'
+                            WHERE table_name = 'bloggers' AND column_name = 'notifications_enabled'
                         ) THEN
-                            ALTER TABLE workers ADD COLUMN notifications_enabled BOOLEAN DEFAULT TRUE;
+                            ALTER TABLE bloggers ADD COLUMN notifications_enabled BOOLEAN DEFAULT TRUE;
                         END IF;
                     END $$;
                 """)
 
-                # Миграция для clients
+                # Миграция для advertisers
                 cursor.execute("""
                     DO $$
                     BEGIN
                         IF NOT EXISTS (
                             SELECT 1 FROM information_schema.columns
-                            WHERE table_name = 'clients' AND column_name = 'notifications_enabled'
+                            WHERE table_name = 'advertisers' AND column_name = 'notifications_enabled'
                         ) THEN
-                            ALTER TABLE clients ADD COLUMN notifications_enabled BOOLEAN DEFAULT TRUE;
+                            ALTER TABLE advertisers ADD COLUMN notifications_enabled BOOLEAN DEFAULT TRUE;
                         END IF;
                     END $$;
                 """)
             else:
-                # SQLite - миграция для workers
-                cursor.execute("PRAGMA table_info(workers)")
-                worker_columns = [column[1] for column in cursor.fetchall()]
+                # SQLite - миграция для bloggers
+                cursor.execute("PRAGMA table_info(bloggers)")
+                blogger_columns = [column[1] for column in cursor.fetchall()]
 
-                if 'notifications_enabled' not in worker_columns:
-                    cursor.execute("ALTER TABLE workers ADD COLUMN notifications_enabled INTEGER DEFAULT 1")
+                if 'notifications_enabled' not in blogger_columns:
+                    cursor.execute("ALTER TABLE bloggers ADD COLUMN notifications_enabled INTEGER DEFAULT 1")
 
-                # SQLite - миграция для clients
-                cursor.execute("PRAGMA table_info(clients)")
-                client_columns = [column[1] for column in cursor.fetchall()]
+                # SQLite - миграция для advertisers
+                cursor.execute("PRAGMA table_info(advertisers)")
+                advertiser_columns = [column[1] for column in cursor.fetchall()]
 
-                if 'notifications_enabled' not in client_columns:
-                    cursor.execute("ALTER TABLE clients ADD COLUMN notifications_enabled INTEGER DEFAULT 1")
+                if 'notifications_enabled' not in advertiser_columns:
+                    cursor.execute("ALTER TABLE advertisers ADD COLUMN notifications_enabled INTEGER DEFAULT 1")
 
             conn.commit()
             print("✅ Notification settings migration completed successfully!")
@@ -2665,11 +2665,11 @@ def migrate_normalize_categories():
     ИСПРАВЛЕНИЕ: Создает отдельную таблицу для категорий мастеров.
 
     ПРОБЛЕМА: categories LIKE '%Электрика%' находит 'Неэлектрика'
-    РЕШЕНИЕ: Отдельная таблица worker_categories с точным поиском
+    РЕШЕНИЕ: Отдельная таблица blogger_categories с точным поиском
 
     Создает:
-    1. Таблицу worker_categories (worker_id, category)
-    2. Переносит данные из workers.categories
+    1. Таблицу blogger_categories (blogger_id, category)
+    2. Переносит данные из bloggers.categories
     3. Создает индексы для быстрого поиска
     """
     with get_db_connection() as conn:
@@ -2681,7 +2681,7 @@ def migrate_normalize_categories():
                 cursor.execute("""
                     SELECT EXISTS (
                         SELECT 1 FROM information_schema.tables
-                        WHERE table_name = 'worker_categories'
+                        WHERE table_name = 'blogger_categories'
                     )
                 """)
                 result = cursor.fetchone()
@@ -2693,49 +2693,49 @@ def migrate_normalize_categories():
             else:
                 cursor.execute("""
                     SELECT name FROM sqlite_master
-                    WHERE type='table' AND name='worker_categories'
+                    WHERE type='table' AND name='blogger_categories'
                 """)
                 table_exists = cursor.fetchone() is not None
 
             if table_exists:
-                print("ℹ️  Таблица worker_categories уже существует, пропускаем миграцию")
+                print("ℹ️  Таблица blogger_categories уже существует, пропускаем миграцию")
                 return
 
-            # Создаем таблицу worker_categories
+            # Создаем таблицу blogger_categories
             if USE_POSTGRES:
                 cursor.execute("""
-                    CREATE TABLE worker_categories (
+                    CREATE TABLE blogger_categories (
                         id SERIAL PRIMARY KEY,
-                        worker_id INTEGER NOT NULL,
+                        blogger_id INTEGER NOT NULL,
                         category VARCHAR(100) NOT NULL,
-                        FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE CASCADE,
-                        UNIQUE (worker_id, category)
+                        FOREIGN KEY (blogger_id) REFERENCES bloggers(id) ON DELETE CASCADE,
+                        UNIQUE (blogger_id, category)
                     )
                 """)
             else:
                 cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS worker_categories (
+                    CREATE TABLE IF NOT EXISTS blogger_categories (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        worker_id INTEGER NOT NULL,
+                        blogger_id INTEGER NOT NULL,
                         category TEXT NOT NULL,
-                        FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE CASCADE,
-                        UNIQUE (worker_id, category)
+                        FOREIGN KEY (blogger_id) REFERENCES bloggers(id) ON DELETE CASCADE,
+                        UNIQUE (blogger_id, category)
                     )
                 """)
 
-            # Переносим существующие категории из workers.categories
-            cursor.execute("SELECT id, categories FROM workers WHERE categories IS NOT NULL AND categories != ''")
-            workers = cursor.fetchall()
+            # Переносим существующие категории из bloggers.categories
+            cursor.execute("SELECT id, categories FROM bloggers WHERE categories IS NOT NULL AND categories != ''")
+            bloggers = cursor.fetchall()
 
             migrated_count = 0
-            for worker in workers:
+            for blogger in bloggers:
                 # PostgreSQL возвращает dict, SQLite может вернуть tuple
-                if isinstance(worker, dict):
-                    worker_id = worker['id']
-                    categories_str = worker['categories']
+                if isinstance(blogger, dict):
+                    blogger_id = blogger['id']
+                    categories_str = blogger['categories']
                 else:
-                    worker_id = worker[0]
-                    categories_str = worker[1]
+                    blogger_id = blogger[0]
+                    categories_str = blogger[1]
 
                 if not categories_str:
                     continue
@@ -2746,9 +2746,9 @@ def migrate_normalize_categories():
                 for category in categories:
                     try:
                         cursor.execute("""
-                            INSERT INTO worker_categories (worker_id, category)
+                            INSERT INTO blogger_categories (blogger_id, category)
                             VALUES (?, ?)
-                        """, (worker_id, category))
+                        """, (blogger_id, category))
                         migrated_count += 1
                     except:
                         # Пропускаем дубликаты
@@ -2757,11 +2757,11 @@ def migrate_normalize_categories():
             # Создаем индексы для быстрого поиска
             cursor.execute("""
                 CREATE INDEX IF NOT EXISTS idx_worker_categories_worker
-                ON worker_categories(worker_id)
+                ON blogger_categories(blogger_id)
             """)
             cursor.execute("""
                 CREATE INDEX IF NOT EXISTS idx_worker_categories_category
-                ON worker_categories(category)
+                ON blogger_categories(category)
             """)
 
             conn.commit()
@@ -2779,27 +2779,27 @@ def migrate_normalize_order_categories():
     Проблема: категории хранятся как TEXT со значениями вида "Электрика, Сантехника"
     Поиск через LIKE '%Электрика%' находит также "Неэлектрика" (ложное совпадение)
 
-    Решение: нормализованная таблица order_categories с точным поиском
+    Решение: нормализованная таблица campaign_categories с точным поиском
     """
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
 
         try:
-            # 1. Создаем таблицу order_categories
+            # 1. Создаем таблицу campaign_categories
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS order_categories (
+                CREATE TABLE IF NOT EXISTS campaign_categories (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    order_id INTEGER NOT NULL,
+                    campaign_id INTEGER NOT NULL,
                     category TEXT NOT NULL,
-                    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-                    UNIQUE (order_id, category)
+                    FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
+                    UNIQUE (campaign_id, category)
                 )
             """)
 
-            logger.info("📋 Таблица order_categories создана")
+            logger.info("📋 Таблица campaign_categories создана")
 
-            # 2. Проверяем есть ли уже данные в order_categories
-            cursor.execute("SELECT COUNT(*) FROM order_categories")
+            # 2. Проверяем есть ли уже данные в campaign_categories
+            cursor.execute("SELECT COUNT(*) FROM campaign_categories")
             result = cursor.fetchone()
             # PostgreSQL возвращает dict, SQLite может вернуть tuple
             if isinstance(result, dict):
@@ -2811,19 +2811,19 @@ def migrate_normalize_order_categories():
                 logger.info(f"✅ Категории заказов уже мигрированы ({existing_count} записей)")
                 return
 
-            # 3. Переносим существующие категории из orders.category в order_categories
-            cursor.execute("SELECT id, category FROM orders WHERE category IS NOT NULL AND category != ''")
-            orders = cursor.fetchall()
+            # 3. Переносим существующие категории из campaigns.category в campaign_categories
+            cursor.execute("SELECT id, category FROM campaigns WHERE category IS NOT NULL AND category != ''")
+            campaigns = cursor.fetchall()
 
             migrated_count = 0
-            for order in orders:
+            for campaign in campaigns:
                 # PostgreSQL возвращает dict, SQLite может вернуть tuple
-                if isinstance(order, dict):
-                    order_id = order['id']
-                    categories_str = order['category']
+                if isinstance(campaign, dict):
+                    campaign_id = campaign['id']
+                    categories_str = campaign['category']
                 else:
-                    order_id = order[0]
-                    categories_str = order[1]
+                    campaign_id = campaign[0]
+                    categories_str = campaign[1]
 
                 if not categories_str:
                     continue
@@ -2835,23 +2835,23 @@ def migrate_normalize_order_categories():
                 for category in categories:
                     try:
                         cursor.execute("""
-                            INSERT INTO order_categories (order_id, category)
+                            INSERT INTO campaign_categories (campaign_id, category)
                             VALUES (?, ?)
-                        """, (order_id, category))
+                        """, (campaign_id, category))
                         migrated_count += 1
                     except Exception as e:
                         # Игнорируем дубликаты (UNIQUE constraint)
                         if "UNIQUE constraint failed" not in str(e) and "duplicate key" not in str(e):
-                            logger.warning(f"⚠️ Ошибка при добавлении категории '{category}' для заказа {order_id}: {e}")
+                            logger.warning(f"⚠️ Ошибка при добавлении категории '{category}' для заказа {campaign_id}: {e}")
 
             # 4. Создаем индексы для быстрого поиска
             cursor.execute("""
                 CREATE INDEX IF NOT EXISTS idx_order_categories_order
-                ON order_categories(order_id)
+                ON campaign_categories(campaign_id)
             """)
             cursor.execute("""
                 CREATE INDEX IF NOT EXISTS idx_order_categories_category
-                ON order_categories(category)
+                ON campaign_categories(category)
             """)
 
             logger.info(f"✅ Категории заказов нормализованы! Перенесено {migrated_count} категорий")
@@ -2933,8 +2933,8 @@ def migrate_add_moderation():
 
 def migrate_add_regions_to_clients():
     """
-    Добавляет поле regions в таблицу clients для хранения региона клиента.
-    Аналогично полю regions в таблице workers.
+    Добавляет поле regions в таблицу advertisers для хранения региона клиента.
+    Аналогично полю regions в таблице bloggers.
     """
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
@@ -2946,31 +2946,31 @@ def migrate_add_regions_to_clients():
                     BEGIN
                         IF NOT EXISTS (
                             SELECT 1 FROM information_schema.columns
-                            WHERE table_name = 'clients' AND column_name = 'regions'
+                            WHERE table_name = 'advertisers' AND column_name = 'regions'
                         ) THEN
-                            ALTER TABLE clients ADD COLUMN regions TEXT;
+                            ALTER TABLE advertisers ADD COLUMN regions TEXT;
                         END IF;
                     END $$;
                 """)
             else:
-                cursor.execute("PRAGMA table_info(clients)")
+                cursor.execute("PRAGMA table_info(advertisers)")
                 columns = [column[1] for column in cursor.fetchall()]
 
                 if 'regions' not in columns:
-                    cursor.execute("ALTER TABLE clients ADD COLUMN regions TEXT")
+                    cursor.execute("ALTER TABLE advertisers ADD COLUMN regions TEXT")
 
             conn.commit()
-            print("✅ Regions field migration for clients completed successfully!")
+            print("✅ Regions field migration for advertisers completed successfully!")
 
         except Exception as e:
-            print(f"⚠️  Ошибка при добавлении поля regions в clients: {e}")
+            print(f"⚠️  Ошибка при добавлении поля regions в advertisers: {e}")
             import traceback
             traceback.print_exc()
 
 
 def migrate_add_videos_to_orders():
     """
-    Добавляет поле videos в таблицу orders для хранения видео заказа.
+    Добавляет поле videos в таблицу campaigns для хранения видео заказа.
     """
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
@@ -2982,56 +2982,56 @@ def migrate_add_videos_to_orders():
                     BEGIN
                         IF NOT EXISTS (
                             SELECT 1 FROM information_schema.columns
-                            WHERE table_name = 'orders' AND column_name = 'videos'
+                            WHERE table_name = 'campaigns' AND column_name = 'videos'
                         ) THEN
-                            ALTER TABLE orders ADD COLUMN videos TEXT DEFAULT '';
+                            ALTER TABLE campaigns ADD COLUMN videos TEXT DEFAULT '';
                         END IF;
                     END $$;
                 """)
             else:
-                cursor.execute("PRAGMA table_info(orders)")
+                cursor.execute("PRAGMA table_info(campaigns)")
                 columns = [column[1] for column in cursor.fetchall()]
 
                 if 'videos' not in columns:
-                    cursor.execute("ALTER TABLE orders ADD COLUMN videos TEXT DEFAULT ''")
+                    cursor.execute("ALTER TABLE campaigns ADD COLUMN videos TEXT DEFAULT ''")
 
             conn.commit()
-            print("✅ Videos field migration for orders completed successfully!")
+            print("✅ Videos field migration for campaigns completed successfully!")
 
         except Exception as e:
-            print(f"⚠️  Ошибка при добавлении поля videos в orders: {e}")
+            print(f"⚠️  Ошибка при добавлении поля videos в campaigns: {e}")
             import traceback
             traceback.print_exc()
 
 
 # === CHAT SYSTEM HELPERS ===
 
-def create_chat(order_id, client_user_id, worker_user_id, bid_id):
+def create_chat(campaign_id, advertiser_user_id, blogger_user_id, offer_id):
     """Создаёт чат между клиентом и мастером"""
     from datetime import datetime
 
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         cursor.execute("""
-            INSERT INTO chats (order_id, client_user_id, worker_user_id, bid_id, created_at, last_message_at)
+            INSERT INTO chats (campaign_id, advertiser_user_id, blogger_user_id, offer_id, created_at, last_message_at)
             VALUES (?, ?, ?, ?, ?, ?)
-        """, (order_id, client_user_id, worker_user_id, bid_id, datetime.now().isoformat(), datetime.now().isoformat()))
+        """, (campaign_id, advertiser_user_id, blogger_user_id, offer_id, datetime.now().isoformat(), datetime.now().isoformat()))
         conn.commit()
         return cursor.lastrowid
 
 
-def get_chat_by_order_and_bid(order_id, bid_id):
+def get_chat_by_order_and_bid(campaign_id, offer_id):
     """Получает чат по заказу и отклику"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         cursor.execute("""
             SELECT * FROM chats
-            WHERE order_id = ? AND bid_id = ?
-        """, (order_id, bid_id))
+            WHERE campaign_id = ? AND offer_id = ?
+        """, (campaign_id, offer_id))
         return cursor.fetchone()
 
 
-def get_chat_by_order(order_id):
+def get_chat_by_order(campaign_id):
     """
     НОВОЕ: Получает чат по заказу (для упрощения доступа из списка заказов).
     Возвращает первый найденный чат для этого заказа.
@@ -3040,9 +3040,9 @@ def get_chat_by_order(order_id):
         cursor = get_cursor(conn)
         cursor.execute("""
             SELECT * FROM chats
-            WHERE order_id = ?
+            WHERE campaign_id = ?
             LIMIT 1
-        """, (order_id,))
+        """, (campaign_id,))
         return cursor.fetchone()
 
 
@@ -3059,11 +3059,11 @@ def get_user_chats(user_id):
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         cursor.execute("""
-            SELECT c.*, o.description as order_description
+            SELECT c.*, o.description as campaign_description
             FROM chats c
-            JOIN orders o ON c.order_id = o.id
-            WHERE c.client_user_id = ? OR c.worker_user_id = ?
-            ORDER BY c.last_message_at DESC
+            JOIN campaigns o ON c.campaign_id = o.id
+            WHERE c.advertiser_user_id = ? OR c.blogger_user_id = ?
+            CAMPAIGN BY c.last_message_at DESC
         """, (user_id, user_id))
         return cursor.fetchall()
 
@@ -3099,7 +3099,7 @@ def get_chat_messages(chat_id, limit=50):
         cursor.execute("""
             SELECT * FROM messages
             WHERE chat_id = ?
-            ORDER BY created_at DESC
+            CAMPAIGN BY created_at DESC
             LIMIT ?
         """, (chat_id, limit))
         return cursor.fetchall()
@@ -3143,7 +3143,7 @@ def confirm_worker_in_chat(chat_id):
         cursor = get_cursor(conn)
         cursor.execute("""
             UPDATE chats
-            SET worker_confirmed = TRUE, worker_confirmed_at = ?
+            SET blogger_confirmed = TRUE, blogger_confirmed_at = ?
             WHERE id = ?
         """, (datetime.now().isoformat(), chat_id))
         conn.commit()
@@ -3153,13 +3153,13 @@ def is_worker_confirmed(chat_id):
     """Проверяет подтвердил ли мастер готовность"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
-        cursor.execute("SELECT worker_confirmed FROM chats WHERE id = ?", (chat_id,))
+        cursor.execute("SELECT blogger_confirmed FROM chats WHERE id = ?", (chat_id,))
         result = cursor.fetchone()
         if not result:
             return False
         # PostgreSQL возвращает dict, SQLite может вернуть tuple
         if isinstance(result, dict):
-            return bool(result.get('worker_confirmed', False))
+            return bool(result.get('blogger_confirmed', False))
         else:
             return bool(result[0])
 
@@ -3174,7 +3174,7 @@ def set_active_chat(telegram_id, chat_id, role):
     Args:
         telegram_id: Telegram ID пользователя
         chat_id: ID чата
-        role: Роль пользователя в чате ('client' или 'worker')
+        role: Роль пользователя в чате ('advertiser' или 'blogger')
     """
     from datetime import datetime
 
@@ -3257,7 +3257,7 @@ def clear_active_chat(telegram_id):
 
 # === TRANSACTION HELPERS ===
 
-def create_transaction(user_id, order_id, bid_id, transaction_type, amount, currency='BYN', payment_method='test', description=''):
+def create_transaction(user_id, campaign_id, offer_id, transaction_type, amount, currency='BYN', payment_method='test', description=''):
     """Создаёт транзакцию"""
     from datetime import datetime
 
@@ -3265,9 +3265,9 @@ def create_transaction(user_id, order_id, bid_id, transaction_type, amount, curr
         cursor = get_cursor(conn)
         cursor.execute("""
             INSERT INTO transactions
-            (user_id, order_id, bid_id, transaction_type, amount, currency, status, payment_method, description, created_at)
+            (user_id, campaign_id, offer_id, transaction_type, amount, currency, status, payment_method, description, created_at)
             VALUES (?, ?, ?, ?, ?, ?, 'completed', ?, ?, ?)
-        """, (user_id, order_id, bid_id, transaction_type, amount, currency, payment_method, description, datetime.now().isoformat()))
+        """, (user_id, campaign_id, offer_id, transaction_type, amount, currency, payment_method, description, datetime.now().isoformat()))
         conn.commit()
         return cursor.lastrowid
 
@@ -3279,19 +3279,19 @@ def get_user_transactions(user_id):
         cursor.execute("""
             SELECT * FROM transactions
             WHERE user_id = ?
-            ORDER BY created_at DESC
+            CAMPAIGN BY created_at DESC
         """, (user_id,))
         return cursor.fetchall()
 
 
-def get_transaction_by_order_bid(order_id, bid_id):
+def get_transaction_by_order_bid(campaign_id, offer_id):
     """Проверяет была ли оплата за доступ к мастеру"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         cursor.execute("""
             SELECT * FROM transactions
-            WHERE order_id = ? AND bid_id = ? AND status = 'completed'
-        """, (order_id, bid_id))
+            WHERE campaign_id = ? AND offer_id = ? AND status = 'completed'
+        """, (campaign_id, offer_id))
         return cursor.fetchone()
 
 
@@ -3303,7 +3303,7 @@ def get_expired_chats(hours=24):
         hours: количество часов для проверки (по умолчанию 24)
 
     Returns:
-        Список чатов где worker_confirmed = FALSE и прошло более hours часов с created_at
+        Список чатов где blogger_confirmed = FALSE и прошло более hours часов с created_at
     """
     from datetime import datetime, timedelta
 
@@ -3313,7 +3313,7 @@ def get_expired_chats(hours=24):
 
         cursor.execute("""
             SELECT * FROM chats
-            WHERE worker_confirmed = FALSE
+            WHERE blogger_confirmed = FALSE
             AND created_at < ?
         """, (expiration_time.isoformat(),))
 
@@ -3325,7 +3325,7 @@ def mark_chat_as_expired(chat_id):
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         # Можно добавить поле expired_at или is_expired, но пока просто оставим
-        # Чат будет считаться просроченным по факту что worker_confirmed = 0 и прошло 24 часа
+        # Чат будет считаться просроченным по факту что blogger_confirmed = 0 и прошло 24 часа
         pass
 
 
@@ -3346,7 +3346,7 @@ def are_notifications_enabled(user_id):
         cursor = get_cursor(conn)
         cursor.execute("""
             SELECT notifications_enabled
-            FROM workers
+            FROM bloggers
             WHERE user_id = ?
         """, (user_id,))
         result = cursor.fetchone()
@@ -3381,7 +3381,7 @@ def set_notifications_enabled(user_id, enabled):
             # PostgreSQL: используем TRUE/FALSE напрямую
             value_str = 'TRUE' if enabled else 'FALSE'
             cursor.execute(f"""
-                UPDATE workers
+                UPDATE bloggers
                 SET notifications_enabled = {value_str}
                 WHERE user_id = %s
             """, (user_id,))
@@ -3389,7 +3389,7 @@ def set_notifications_enabled(user_id, enabled):
             # SQLite: используем 1/0
             value = 1 if enabled else 0
             cursor.execute("""
-                UPDATE workers
+                UPDATE bloggers
                 SET notifications_enabled = ?
                 WHERE user_id = ?
             """, (value, user_id))
@@ -3413,7 +3413,7 @@ def are_client_notifications_enabled(user_id):
         cursor = get_cursor(conn)
         cursor.execute("""
             SELECT notifications_enabled
-            FROM clients
+            FROM advertisers
             WHERE user_id = ?
         """, (user_id,))
         result = cursor.fetchone()
@@ -3448,7 +3448,7 @@ def set_client_notifications_enabled(user_id, enabled):
             # PostgreSQL: используем TRUE/FALSE напрямую
             value_str = 'TRUE' if enabled else 'FALSE'
             cursor.execute(f"""
-                UPDATE clients
+                UPDATE advertisers
                 SET notifications_enabled = {value_str}
                 WHERE user_id = %s
             """, (user_id,))
@@ -3456,7 +3456,7 @@ def set_client_notifications_enabled(user_id, enabled):
             # SQLite: используем 1/0
             value = 1 if enabled else 0
             cursor.execute("""
-                UPDATE clients
+                UPDATE advertisers
                 SET notifications_enabled = ?
                 WHERE user_id = ?
             """, (value, user_id))
@@ -3599,7 +3599,7 @@ def get_banned_users():
             SELECT telegram_id, ban_reason, banned_at, banned_by
             FROM users
             WHERE is_banned = TRUE
-            ORDER BY banned_at DESC
+            CAMPAIGN BY banned_at DESC
         """)
         return cursor.fetchall()
 
@@ -3612,29 +3612,29 @@ def search_users(query, limit=20):
         if USE_POSTGRES:
             cursor.execute("""
                 SELECT u.*,
-                       w.id as worker_id,
-                       c.id as client_id
+                       w.id as blogger_id,
+                       c.id as advertiser_id
                 FROM users u
-                LEFT JOIN workers w ON u.id = w.user_id
-                LEFT JOIN clients c ON u.id = c.user_id
+                LEFT JOIN bloggers w ON u.id = w.user_id
+                LEFT JOIN advertisers c ON u.id = c.user_id
                 WHERE u.telegram_id::text LIKE %s
                    OR LOWER(u.full_name) LIKE LOWER(%s)
                    OR LOWER(u.username) LIKE LOWER(%s)
-                ORDER BY u.created_at DESC
+                CAMPAIGN BY u.created_at DESC
                 LIMIT %s
             """, (f'%{query}%', f'%{query}%', f'%{query}%', limit))
         else:
             cursor.execute("""
                 SELECT u.*,
-                       w.id as worker_id,
-                       c.id as client_id
+                       w.id as blogger_id,
+                       c.id as advertiser_id
                 FROM users u
-                LEFT JOIN workers w ON u.id = w.user_id
-                LEFT JOIN clients c ON u.id = c.user_id
+                LEFT JOIN bloggers w ON u.id = w.user_id
+                LEFT JOIN advertisers c ON u.id = c.user_id
                 WHERE CAST(u.telegram_id AS TEXT) LIKE ?
                    OR LOWER(u.full_name) LIKE LOWER(?)
                    OR LOWER(u.username) LIKE LOWER(?)
-                ORDER BY u.created_at DESC
+                CAMPAIGN BY u.created_at DESC
                 LIMIT ?
             """, (f'%{query}%', f'%{query}%', f'%{query}%', limit))
         return cursor.fetchall()
@@ -3643,7 +3643,7 @@ def search_users(query, limit=20):
 def get_users_filtered(filter_type='all', page=1, per_page=20):
     """
     Получает пользователей с фильтром
-    filter_type: 'all', 'workers', 'clients', 'banned', 'dual'
+    filter_type: 'all', 'bloggers', 'advertisers', 'banned', 'dual'
     """
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
@@ -3651,51 +3651,51 @@ def get_users_filtered(filter_type='all', page=1, per_page=20):
 
         if filter_type == 'banned':
             cursor.execute("""
-                SELECT u.*, w.id as worker_id, c.id as client_id
+                SELECT u.*, w.id as blogger_id, c.id as advertiser_id
                 FROM users u
-                LEFT JOIN workers w ON u.id = w.user_id
-                LEFT JOIN clients c ON u.id = c.user_id
+                LEFT JOIN bloggers w ON u.id = w.user_id
+                LEFT JOIN advertisers c ON u.id = c.user_id
                 WHERE u.is_banned = TRUE
-                ORDER BY u.created_at DESC
+                CAMPAIGN BY u.created_at DESC
                 LIMIT ? OFFSET ?
             """, (per_page, offset))
-        elif filter_type == 'workers':
+        elif filter_type == 'bloggers':
             cursor.execute("""
-                SELECT u.*, w.id as worker_id, c.id as client_id
+                SELECT u.*, w.id as blogger_id, c.id as advertiser_id
                 FROM users u
-                INNER JOIN workers w ON u.id = w.user_id
-                LEFT JOIN clients c ON u.id = c.user_id
+                INNER JOIN bloggers w ON u.id = w.user_id
+                LEFT JOIN advertisers c ON u.id = c.user_id
                 WHERE u.is_banned = FALSE
-                ORDER BY u.created_at DESC
+                CAMPAIGN BY u.created_at DESC
                 LIMIT ? OFFSET ?
             """, (per_page, offset))
-        elif filter_type == 'clients':
+        elif filter_type == 'advertisers':
             cursor.execute("""
-                SELECT u.*, w.id as worker_id, c.id as client_id
+                SELECT u.*, w.id as blogger_id, c.id as advertiser_id
                 FROM users u
-                LEFT JOIN workers w ON u.id = w.user_id
-                INNER JOIN clients c ON u.id = c.user_id
+                LEFT JOIN bloggers w ON u.id = w.user_id
+                INNER JOIN advertisers c ON u.id = c.user_id
                 WHERE u.is_banned = FALSE
-                ORDER BY u.created_at DESC
+                CAMPAIGN BY u.created_at DESC
                 LIMIT ? OFFSET ?
             """, (per_page, offset))
         elif filter_type == 'dual':
             cursor.execute("""
-                SELECT u.*, w.id as worker_id, c.id as client_id
+                SELECT u.*, w.id as blogger_id, c.id as advertiser_id
                 FROM users u
-                INNER JOIN workers w ON u.id = w.user_id
-                INNER JOIN clients c ON u.id = c.user_id
+                INNER JOIN bloggers w ON u.id = w.user_id
+                INNER JOIN advertisers c ON u.id = c.user_id
                 WHERE u.is_banned = FALSE
-                ORDER BY u.created_at DESC
+                CAMPAIGN BY u.created_at DESC
                 LIMIT ? OFFSET ?
             """, (per_page, offset))
         else:  # 'all'
             cursor.execute("""
-                SELECT u.*, w.id as worker_id, c.id as client_id
+                SELECT u.*, w.id as blogger_id, c.id as advertiser_id
                 FROM users u
-                LEFT JOIN workers w ON u.id = w.user_id
-                LEFT JOIN clients c ON u.id = c.user_id
-                ORDER BY u.created_at DESC
+                LEFT JOIN bloggers w ON u.id = w.user_id
+                LEFT JOIN advertisers c ON u.id = c.user_id
+                CAMPAIGN BY u.created_at DESC
                 LIMIT ? OFFSET ?
             """, (per_page, offset))
 
@@ -3715,32 +3715,32 @@ def get_user_details_for_admin(telegram_id):
         user_dict = dict(user)
         details = {
             'user': user_dict,
-            'worker_profile': None,
-            'client_profile': None,
+            'blogger_profile': None,
+            'advertiser_profile': None,
             'stats': {}
         }
 
         # Профили
-        worker = get_worker_profile(user_dict['id'])
-        if worker:
-            details['worker_profile'] = dict(worker)
+        blogger = get_worker_profile(user_dict['id'])
+        if blogger:
+            details['blogger_profile'] = dict(blogger)
 
-        client = get_client_profile(user_dict['id'])
-        if client:
-            details['client_profile'] = dict(client)
+        advertiser = get_client_profile(user_dict['id'])
+        if advertiser:
+            details['advertiser_profile'] = dict(advertiser)
 
         # Статистика как мастера
-        if worker:
-            worker_dict = dict(worker)
+        if blogger:
+            blogger_dict = dict(blogger)
             cursor.execute("""
-                SELECT COUNT(*) FROM bids WHERE worker_id = ?
-            """, (worker_dict['id'],))
+                SELECT COUNT(*) FROM offers WHERE blogger_id = ?
+            """, (blogger_dict['id'],))
             details['stats']['total_bids'] = _get_count_from_result(cursor.fetchone())
 
             cursor.execute("""
-                SELECT COUNT(*) FROM bids
-                WHERE worker_id = ? AND status = 'selected'
-            """, (worker_dict['id'],))
+                SELECT COUNT(*) FROM offers
+                WHERE blogger_id = ? AND status = 'selected'
+            """, (blogger_dict['id'],))
             details['stats']['accepted_bids'] = _get_count_from_result(cursor.fetchone())
 
             cursor.execute("""
@@ -3749,22 +3749,22 @@ def get_user_details_for_admin(telegram_id):
             result = cursor.fetchone()
             if result:
                 avg_rating = result['avg'] if isinstance(result, dict) else result[0]
-                details['stats']['worker_rating'] = float(avg_rating) if avg_rating else 0.0
+                details['stats']['blogger_rating'] = float(avg_rating) if avg_rating else 0.0
             else:
-                details['stats']['worker_rating'] = 0.0
+                details['stats']['blogger_rating'] = 0.0
 
         # Статистика как клиента
-        if client:
-            client_dict = dict(client)
+        if advertiser:
+            advertiser_dict = dict(advertiser)
             cursor.execute("""
-                SELECT COUNT(*) FROM orders WHERE client_id = ?
-            """, (client_dict['id'],))
+                SELECT COUNT(*) FROM campaigns WHERE advertiser_id = ?
+            """, (advertiser_dict['id'],))
             details['stats']['total_orders'] = _get_count_from_result(cursor.fetchone())
 
             cursor.execute("""
-                SELECT COUNT(*) FROM orders
-                WHERE client_id = ? AND status = 'completed'
-            """, (client_dict['id'],))
+                SELECT COUNT(*) FROM campaigns
+                WHERE advertiser_id = ? AND status = 'completed'
+            """, (advertiser_dict['id'],))
             details['stats']['completed_orders'] = _get_count_from_result(cursor.fetchone())
 
         return details
@@ -3796,50 +3796,50 @@ def get_analytics_stats():
         cursor.execute("SELECT COUNT(*) FROM users WHERE is_banned = TRUE")
         stats['banned_users'] = _get_count_from_result(cursor.fetchone())
 
-        cursor.execute("SELECT COUNT(*) FROM workers")
+        cursor.execute("SELECT COUNT(*) FROM bloggers")
         stats['total_workers'] = _get_count_from_result(cursor.fetchone())
 
-        cursor.execute("SELECT COUNT(*) FROM clients")
+        cursor.execute("SELECT COUNT(*) FROM advertisers")
         stats['total_clients'] = _get_count_from_result(cursor.fetchone())
 
         # Пользователи с двумя профилями (и мастер и клиент)
         cursor.execute("""
             SELECT COUNT(DISTINCT w.user_id)
-            FROM workers w
-            INNER JOIN clients c ON w.user_id = c.user_id
+            FROM bloggers w
+            INNER JOIN advertisers c ON w.user_id = c.user_id
         """)
         stats['dual_profile_users'] = _get_count_from_result(cursor.fetchone())
 
         # === ЗАКАЗЫ ===
-        cursor.execute("SELECT COUNT(*) FROM orders")
+        cursor.execute("SELECT COUNT(*) FROM campaigns")
         stats['total_orders'] = _get_count_from_result(cursor.fetchone())
 
-        cursor.execute("SELECT COUNT(*) FROM orders WHERE status = 'open'")
+        cursor.execute("SELECT COUNT(*) FROM campaigns WHERE status = 'open'")
         stats['open_orders'] = _get_count_from_result(cursor.fetchone())
 
         cursor.execute("""
-            SELECT COUNT(*) FROM orders
+            SELECT COUNT(*) FROM campaigns
             WHERE status IN ('master_selected', 'contact_shared', 'master_confirmed', 'waiting_master_confirmation')
         """)
         stats['active_orders'] = _get_count_from_result(cursor.fetchone())
 
-        cursor.execute("SELECT COUNT(*) FROM orders WHERE status IN ('done', 'completed')")
+        cursor.execute("SELECT COUNT(*) FROM campaigns WHERE status IN ('done', 'completed')")
         stats['completed_orders'] = _get_count_from_result(cursor.fetchone())
 
-        cursor.execute("SELECT COUNT(*) FROM orders WHERE status = 'canceled'")
+        cursor.execute("SELECT COUNT(*) FROM campaigns WHERE status = 'canceled'")
         stats['canceled_orders'] = _get_count_from_result(cursor.fetchone())
 
         # === ОТКЛИКИ ===
-        cursor.execute("SELECT COUNT(*) FROM bids")
+        cursor.execute("SELECT COUNT(*) FROM offers")
         stats['total_bids'] = _get_count_from_result(cursor.fetchone())
 
-        cursor.execute("SELECT COUNT(*) FROM bids WHERE status = 'pending'")
+        cursor.execute("SELECT COUNT(*) FROM offers WHERE status = 'pending'")
         stats['pending_bids'] = _get_count_from_result(cursor.fetchone())
 
-        cursor.execute("SELECT COUNT(*) FROM bids WHERE status = 'selected'")
+        cursor.execute("SELECT COUNT(*) FROM offers WHERE status = 'selected'")
         stats['selected_bids'] = _get_count_from_result(cursor.fetchone())
 
-        cursor.execute("SELECT COUNT(*) FROM bids WHERE status = 'rejected'")
+        cursor.execute("SELECT COUNT(*) FROM offers WHERE status = 'rejected'")
         stats['rejected_bids'] = _get_count_from_result(cursor.fetchone())
 
         # === ЧАТЫ И СООБЩЕНИЯ ===
@@ -3865,12 +3865,12 @@ def get_analytics_stats():
         # Заказов за последние 24 часа
         if USE_POSTGRES:
             cursor.execute("""
-                SELECT COUNT(*) FROM orders
+                SELECT COUNT(*) FROM campaigns
                 WHERE CAST(created_at AS TIMESTAMP) >= NOW() - INTERVAL '1 day'
             """)
         else:
             cursor.execute("""
-                SELECT COUNT(*) FROM orders
+                SELECT COUNT(*) FROM campaigns
                 WHERE created_at >= datetime('now', '-1 day')
             """)
         stats['orders_last_24h'] = _get_count_from_result(cursor.fetchone())
@@ -3907,34 +3907,34 @@ def create_indexes():
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_telegram_id ON users(telegram_id)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)")
 
-            # Индексы для таблицы workers
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_workers_user_id ON workers(user_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_workers_city ON workers(city)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_workers_rating ON workers(rating DESC)")
+            # Индексы для таблицы bloggers
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_workers_user_id ON bloggers(user_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_workers_city ON bloggers(city)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_workers_rating ON bloggers(rating DESC)")
 
-            # Индексы для таблицы clients
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_clients_user_id ON clients(user_id)")
+            # Индексы для таблицы advertisers
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_clients_user_id ON advertisers(user_id)")
 
-            # Индексы для таблицы orders
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_orders_client_id ON orders(client_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_orders_city ON orders(city)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_orders_category ON orders(category)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC)")
+            # Индексы для таблицы campaigns
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_orders_client_id ON campaigns(advertiser_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_orders_status ON campaigns(status)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_orders_city ON campaigns(city)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_orders_category ON campaigns(category)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_orders_created_at ON campaigns(created_at DESC)")
             # Composite index для часто используемого запроса
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_orders_status_category ON orders(status, category)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_orders_status_category ON campaigns(status, category)")
 
-            # Индексы для таблицы bids
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_bids_order_id ON bids(order_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_bids_worker_id ON bids(worker_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_bids_status ON bids(status)")
+            # Индексы для таблицы offers
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_bids_order_id ON offers(campaign_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_bids_worker_id ON offers(blogger_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_bids_status ON offers(status)")
             # Composite index для проверки существования отклика
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_bids_order_worker ON bids(order_id, worker_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_bids_order_worker ON offers(campaign_id, blogger_id)")
 
             # Индексы для таблицы reviews
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_reviews_from_user ON reviews(from_user_id)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_reviews_to_user ON reviews(to_user_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_reviews_order_id ON reviews(order_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_reviews_order_id ON reviews(campaign_id)")
 
             conn.commit()
             print("✅ Индексы успешно созданы для оптимизации производительности")
@@ -3942,14 +3942,14 @@ def create_indexes():
         except Exception as e:
             print(f"⚠️  Предупреждение при создании индексов: {e}")
 
-def create_order(client_id, city, categories, description, photos, videos=None, budget_type="none", budget_value=0):
+def create_order(advertiser_id, city, categories, description, photos, videos=None, budget_type="none", budget_value=0):
     """
     Создаёт новый заказ.
     ИСПРАВЛЕНО: Валидация file_id для фотографий.
     ОБНОВЛЕНО: Добавлена поддержка видео.
     """
     # Rate limiting: проверяем лимит заказов
-    allowed, remaining_seconds = _rate_limiter.is_allowed(client_id, "create_order", RATE_LIMIT_ORDERS_PER_HOUR)
+    allowed, remaining_seconds = _rate_limiter.is_allowed(advertiser_id, "create_order", RATE_LIMIT_ORDERS_PER_HOUR)
     if not allowed:
         minutes = remaining_seconds // 60
         raise ValueError(f"❌ Превышен лимит создания заказов. Попробуйте через {minutes} мин.")
@@ -3960,12 +3960,12 @@ def create_order(client_id, city, categories, description, photos, videos=None, 
 
     # ИСПРАВЛЕНИЕ: Валидация file_id для фотографий заказа
     if photos:
-        validated_photos = validate_photo_list(photos, "order_photos")
+        validated_photos = validate_photo_list(photos, "campaign_photos")
         photos = validated_photos  # Сохраняем как список для последующего преобразования
 
     # Валидация file_id для видео
     if videos:
-        validated_videos = validate_photo_list(videos, "order_videos")
+        validated_videos = validate_photo_list(videos, "campaign_videos")
         videos = validated_videos
 
     with get_db_connection() as conn:
@@ -3984,30 +3984,30 @@ def create_order(client_id, city, categories, description, photos, videos=None, 
         videos_str = ",".join(videos) if videos and isinstance(videos, list) else (videos if videos else "")
 
         cursor.execute("""
-            INSERT INTO orders (
-                client_id, city, category, description, photos, videos,
+            INSERT INTO campaigns (
+                advertiser_id, city, category, description, photos, videos,
                 budget_type, budget_value, status, created_at
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)
-        """, (client_id, city, categories_str, description, photos_str, videos_str, budget_type, budget_value, now))
+        """, (advertiser_id, city, categories_str, description, photos_str, videos_str, budget_type, budget_value, now))
 
-        order_id = cursor.lastrowid
+        campaign_id = cursor.lastrowid
         conn.commit()  # КРИТИЧНО: Фиксируем транзакцию создания заказа
-        logger.info(f"✅ Создан заказ: ID={order_id}, Клиент={client_id}, Город={city}, Категории={categories_str}, Фото={len(photos) if photos else 0}, Видео={len(videos) if videos else 0}")
+        logger.info(f"✅ Создан заказ: ID={campaign_id}, Клиент={advertiser_id}, Город={city}, Категории={categories_str}, Фото={len(photos) if photos else 0}, Видео={len(videos) if videos else 0}")
 
     # ИСПРАВЛЕНИЕ: Добавляем категории в нормализованную таблицу
     if categories:
         categories_list = categories if isinstance(categories, list) else [cat.strip() for cat in categories.split(',') if cat.strip()]
-        add_order_categories(order_id, categories_list)
-        logger.info(f"📋 Добавлены категории для заказа {order_id}: {categories_list}")
+        add_order_categories(campaign_id, categories_list)
+        logger.info(f"📋 Добавлены категории для заказа {campaign_id}: {categories_list}")
 
-    return order_id
+    return campaign_id
 
 
 def get_orders_by_category(category, page=1, per_page=10):
     """
     ИСПРАВЛЕНО: Получает открытые заказы по категории с пагинацией.
-    Использует нормализованную таблицу order_categories для точного поиска.
+    Использует нормализованную таблицу campaign_categories для точного поиска.
 
     Args:
         category: Категория заказа (точное совпадение)
@@ -4015,17 +4015,17 @@ def get_orders_by_category(category, page=1, per_page=10):
         per_page: Количество заказов на странице
 
     Returns:
-        tuple: (orders, total_count, has_next_page)
+        tuple: (campaigns, total_count, has_next_page)
     """
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
 
-        # ИСПРАВЛЕНО: Используем order_categories для точного поиска вместо LIKE
+        # ИСПРАВЛЕНО: Используем campaign_categories для точного поиска вместо LIKE
         # Получаем общее количество заказов
         cursor.execute("""
             SELECT COUNT(DISTINCT o.id)
-            FROM orders o
-            JOIN order_categories oc ON o.id = oc.order_id
+            FROM campaigns o
+            JOIN campaign_categories oc ON o.id = oc.campaign_id
             WHERE o.status = 'open'
             AND oc.category = ?
         """, (category,))
@@ -4036,25 +4036,25 @@ def get_orders_by_category(category, page=1, per_page=10):
         cursor.execute("""
             SELECT DISTINCT
                 o.*,
-                c.name as client_name,
-                c.rating as client_rating,
-                c.rating_count as client_rating_count
-            FROM orders o
-            JOIN order_categories oc ON o.id = oc.order_id
-            JOIN clients c ON o.client_id = c.id
+                c.name as advertiser_name,
+                c.rating as advertiser_rating,
+                c.rating_count as advertiser_rating_count
+            FROM campaigns o
+            JOIN campaign_categories oc ON o.id = oc.campaign_id
+            JOIN advertisers c ON o.advertiser_id = c.id
             WHERE o.status = 'open'
             AND oc.category = ?
-            ORDER BY o.created_at DESC
+            CAMPAIGN BY o.created_at DESC
             LIMIT ? OFFSET ?
         """, (category, per_page, offset))
 
-        orders = cursor.fetchall()
+        campaigns = cursor.fetchall()
         has_next_page = (offset + per_page) < total_count
 
-        return orders, total_count, has_next_page
+        return campaigns, total_count, has_next_page
 
 
-def get_orders_by_categories(categories_list, per_page=30, worker_id=None):
+def get_orders_by_categories(categories_list, per_page=30, blogger_id=None):
     """
     ИСПРАВЛЕНО: Получает заказы для НЕСКОЛЬКИХ категорий ОДНИМ запросом с ТОЧНЫМ поиском.
     ИСПРАВЛЕНО: Фильтрует заказы по городам мастера (мастер видит только заказы из СВОИХ городов).
@@ -4066,13 +4066,13 @@ def get_orders_by_categories(categories_list, per_page=30, worker_id=None):
 
     Теперь:
     - 5 категорий = 1 SQL запрос
-    - Точное совпадение через order_categories таблицу
-    - Фильтрация по городам мастера через worker_cities
+    - Точное совпадение через campaign_categories таблицу
+    - Фильтрация по городам мастера через blogger_cities
 
     Args:
         categories_list: Список категорий ["Электрика", "Сантехника"]
         per_page: Максимум заказов (по умолчанию 30)
-        worker_id: ID мастера для фильтрации по городам (опционально)
+        blogger_id: ID мастера для фильтрации по городам (опционально)
 
     Returns:
         Список заказов, отсортированных по дате (новые первые)
@@ -4084,86 +4084,86 @@ def get_orders_by_categories(categories_list, per_page=30, worker_id=None):
         cursor = get_cursor(conn)
 
         # Создаем IN clause для точного поиска по категориям
-        # Используем нормализованную таблицу order_categories
+        # Используем нормализованную таблицу campaign_categories
         placeholders = ', '.join(['?' for _ in categories_list])
 
         # ИСПРАВЛЕНО: Добавлена фильтрация по городам мастера
         city_filter = ""
-        if worker_id:
+        if blogger_id:
             city_filter = """
                 AND (
-                    o.city IN (SELECT city FROM worker_cities WHERE worker_id = ?)
-                    OR o.city = (SELECT city FROM workers WHERE id = ?)
+                    o.city IN (SELECT city FROM blogger_cities WHERE blogger_id = ?)
+                    OR o.city = (SELECT city FROM bloggers WHERE id = ?)
                 )
             """
 
         query = f"""
             SELECT DISTINCT
                 o.*,
-                c.name as client_name,
-                c.rating as client_rating,
-                c.rating_count as client_rating_count
-            FROM orders o
-            JOIN clients c ON o.client_id = c.id
-            JOIN order_categories oc ON o.id = oc.order_id
+                c.name as advertiser_name,
+                c.rating as advertiser_rating,
+                c.rating_count as advertiser_rating_count
+            FROM campaigns o
+            JOIN advertisers c ON o.advertiser_id = c.id
+            JOIN campaign_categories oc ON o.id = oc.campaign_id
             WHERE o.status = 'open'
             AND oc.category IN ({placeholders})
             {city_filter}
-            ORDER BY o.created_at DESC
+            CAMPAIGN BY o.created_at DESC
             LIMIT ?
         """
 
         params = [cat.strip() for cat in categories_list if cat and cat.strip()]
 
-        # Добавляем worker_id дважды для фильтрации по городам
-        if worker_id:
-            params.append(worker_id)
-            params.append(worker_id)
+        # Добавляем blogger_id дважды для фильтрации по городам
+        if blogger_id:
+            params.append(blogger_id)
+            params.append(blogger_id)
 
         params.append(per_page)
 
-        logger.info(f"🔍 Поиск заказов: категории={categories_list}, worker_id={worker_id}")
+        logger.info(f"🔍 Поиск заказов: категории={categories_list}, blogger_id={blogger_id}")
         cursor.execute(query, params)
         results = cursor.fetchall()
         logger.info(f"🔍 Найдено заказов: {len(results)}")
         return results
 
 
-def get_client_orders(client_id, page=1, per_page=10):
+def get_client_orders(advertiser_id, page=1, per_page=10):
     """
     Получает заказы клиента с пагинацией.
 
     Args:
-        client_id: ID клиента
+        advertiser_id: ID клиента
         page: Номер страницы (начиная с 1)
         per_page: Количество заказов на странице
 
     Returns:
-        tuple: (orders, total_count, has_next_page)
+        tuple: (campaigns, total_count, has_next_page)
     """
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
 
         # Получаем общее количество заказов
-        cursor.execute("SELECT COUNT(*) FROM orders WHERE client_id = ?", (client_id,))
+        cursor.execute("SELECT COUNT(*) FROM campaigns WHERE advertiser_id = ?", (advertiser_id,))
         total_count = _get_count_from_result(cursor.fetchone())
 
         # Получаем заказы для текущей страницы
         offset = (page - 1) * per_page
         cursor.execute("""
-            SELECT * FROM orders
-            WHERE client_id = ?
-            ORDER BY created_at DESC
+            SELECT * FROM campaigns
+            WHERE advertiser_id = ?
+            CAMPAIGN BY created_at DESC
             LIMIT ? OFFSET ?
-        """, (client_id, per_page, offset))
+        """, (advertiser_id, per_page, offset))
 
-        orders = cursor.fetchall()
+        campaigns = cursor.fetchall()
         has_next_page = (offset + per_page) < total_count
 
-        return orders, total_count, has_next_page
+        return campaigns, total_count, has_next_page
 
 
-def get_order_by_id(order_id):
+def get_order_by_id(campaign_id):
     """Получает заказ по ID"""
     with get_db_connection() as conn:
 
@@ -4172,42 +4172,42 @@ def get_order_by_id(order_id):
         cursor.execute("""
             SELECT
                 o.*,
-                c.name as client_name,
-                c.phone as client_phone,
-                c.rating as client_rating,
-                c.rating_count as client_rating_count
-            FROM orders o
-            JOIN clients c ON o.client_id = c.id
+                c.name as advertiser_name,
+                c.phone as advertiser_phone,
+                c.rating as advertiser_rating,
+                c.rating_count as advertiser_rating_count
+            FROM campaigns o
+            JOIN advertisers c ON o.advertiser_id = c.id
             WHERE o.id = ?
-        """, (order_id,))
+        """, (campaign_id,))
 
         return cursor.fetchone()
 
 
-def update_order_status(order_id, new_status):
+def update_order_status(campaign_id, new_status):
     """Обновляет статус заказа"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         cursor.execute("""
-            UPDATE orders
+            UPDATE campaigns
             SET status = ?
             WHERE id = ?
-        """, (new_status, order_id))
+        """, (new_status, campaign_id))
         conn.commit()
         success = cursor.rowcount > 0
         if success:
-            logger.info(f"✅ Обновлен статус заказа: ID={order_id}, Новый статус={new_status}")
+            logger.info(f"✅ Обновлен статус заказа: ID={campaign_id}, Новый статус={new_status}")
         else:
-            logger.warning(f"⚠️ Заказ {order_id} не найден для обновления статуса")
+            logger.warning(f"⚠️ Заказ {campaign_id} не найден для обновления статуса")
         return success
 
 
-def cancel_order(order_id, cancelled_by_user_id, reason=""):
+def cancel_order(campaign_id, cancelled_by_user_id, reason=""):
     """
     НОВОЕ: Отменяет заказ клиентом.
 
     Args:
-        order_id: ID заказа
+        campaign_id: ID заказа
         cancelled_by_user_id: ID пользователя который отменяет
         reason: Причина отмены (опционально)
 
@@ -4223,62 +4223,62 @@ def cancel_order(order_id, cancelled_by_user_id, reason=""):
 
         # Проверяем существование заказа и права на отмену
         cursor.execute("""
-            SELECT o.*, c.user_id as client_user_id
-            FROM orders o
-            JOIN clients c ON o.client_id = c.id
+            SELECT o.*, c.user_id as advertiser_user_id
+            FROM campaigns o
+            JOIN advertisers c ON o.advertiser_id = c.id
             WHERE o.id = ?
-        """, (order_id,))
+        """, (campaign_id,))
 
-        order = cursor.fetchone()
-        if not order:
+        campaign = cursor.fetchone()
+        if not campaign:
             return {'success': False, 'message': 'Заказ не найден', 'notified_workers': []}
 
-        order_dict = dict(order)
+        campaign_dict = dict(campaign)
 
         # Проверка прав: только владелец может отменить
-        if order_dict['client_user_id'] != cancelled_by_user_id:
+        if campaign_dict['advertiser_user_id'] != cancelled_by_user_id:
             return {'success': False, 'message': 'Нет прав на отмену этого заказа', 'notified_workers': []}
 
         # Проверка статуса: можно отменить только open или waiting_master_confirmation
-        if order_dict['status'] not in ('open', 'waiting_master_confirmation'):
+        if campaign_dict['status'] not in ('open', 'waiting_master_confirmation'):
             return {
                 'success': False,
-                'message': f"Нельзя отменить заказ в статусе '{order_dict['status']}'",
+                'message': f"Нельзя отменить заказ в статусе '{campaign_dict['status']}'",
                 'notified_workers': []
             }
 
         # Обновляем статус заказа
         cursor.execute("""
-            UPDATE orders
+            UPDATE campaigns
             SET status = 'cancelled'
             WHERE id = ?
-        """, (order_id,))
+        """, (campaign_id,))
 
         # Получаем список мастеров которые откликнулись (для уведомления)
         cursor.execute("""
             SELECT DISTINCT w.user_id
-            FROM bids b
-            JOIN workers w ON b.worker_id = w.id
-            WHERE b.order_id = ? AND b.status IN ('pending', 'selected')
-        """, (order_id,))
+            FROM offers b
+            JOIN bloggers w ON b.blogger_id = w.id
+            WHERE b.campaign_id = ? AND b.status IN ('pending', 'selected')
+        """, (campaign_id,))
 
-        worker_user_ids = [row[0] for row in cursor.fetchall()]
+        blogger_user_ids = [row[0] for row in cursor.fetchall()]
 
         # Отмечаем все отклики как rejected
         cursor.execute("""
-            UPDATE bids
+            UPDATE offers
             SET status = 'rejected'
-            WHERE order_id = ?
-        """, (order_id,))
+            WHERE campaign_id = ?
+        """, (campaign_id,))
 
         conn.commit()
 
-        logger.info(f"Заказ {order_id} отменен пользователем {cancelled_by_user_id}. Причина: {reason}")
+        logger.info(f"Заказ {campaign_id} отменен пользователем {cancelled_by_user_id}. Причина: {reason}")
 
         return {
             'success': True,
             'message': 'Заказ успешно отменен',
-            'notified_workers': worker_user_ids
+            'notified_workers': blogger_user_ids
         }
 
 
@@ -4299,9 +4299,9 @@ def check_expired_orders():
         list: Список словарей с информацией о просроченных заказах:
             [
                 {
-                    'order_id': int,
-                    'client_user_id': int,
-                    'worker_user_ids': [int, ...],
+                    'campaign_id': int,
+                    'advertiser_user_id': int,
+                    'blogger_user_ids': [int, ...],
                     'title': str
                 },
                 ...
@@ -4316,9 +4316,9 @@ def check_expired_orders():
         now = datetime.now().isoformat()
 
         cursor.execute("""
-            SELECT o.id, o.title, o.deadline, c.user_id as client_user_id
-            FROM orders o
-            JOIN clients c ON o.client_id = c.id
+            SELECT o.id, o.title, o.deadline, c.user_id as advertiser_user_id
+            FROM campaigns o
+            JOIN advertisers c ON o.advertiser_id = c.id
             WHERE o.deadline IS NOT NULL
             AND o.deadline != ''
             AND o.deadline < ?
@@ -4333,42 +4333,42 @@ def check_expired_orders():
 
         result = []
 
-        for order_row in expired_orders:
-            order_id = order_row[0]
-            title = order_row[1]
-            client_user_id = order_row[3]
+        for campaign_row in expired_orders:
+            campaign_id = campaign_row[0]
+            title = campaign_row[1]
+            advertiser_user_id = campaign_row[3]
 
             # Получаем всех мастеров, которые откликнулись
             cursor.execute("""
                 SELECT DISTINCT w.user_id
-                FROM bids b
-                JOIN workers w ON b.worker_id = w.id
-                WHERE b.order_id = ? AND b.status IN ('pending', 'selected')
-            """, (order_id,))
+                FROM offers b
+                JOIN bloggers w ON b.blogger_id = w.id
+                WHERE b.campaign_id = ? AND b.status IN ('pending', 'selected')
+            """, (campaign_id,))
 
-            worker_rows = cursor.fetchall()
-            worker_user_ids = [row[0] for row in worker_rows]
+            blogger_rows = cursor.fetchall()
+            blogger_user_ids = [row[0] for row in blogger_rows]
 
             # Обновляем статус заказа
             cursor.execute("""
-                UPDATE orders
+                UPDATE campaigns
                 SET status = 'expired'
                 WHERE id = ?
-            """, (order_id,))
+            """, (campaign_id,))
 
             # Отклоняем все активные отклики
             cursor.execute("""
-                UPDATE bids
+                UPDATE offers
                 SET status = 'rejected'
-                WHERE order_id = ? AND status IN ('pending', 'selected')
-            """, (order_id,))
+                WHERE campaign_id = ? AND status IN ('pending', 'selected')
+            """, (campaign_id,))
 
-            logger.info(f"Заказ {order_id} истек по дедлайну. Клиент: {client_user_id}, Мастеров: {len(worker_user_ids)}")
+            logger.info(f"Заказ {campaign_id} истек по дедлайну. Клиент: {advertiser_user_id}, Мастеров: {len(blogger_user_ids)}")
 
             result.append({
-                'order_id': order_id,
-                'client_user_id': client_user_id,
-                'worker_user_ids': worker_user_ids,
+                'campaign_id': campaign_id,
+                'advertiser_user_id': advertiser_user_id,
+                'blogger_user_ids': blogger_user_ids,
                 'title': title
             })
 
@@ -4378,10 +4378,10 @@ def check_expired_orders():
         return result
 
 
-def create_bid(order_id, worker_id, proposed_price, currency, comment="", ready_in_days=7):
+def create_bid(campaign_id, blogger_id, proposed_price, currency, comment="", ready_in_days=7):
     """Создаёт отклик мастера на заказ"""
     # Rate limiting: проверяем лимит откликов
-    allowed, remaining_seconds = _rate_limiter.is_allowed(worker_id, "create_bid", RATE_LIMIT_BIDS_PER_HOUR)
+    allowed, remaining_seconds = _rate_limiter.is_allowed(blogger_id, "create_bid", RATE_LIMIT_BIDS_PER_HOUR)
     if not allowed:
         minutes = remaining_seconds // 60
         raise ValueError(f"❌ Превышен лимит откликов. Попробуйте через {minutes} мин.")
@@ -4395,20 +4395,20 @@ def create_bid(order_id, worker_id, proposed_price, currency, comment="", ready_
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         cursor.execute("""
-            INSERT INTO bids (
-                order_id, worker_id, proposed_price, currency,
+            INSERT INTO offers (
+                campaign_id, blogger_id, proposed_price, currency,
                 comment, ready_in_days, created_at, status
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, 'active')
-        """, (order_id, worker_id, proposed_price, currency, comment, ready_in_days, now))
+        """, (campaign_id, blogger_id, proposed_price, currency, comment, ready_in_days, now))
 
         conn.commit()
-        bid_id = cursor.lastrowid
-        logger.info(f"✅ Создан отклик: ID={bid_id}, Заказ={order_id}, Мастер={worker_id}, Цена={proposed_price} {currency}, Срок={ready_in_days} дн.")
-        return bid_id
+        offer_id = cursor.lastrowid
+        logger.info(f"✅ Создан отклик: ID={offer_id}, Заказ={campaign_id}, Мастер={blogger_id}, Цена={proposed_price} {currency}, Срок={ready_in_days} дн.")
+        return offer_id
 
 
-def get_bids_for_order(order_id):
+def get_bids_for_order(campaign_id):
     """Получает все отклики для заказа с полной информацией о мастере"""
     with get_db_connection() as conn:
 
@@ -4417,38 +4417,38 @@ def get_bids_for_order(order_id):
         cursor.execute("""
             SELECT
                 b.*,
-                w.name as worker_name,
-                w.rating as worker_rating,
-                w.rating_count as worker_rating_count,
-                w.experience as worker_experience,
-                w.phone as worker_phone,
-                w.profile_photo as worker_profile_photo,
-                w.portfolio_photos as worker_portfolio_photos,
-                w.description as worker_description,
-                w.city as worker_city,
-                w.categories as worker_categories,
-                w.verified_reviews as worker_verified_reviews,
-                u.telegram_id as worker_telegram_id
-            FROM bids b
-            JOIN workers w ON b.worker_id = w.id
+                w.name as blogger_name,
+                w.rating as blogger_rating,
+                w.rating_count as blogger_rating_count,
+                w.experience as blogger_experience,
+                w.phone as blogger_phone,
+                w.profile_photo as blogger_profile_photo,
+                w.portfolio_photos as blogger_portfolio_photos,
+                w.description as blogger_description,
+                w.city as blogger_city,
+                w.categories as blogger_categories,
+                w.verified_reviews as blogger_verified_reviews,
+                u.telegram_id as blogger_telegram_id
+            FROM offers b
+            JOIN bloggers w ON b.blogger_id = w.id
             JOIN users u ON w.user_id = u.id
-            WHERE b.order_id = ?
+            WHERE b.campaign_id = ?
             AND b.status = 'active'
-            ORDER BY b.created_at ASC
-        """, (order_id,))
+            CAMPAIGN BY b.created_at ASC
+        """, (campaign_id,))
 
         return cursor.fetchall()
 
 
-def check_worker_bid_exists(order_id, worker_id):
+def check_worker_bid_exists(campaign_id, blogger_id):
     """Проверяет, откликался ли уже мастер на этот заказ"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
 
         cursor.execute("""
-            SELECT COUNT(*) FROM bids
-            WHERE order_id = ? AND worker_id = ?
-        """, (order_id, worker_id))
+            SELECT COUNT(*) FROM offers
+            WHERE campaign_id = ? AND blogger_id = ?
+        """, (campaign_id, blogger_id))
 
         result = cursor.fetchone()
         if not result:
@@ -4460,7 +4460,7 @@ def check_worker_bid_exists(order_id, worker_id):
             return result[0] > 0
 
 
-def get_bid_by_id(bid_id):
+def get_bid_by_id(offer_id):
     """Получает отклик по ID с полной информацией о мастере"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
@@ -4469,57 +4469,57 @@ def get_bid_by_id(bid_id):
             cursor.execute("""
                 SELECT
                     b.*,
-                    w.name as worker_name,
-                    w.rating as worker_rating,
-                    w.rating_count as worker_rating_count,
-                    w.experience as worker_experience,
-                    w.phone as worker_phone,
-                    w.profile_photo as worker_profile_photo,
-                    w.portfolio_photos as worker_portfolio_photos,
-                    w.description as worker_description,
-                    w.city as worker_city,
-                    w.categories as worker_categories,
-                    w.verified_reviews as worker_verified_reviews,
-                    u.telegram_id as worker_telegram_id
-                FROM bids b
-                JOIN workers w ON b.worker_id = w.id
+                    w.name as blogger_name,
+                    w.rating as blogger_rating,
+                    w.rating_count as blogger_rating_count,
+                    w.experience as blogger_experience,
+                    w.phone as blogger_phone,
+                    w.profile_photo as blogger_profile_photo,
+                    w.portfolio_photos as blogger_portfolio_photos,
+                    w.description as blogger_description,
+                    w.city as blogger_city,
+                    w.categories as blogger_categories,
+                    w.verified_reviews as blogger_verified_reviews,
+                    u.telegram_id as blogger_telegram_id
+                FROM offers b
+                JOIN bloggers w ON b.blogger_id = w.id
                 JOIN users u ON w.user_id = u.id
                 WHERE b.id = %s
-            """, (bid_id,))
+            """, (offer_id,))
         else:
             cursor.execute("""
                 SELECT
                     b.*,
-                    w.name as worker_name,
-                    w.rating as worker_rating,
-                    w.rating_count as worker_rating_count,
-                    w.experience as worker_experience,
-                    w.phone as worker_phone,
-                    w.profile_photo as worker_profile_photo,
-                    w.portfolio_photos as worker_portfolio_photos,
-                    w.description as worker_description,
-                    w.city as worker_city,
-                    w.categories as worker_categories,
-                    w.verified_reviews as worker_verified_reviews,
-                    u.telegram_id as worker_telegram_id
-                FROM bids b
-                JOIN workers w ON b.worker_id = w.id
+                    w.name as blogger_name,
+                    w.rating as blogger_rating,
+                    w.rating_count as blogger_rating_count,
+                    w.experience as blogger_experience,
+                    w.phone as blogger_phone,
+                    w.profile_photo as blogger_profile_photo,
+                    w.portfolio_photos as blogger_portfolio_photos,
+                    w.description as blogger_description,
+                    w.city as blogger_city,
+                    w.categories as blogger_categories,
+                    w.verified_reviews as blogger_verified_reviews,
+                    u.telegram_id as blogger_telegram_id
+                FROM offers b
+                JOIN bloggers w ON b.blogger_id = w.id
                 JOIN users u ON w.user_id = u.id
                 WHERE b.id = ?
-            """, (bid_id,))
+            """, (offer_id,))
 
         return cursor.fetchone()
 
 
-def get_bids_count_for_order(order_id):
+def get_bids_count_for_order(campaign_id):
     """Получает количество активных откликов для заказа"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
 
         cursor.execute("""
-            SELECT COUNT(*) FROM bids
-            WHERE order_id = ? AND status = 'active'
-        """, (order_id,))
+            SELECT COUNT(*) FROM offers
+            WHERE campaign_id = ? AND status = 'active'
+        """, (campaign_id,))
 
         result = cursor.fetchone()
         if not result:
@@ -4531,12 +4531,12 @@ def get_bids_count_for_order(order_id):
             return result[0]
 
 
-def get_bids_for_worker(worker_id):
+def get_bids_for_worker(blogger_id):
     """
     Получает все отклики мастера с информацией о заказах.
 
     Args:
-        worker_id: ID мастера в таблице workers
+        blogger_id: ID мастера в таблице bloggers
 
     Returns:
         Список откликов с информацией о заказе и клиенте
@@ -4547,26 +4547,26 @@ def get_bids_for_worker(worker_id):
         cursor.execute("""
             SELECT
                 b.*,
-                o.title as order_title,
-                o.description as order_description,
-                o.city as order_city,
-                o.category as order_category,
-                o.status as order_status,
-                o.created_at as order_created_at,
-                c.name as client_name,
-                u.telegram_id as client_telegram_id
-            FROM bids b
-            JOIN orders o ON b.order_id = o.id
-            JOIN clients c ON o.client_id = c.id
+                o.title as campaign_title,
+                o.description as campaign_description,
+                o.city as campaign_city,
+                o.category as campaign_category,
+                o.status as campaign_status,
+                o.created_at as campaign_created_at,
+                c.name as advertiser_name,
+                u.telegram_id as advertiser_telegram_id
+            FROM offers b
+            JOIN campaigns o ON b.campaign_id = o.id
+            JOIN advertisers c ON o.advertiser_id = c.id
             JOIN users u ON c.user_id = u.id
-            WHERE b.worker_id = ?
-            ORDER BY b.created_at DESC
-        """, (worker_id,))
+            WHERE b.blogger_id = ?
+            CAMPAIGN BY b.created_at DESC
+        """, (blogger_id,))
 
         return cursor.fetchall()
 
 
-def select_bid(bid_id):
+def select_bid(offer_id):
     """
     ИСПРАВЛЕНО: Отмечает отклик как выбранный с защитой от race conditions.
     Проверяет что заказ еще не был выбран другим пользователем.
@@ -4574,73 +4574,73 @@ def select_bid(bid_id):
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
 
-        # КРИТИЧНО: Получаем order_id, worker_id и проверяем статус заказа одним запросом
+        # КРИТИЧНО: Получаем campaign_id, blogger_id и проверяем статус заказа одним запросом
         cursor.execute("""
-            SELECT b.order_id, b.worker_id, o.status
-            FROM bids b
-            JOIN orders o ON b.order_id = o.id
+            SELECT b.campaign_id, b.blogger_id, o.status
+            FROM offers b
+            JOIN campaigns o ON b.campaign_id = o.id
             WHERE b.id = ?
-        """, (bid_id,))
+        """, (offer_id,))
         result = cursor.fetchone()
         if not result:
-            logger.warning(f"Отклик {bid_id} не найден")
+            logger.warning(f"Отклик {offer_id} не найден")
             return False
 
         # PostgreSQL возвращает dict, SQLite может вернуть tuple
         if isinstance(result, dict):
-            order_id = result['order_id']
-            worker_id = result['worker_id']
-            order_status = result['status']
+            campaign_id = result['campaign_id']
+            blogger_id = result['blogger_id']
+            campaign_status = result['status']
         else:
-            order_id, worker_id, order_status = result[0], result[1], result[2]
+            campaign_id, blogger_id, campaign_status = result[0], result[1], result[2]
 
         # ЗАЩИТА ОТ RACE CONDITION: проверяем что заказ еще не был выбран
-        if order_status not in ('open', 'waiting_master_confirmation'):
-            logger.warning(f"Заказ {order_id} уже в статусе '{order_status}', нельзя выбрать мастера")
+        if campaign_status not in ('open', 'waiting_master_confirmation'):
+            logger.warning(f"Заказ {campaign_id} уже в статусе '{campaign_status}', нельзя выбрать мастера")
             return False
 
         # Обновляем статус выбранного отклика
         cursor.execute("""
-            UPDATE bids
+            UPDATE offers
             SET status = 'selected'
             WHERE id = ?
-        """, (bid_id,))
+        """, (offer_id,))
 
         # Остальные отклики отмечаем как rejected
         cursor.execute("""
-            UPDATE bids
+            UPDATE offers
             SET status = 'rejected'
-            WHERE order_id = ? AND id != ?
-        """, (order_id, bid_id))
+            WHERE campaign_id = ? AND id != ?
+        """, (campaign_id, offer_id))
 
         # КРИТИЧНО: Обновляем статус заказа И устанавливаем selected_worker_id
         # Это необходимо для показа кнопок чата и завершения заказа
         cursor.execute("""
-            UPDATE orders
+            UPDATE campaigns
             SET status = 'master_selected', selected_worker_id = ?
             WHERE id = ? AND status IN ('open', 'waiting_master_confirmation')
-        """, (worker_id, order_id))
+        """, (blogger_id, campaign_id))
 
         # Проверяем что UPDATE действительно произошел
         if cursor.rowcount == 0:
-            logger.warning(f"Не удалось обновить заказ {order_id} - возможно race condition")
+            logger.warning(f"Не удалось обновить заказ {campaign_id} - возможно race condition")
             conn.rollback()
             return False
 
         conn.commit()
-        logger.info(f"✅ Заказ {order_id}: выбран мастер {worker_id}, установлен selected_worker_id")
+        logger.info(f"✅ Заказ {campaign_id}: выбран мастер {blogger_id}, установлен selected_worker_id")
         return True
 
 
-def update_bid_status(bid_id, new_status):
+def update_bid_status(offer_id, new_status):
     """Обновляет статус отклика (pending, selected, rejected)"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         cursor.execute("""
-            UPDATE bids
+            UPDATE offers
             SET status = ?
             WHERE id = ?
-        """, (new_status, bid_id))
+        """, (new_status, offer_id))
         conn.commit()
         return cursor.rowcount > 0
 
@@ -4672,13 +4672,13 @@ def add_test_orders(telegram_id):
             created_at = datetime.now().isoformat()
             cursor.execute(
                 "INSERT INTO users (telegram_id, role, created_at) VALUES (?, ?, ?)",
-                (telegram_id, "client", created_at)
+                (telegram_id, "advertiser", created_at)
             )
             user_id = cursor.lastrowid
 
             # Создаем профиль клиента
             cursor.execute("""
-                INSERT INTO clients (user_id, name, phone, city, description)
+                INSERT INTO advertisers (user_id, name, phone, city, description)
                 VALUES (?, ?, ?, ?, ?)
             """, (user_id, "Тестовый клиент", "+375291234567", "Минск", "Тестовый профиль"))
         else:
@@ -4686,19 +4686,19 @@ def add_test_orders(telegram_id):
             # Пользователь может быть мастером или клиентом - это не важно
             # Проверим наличие профиля клиента и создадим если нужно
 
-        # Получаем client_id
-        cursor.execute("SELECT id FROM clients WHERE user_id = ?", (user_id,))
-        client_row = cursor.fetchone()
+        # Получаем advertiser_id
+        cursor.execute("SELECT id FROM advertisers WHERE user_id = ?", (user_id,))
+        advertiser_row = cursor.fetchone()
 
-        if not client_row:
+        if not advertiser_row:
             # Создаем профиль клиента, если его нет
             cursor.execute("""
-                INSERT INTO clients (user_id, name, phone, city, description)
+                INSERT INTO advertisers (user_id, name, phone, city, description)
                 VALUES (?, ?, ?, ?, ?)
             """, (user_id, "Тестовый клиент", "+375291234567", "Минск", "Тестовый профиль"))
-            client_id = cursor.lastrowid
+            advertiser_id = cursor.lastrowid
         else:
-            client_id = client_row[0]
+            advertiser_id = advertiser_row[0]
 
         # Данные для создания тестовых заказов
         categories = [
@@ -4737,12 +4737,12 @@ def add_test_orders(telegram_id):
         for category, city, description, budget_type, budget_value in test_orders:
             try:
                 cursor.execute("""
-                    INSERT INTO orders (
-                        client_id, city, category, description, photos,
+                    INSERT INTO campaigns (
+                        advertiser_id, city, category, description, photos,
                         budget_type, budget_value, status, created_at
                     )
                     VALUES (?, ?, ?, ?, ?, ?, ?, 'open', ?)
-                """, (client_id, city, category, description, "", budget_type, budget_value, now))
+                """, (advertiser_id, city, category, description, "", budget_type, budget_value, now))
                 orders_created += 1
             except Exception as e:
                 print(f"Ошибка при создании заказа: {e}")
@@ -4847,13 +4847,13 @@ def add_test_workers(telegram_id):
         ]
 
         workers_created = 0
-        worker_ids = []
+        blogger_ids = []
 
         # Создаем тестовых мастеров
-        for worker_data in test_workers:
+        for blogger_data in test_workers:
             try:
                 # Проверяем, существует ли пользователь
-                cursor.execute("SELECT id FROM users WHERE telegram_id = ?", (worker_data["telegram_id"],))
+                cursor.execute("SELECT id FROM users WHERE telegram_id = ?", (blogger_data["telegram_id"],))
                 existing_user = cursor.fetchone()
 
                 if not existing_user:
@@ -4861,85 +4861,85 @@ def add_test_workers(telegram_id):
                     created_at = datetime.now().isoformat()
                     cursor.execute(
                         "INSERT INTO users (telegram_id, role, created_at) VALUES (?, ?, ?)",
-                        (worker_data["telegram_id"], "worker", created_at)
+                        (blogger_data["telegram_id"], "blogger", created_at)
                     )
                     user_id = cursor.lastrowid
 
                     # Создаем профиль мастера
                     cursor.execute("""
-                        INSERT INTO workers (user_id, name, phone, city, regions, categories, experience, description, rating, rating_count)
+                        INSERT INTO bloggers (user_id, name, phone, city, regions, categories, experience, description, rating, rating_count)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, (
                         user_id,
-                        worker_data["name"],
-                        worker_data["phone"],
-                        worker_data["city"],
-                        worker_data["regions"],
-                        worker_data["categories"],
-                        worker_data["experience"],
-                        worker_data["description"],
-                        worker_data["rating"],
-                        worker_data["rating_count"]
+                        blogger_data["name"],
+                        blogger_data["phone"],
+                        blogger_data["city"],
+                        blogger_data["regions"],
+                        blogger_data["categories"],
+                        blogger_data["experience"],
+                        blogger_data["description"],
+                        blogger_data["rating"],
+                        blogger_data["rating_count"]
                     ))
-                    worker_id = cursor.lastrowid
-                    worker_ids.append(worker_id)
+                    blogger_id = cursor.lastrowid
+                    blogger_ids.append(blogger_id)
                     workers_created += 1
                 else:
-                    # Получаем worker_id существующего мастера
+                    # Получаем blogger_id существующего мастера
                     user_id = existing_user[0] if isinstance(existing_user, tuple) else existing_user['id']
-                    cursor.execute("SELECT id FROM workers WHERE user_id = ?", (user_id,))
-                    worker_row = cursor.fetchone()
-                    if worker_row:
-                        worker_id = worker_row[0] if isinstance(worker_row, tuple) else worker_row['id']
-                        worker_ids.append(worker_id)
+                    cursor.execute("SELECT id FROM bloggers WHERE user_id = ?", (user_id,))
+                    blogger_row = cursor.fetchone()
+                    if blogger_row:
+                        blogger_id = blogger_row[0] if isinstance(blogger_row, tuple) else blogger_row['id']
+                        blogger_ids.append(blogger_id)
 
             except Exception as e:
                 print(f"Ошибка при создании мастера: {e}")
 
         # Получаем все открытые заказы
-        cursor.execute("SELECT id, category FROM orders WHERE status = 'open'")
-        orders = cursor.fetchall()
+        cursor.execute("SELECT id, category FROM campaigns WHERE status = 'open'")
+        campaigns = cursor.fetchall()
 
         # Создаем отклики от мастеров на подходящие заказы
         bids_created = 0
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        for order in orders:
-            order_id = order[0] if isinstance(order, tuple) else order['id']
-            order_category = order[1] if isinstance(order, tuple) else order['category']
+        for campaign in campaigns:
+            campaign_id = campaign[0] if isinstance(campaign, tuple) else campaign['id']
+            campaign_category = campaign[1] if isinstance(campaign, tuple) else campaign['category']
 
             # Для каждого заказа добавляем 2-3 отклика от подходящих мастеров
             suitable_workers = []
-            for i, worker_data in enumerate(test_workers):
-                if i < len(worker_ids) and order_category in worker_data["categories"]:
-                    suitable_workers.append((worker_ids[i], worker_data))
+            for i, blogger_data in enumerate(test_workers):
+                if i < len(blogger_ids) and campaign_category in blogger_data["categories"]:
+                    suitable_workers.append((blogger_ids[i], blogger_data))
 
             # Добавляем отклики от первых 2-3 подходящих мастеров
-            for worker_id, worker_data in suitable_workers[:3]:
+            for blogger_id, blogger_data in suitable_workers[:3]:
                 try:
                     # Проверяем, нет ли уже отклика
                     cursor.execute(
-                        "SELECT COUNT(*) FROM bids WHERE order_id = ? AND worker_id = ?",
-                        (order_id, worker_id)
+                        "SELECT COUNT(*) FROM offers WHERE campaign_id = ? AND blogger_id = ?",
+                        (campaign_id, blogger_id)
                     )
                     existing_bid = cursor.fetchone()
-                    bid_exists = existing_bid[0] if isinstance(existing_bid, tuple) else existing_bid['COUNT(*)']
+                    offer_exists = existing_bid[0] if isinstance(existing_bid, tuple) else existing_bid['COUNT(*)']
 
-                    if not bid_exists or bid_exists == 0:
+                    if not offer_exists or offer_exists == 0:
                         # Генерируем цену (50-300 BYN)
                         import random
                         price = random.randint(50, 300)
 
                         # Создаем отклик
                         cursor.execute("""
-                            INSERT INTO bids (order_id, worker_id, proposed_price, currency, comment, created_at, status)
+                            INSERT INTO offers (campaign_id, blogger_id, proposed_price, currency, comment, created_at, status)
                             VALUES (?, ?, ?, ?, ?, ?, ?)
                         """, (
-                            order_id,
-                            worker_id,
+                            campaign_id,
+                            blogger_id,
                             price,
                             "BYN",
-                            f"Готов выполнить работу качественно и в срок. Опыт {worker_data['experience']}.",
+                            f"Готов выполнить работу качественно и в срок. Опыт {blogger_data['experience']}.",
                             now,
                             "active"
                         ))
@@ -4958,36 +4958,36 @@ def add_test_workers(telegram_id):
 def migrate_add_ready_in_days_and_notifications():
     """
     Добавляет:
-    1. Поле ready_in_days в таблицу bids (срок готовности мастера)
-    2. Таблицу worker_notifications (для обновляемых уведомлений)
+    1. Поле ready_in_days в таблицу offers (срок готовности мастера)
+    2. Таблицу blogger_notifications (для обновляемых уведомлений)
     """
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
 
         try:
-            # 1. Добавляем поле ready_in_days в bids
+            # 1. Добавляем поле ready_in_days в offers
             if USE_POSTGRES:
                 cursor.execute("""
                     DO $$
                     BEGIN
                         IF NOT EXISTS (
                             SELECT 1 FROM information_schema.columns
-                            WHERE table_name = 'bids' AND column_name = 'ready_in_days'
+                            WHERE table_name = 'offers' AND column_name = 'ready_in_days'
                         ) THEN
-                            ALTER TABLE bids ADD COLUMN ready_in_days INTEGER DEFAULT 7;
+                            ALTER TABLE offers ADD COLUMN ready_in_days INTEGER DEFAULT 7;
                         END IF;
                     END $$;
                 """)
             else:
-                cursor.execute("PRAGMA table_info(bids)")
+                cursor.execute("PRAGMA table_info(offers)")
                 columns = [column[1] for column in cursor.fetchall()]
 
                 if 'ready_in_days' not in columns:
-                    cursor.execute("ALTER TABLE bids ADD COLUMN ready_in_days INTEGER DEFAULT 7")
+                    cursor.execute("ALTER TABLE offers ADD COLUMN ready_in_days INTEGER DEFAULT 7")
 
-            # 2. Создаем таблицу worker_notifications
+            # 2. Создаем таблицу blogger_notifications
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS worker_notifications (
+                CREATE TABLE IF NOT EXISTS blogger_notifications (
                     user_id INTEGER PRIMARY KEY,
                     notification_message_id INTEGER,
                     notification_chat_id INTEGER,
@@ -4997,9 +4997,9 @@ def migrate_add_ready_in_days_and_notifications():
                 )
             """)
 
-            # 3. Создаем таблицу client_notifications
+            # 3. Создаем таблицу advertiser_notifications
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS client_notifications (
+                CREATE TABLE IF NOT EXISTS advertiser_notifications (
                     user_id INTEGER PRIMARY KEY,
                     notification_message_id INTEGER,
                     notification_chat_id INTEGER,
@@ -5010,7 +5010,7 @@ def migrate_add_ready_in_days_and_notifications():
             """)
 
             conn.commit()
-            print("✅ Migration completed: added ready_in_days, worker_notifications and client_notifications!")
+            print("✅ Migration completed: added ready_in_days, blogger_notifications and advertiser_notifications!")
 
         except Exception as e:
             print(f"⚠️  Error in migrate_add_ready_in_days_and_notifications: {e}")
@@ -5018,9 +5018,9 @@ def migrate_add_ready_in_days_and_notifications():
             traceback.print_exc()
 
 
-# === WORKER NOTIFICATIONS HELPERS ===
+# === BLOGGER NOTIFICATIONS HELPERS ===
 
-def save_worker_notification(worker_user_id, message_id, chat_id, orders_count=0):
+def save_worker_notification(blogger_user_id, message_id, chat_id, orders_count=0):
     """Сохраняет или обновляет ID сообщения с уведомлением для мастера"""
     from datetime import datetime
 
@@ -5030,7 +5030,7 @@ def save_worker_notification(worker_user_id, message_id, chat_id, orders_count=0
 
         if USE_POSTGRES:
             cursor.execute("""
-                INSERT INTO worker_notifications
+                INSERT INTO blogger_notifications
                 (user_id, notification_message_id, notification_chat_id, last_update_timestamp, available_orders_count)
                 VALUES (%s, %s, %s, %s, %s)
                 ON CONFLICT (user_id) DO UPDATE SET
@@ -5038,37 +5038,37 @@ def save_worker_notification(worker_user_id, message_id, chat_id, orders_count=0
                     notification_chat_id = EXCLUDED.notification_chat_id,
                     last_update_timestamp = EXCLUDED.last_update_timestamp,
                     available_orders_count = EXCLUDED.available_orders_count
-            """, (worker_user_id, message_id, chat_id, timestamp, orders_count))
+            """, (blogger_user_id, message_id, chat_id, timestamp, orders_count))
         else:
             cursor.execute("""
-                INSERT OR REPLACE INTO worker_notifications
+                INSERT OR REPLACE INTO blogger_notifications
                 (user_id, notification_message_id, notification_chat_id, last_update_timestamp, available_orders_count)
                 VALUES (?, ?, ?, ?, ?)
-            """, (worker_user_id, message_id, chat_id, timestamp, orders_count))
+            """, (blogger_user_id, message_id, chat_id, timestamp, orders_count))
         conn.commit()
 
 
-def get_worker_notification(worker_user_id):
+def get_worker_notification(blogger_user_id):
     """Получает сохраненное уведомление мастера"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         cursor.execute("""
-            SELECT * FROM worker_notifications WHERE user_id = ?
-        """, (worker_user_id,))
+            SELECT * FROM blogger_notifications WHERE user_id = ?
+        """, (blogger_user_id,))
         return cursor.fetchone()
 
 
-def delete_worker_notification(worker_user_id):
+def delete_worker_notification(blogger_user_id):
     """Удаляет сохраненное уведомление (когда мастер просмотрел все заказы)"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
-        cursor.execute("DELETE FROM worker_notifications WHERE user_id = ?", (worker_user_id,))
+        cursor.execute("DELETE FROM blogger_notifications WHERE user_id = ?", (blogger_user_id,))
         conn.commit()
 
 
-# === CLIENT NOTIFICATIONS HELPERS ===
+# === ADVERTISER NOTIFICATIONS HELPERS ===
 
-def save_client_notification(client_user_id, message_id, chat_id, bids_count=0):
+def save_client_notification(advertiser_user_id, message_id, chat_id, bids_count=0):
     """Сохраняет или обновляет ID сообщения с уведомлением для клиента"""
     from datetime import datetime
 
@@ -5078,7 +5078,7 @@ def save_client_notification(client_user_id, message_id, chat_id, bids_count=0):
 
         if USE_POSTGRES:
             cursor.execute("""
-                INSERT INTO client_notifications
+                INSERT INTO advertiser_notifications
                 (user_id, notification_message_id, notification_chat_id, last_update_timestamp, unread_bids_count)
                 VALUES (%s, %s, %s, %s, %s)
                 ON CONFLICT (user_id) DO UPDATE SET
@@ -5086,32 +5086,32 @@ def save_client_notification(client_user_id, message_id, chat_id, bids_count=0):
                     notification_chat_id = EXCLUDED.notification_chat_id,
                     last_update_timestamp = EXCLUDED.last_update_timestamp,
                     unread_bids_count = EXCLUDED.unread_bids_count
-            """, (client_user_id, message_id, chat_id, timestamp, bids_count))
+            """, (advertiser_user_id, message_id, chat_id, timestamp, bids_count))
         else:
             cursor.execute("""
-                INSERT OR REPLACE INTO client_notifications
+                INSERT OR REPLACE INTO advertiser_notifications
                 (user_id, notification_message_id, notification_chat_id, last_update_timestamp, unread_bids_count)
                 VALUES (?, ?, ?, ?, ?)
-            """, (client_user_id, message_id, chat_id, timestamp, bids_count))
+            """, (advertiser_user_id, message_id, chat_id, timestamp, bids_count))
         conn.commit()
 
 
-def get_client_notification(client_user_id):
+def get_client_notification(advertiser_user_id):
     """Получает сохраненное уведомление клиента"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         cursor.execute("""
-            SELECT * FROM client_notifications WHERE user_id = ?
-        """, (client_user_id,))
+            SELECT * FROM advertiser_notifications WHERE user_id = ?
+        """, (advertiser_user_id,))
         row = cursor.fetchone()
         return dict(row) if row else None
 
 
-def delete_client_notification(client_user_id):
+def delete_client_notification(advertiser_user_id):
     """Удаляет сохраненное уведомление (когда клиент просмотрел все отклики)"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
-        cursor.execute("DELETE FROM client_notifications WHERE user_id = ?", (client_user_id,))
+        cursor.execute("DELETE FROM advertiser_notifications WHERE user_id = ?", (advertiser_user_id,))
         conn.commit()
 
 
@@ -5163,15 +5163,15 @@ def delete_chat_message_notification(user_id):
         conn.commit()
 
 
-def get_orders_with_unread_bids(client_user_id):
+def get_orders_with_unread_bids(advertiser_user_id):
     """
     Получает все заказы клиента с количеством откликов.
 
     Args:
-        client_user_id: ID пользователя-клиента
+        advertiser_user_id: ID пользователя-клиента
 
     Returns:
-        list: Список заказов с полем bid_count
+        list: Список заказов с полем offer_count
     """
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
@@ -5182,44 +5182,44 @@ def get_orders_with_unread_bids(client_user_id):
                 o.category,
                 o.description,
                 o.status,
-                COUNT(b.id) as bid_count
-            FROM orders o
-            LEFT JOIN bids b ON o.id = b.order_id AND b.status = 'active'
-            WHERE o.client_id = (SELECT id FROM clients WHERE user_id = ?)
+                COUNT(b.id) as offer_count
+            FROM campaigns o
+            LEFT JOIN offers b ON o.id = b.campaign_id AND b.status = 'active'
+            WHERE o.advertiser_id = (SELECT id FROM advertisers WHERE user_id = ?)
                 AND o.status = 'open'
             GROUP BY o.id, o.city, o.category, o.description, o.status
             HAVING COUNT(b.id) > 0
-        """, (client_user_id,))
+        """, (advertiser_user_id,))
 
         return [dict(row) for row in cursor.fetchall()]
 
 
-def count_available_orders_for_worker(worker_user_id):
+def count_available_orders_for_worker(blogger_user_id):
     """
     ИСПРАВЛЕНО: Подсчитывает количество доступных заказов для мастера.
-    Использует нормализованные таблицы worker_categories и order_categories для точного поиска.
-    Использует worker_cities для поиска заказов во всех городах мастера.
+    Использует нормализованные таблицы blogger_categories и campaign_categories для точного поиска.
+    Использует blogger_cities для поиска заказов во всех городах мастера.
 
     (в его городах и его категориях, на которые он еще не откликнулся)
     """
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
 
-        # Получаем worker_id по user_id
-        cursor.execute("SELECT id FROM workers WHERE user_id = ?", (worker_user_id,))
-        worker = cursor.fetchone()
+        # Получаем blogger_id по user_id
+        cursor.execute("SELECT id FROM bloggers WHERE user_id = ?", (blogger_user_id,))
+        blogger = cursor.fetchone()
 
-        if not worker:
+        if not blogger:
             return 0
 
         # PostgreSQL возвращает dict, SQLite может вернуть tuple
-        if isinstance(worker, dict):
-            worker_id = worker['id']
+        if isinstance(blogger, dict):
+            blogger_id = blogger['id']
         else:
-            worker_id = worker[0]
+            blogger_id = blogger[0]
 
         # Получаем список городов мастера
-        cursor.execute("SELECT city FROM worker_cities WHERE worker_id = ?", (worker_id,))
+        cursor.execute("SELECT city FROM blogger_cities WHERE blogger_id = ?", (blogger_id,))
         cities_result = cursor.fetchall()
 
         if not cities_result:
@@ -5232,23 +5232,23 @@ def count_available_orders_for_worker(worker_user_id):
             cities = [row[0] for row in cities_result]
 
         # ИСПРАВЛЕНО: Используем нормализованные таблицы вместо LIKE
-        # Ищем заказы через JOIN с order_categories и worker_categories
+        # Ищем заказы через JOIN с campaign_categories и blogger_categories
         # Проверяем, что заказ находится в одном из городов мастера
         placeholders = ','.join('?' * len(cities))
         query = f"""
             SELECT COUNT(DISTINCT o.id)
-            FROM orders o
-            JOIN order_categories oc ON o.id = oc.order_id
-            JOIN worker_categories wc ON oc.category = wc.category
+            FROM campaigns o
+            JOIN campaign_categories oc ON o.id = oc.campaign_id
+            JOIN blogger_categories wc ON oc.category = wc.category
             WHERE o.status = 'open'
             AND o.city IN ({placeholders})
-            AND wc.worker_id = ?
+            AND wc.blogger_id = ?
             AND o.id NOT IN (
-                SELECT order_id FROM bids WHERE worker_id = ?
+                SELECT campaign_id FROM offers WHERE blogger_id = ?
             )
         """
 
-        cursor.execute(query, (*cities, worker_id, worker_id))
+        cursor.execute(query, (*cities, blogger_id, blogger_id))
 
         result = cursor.fetchone()
         if not result:
@@ -5368,55 +5368,55 @@ def migrate_add_admin_and_ads():
 
 def migrate_add_worker_cities():
     """
-    Добавляет таблицу worker_cities для хранения нескольких городов у мастера.
-    Мигрирует существующие данные из поля workers.city в новую таблицу.
+    Добавляет таблицу blogger_cities для хранения нескольких городов у мастера.
+    Мигрирует существующие данные из поля bloggers.city в новую таблицу.
     """
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
 
         try:
-            # Создаем таблицу worker_cities
+            # Создаем таблицу blogger_cities
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS worker_cities (
+                CREATE TABLE IF NOT EXISTS blogger_cities (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    worker_id INTEGER NOT NULL,
+                    blogger_id INTEGER NOT NULL,
                     city TEXT NOT NULL,
-                    FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE CASCADE,
-                    UNIQUE (worker_id, city)
+                    FOREIGN KEY (blogger_id) REFERENCES bloggers(id) ON DELETE CASCADE,
+                    UNIQUE (blogger_id, city)
                 )
             """)
-            logger.info("✅ Таблица worker_cities создана")
+            logger.info("✅ Таблица blogger_cities создана")
 
-            # Мигрируем существующие данные из workers.city
+            # Мигрируем существующие данные из bloggers.city
             cursor.execute("""
-                SELECT id, city FROM workers WHERE city IS NOT NULL AND city != ''
+                SELECT id, city FROM bloggers WHERE city IS NOT NULL AND city != ''
             """)
-            workers = cursor.fetchall()
+            bloggers = cursor.fetchall()
 
-            for worker in workers:
+            for blogger in bloggers:
                 # PostgreSQL возвращает dict, SQLite возвращает tuple
-                if isinstance(worker, dict):
-                    worker_id = worker['id']
-                    city = worker['city']
+                if isinstance(blogger, dict):
+                    blogger_id = blogger['id']
+                    city = blogger['city']
                 else:
-                    worker_id, city = worker
+                    blogger_id, city = blogger
 
                 if USE_POSTGRES:
                     cursor.execute("""
-                        INSERT INTO worker_cities (worker_id, city)
+                        INSERT INTO blogger_cities (blogger_id, city)
                         VALUES (%s, %s)
-                        ON CONFLICT (worker_id, city) DO NOTHING
-                    """, (worker_id, city))
+                        ON CONFLICT (blogger_id, city) DO NOTHING
+                    """, (blogger_id, city))
                 else:
                     cursor.execute("""
-                        INSERT OR IGNORE INTO worker_cities (worker_id, city)
+                        INSERT OR IGNORE INTO blogger_cities (blogger_id, city)
                         VALUES (?, ?)
-                    """, (worker_id, city))
+                    """, (blogger_id, city))
 
-            logger.info(f"✅ Мигрировано {len(workers)} городов из поля workers.city")
+            logger.info(f"✅ Мигрировано {len(bloggers)} городов из поля bloggers.city")
 
             conn.commit()
-            logger.info("✅ Migration completed: worker_cities table!")
+            logger.info("✅ Migration completed: blogger_cities table!")
 
         except Exception as e:
             logger.error(f"⚠️ Error in migrate_add_worker_cities: {e}")
@@ -5468,7 +5468,7 @@ def migrate_fix_portfolio_photos_size():
         try:
             # ИСПРАВЛЕНО: Используем USING для корректного преобразования типа в PostgreSQL
             raw_cursor.execute("""
-                ALTER TABLE workers
+                ALTER TABLE bloggers
                 ALTER COLUMN portfolio_photos TYPE TEXT
                 USING portfolio_photos::TEXT
             """)
@@ -5627,7 +5627,7 @@ def get_active_ad(placement, user_id=None, user_categories=None):
             """
             params.extend([user_id, today_start])
 
-        query += " ORDER BY a.id DESC LIMIT 1"
+        query += " CAMPAIGN BY a.id DESC LIMIT 1"
 
         cursor.execute(query, params)
         result = cursor.fetchone()
@@ -5643,7 +5643,7 @@ def get_active_ads(placement, user_id=None, user_categories=None, user_role=None
         placement: где показывать ('menu_banner', 'morning_digest')
         user_id: ID пользователя (для проверки лимита показов)
         user_categories: список категорий пользователя (для таргетинга)
-        user_role: роль пользователя ('worker', 'client') для фильтрации по target_audience
+        user_role: роль пользователя ('blogger', 'advertiser') для фильтрации по target_audience
 
     Returns:
         список dict с данными реклам
@@ -5668,8 +5668,8 @@ def get_active_ads(placement, user_id=None, user_categories=None, user_role=None
         if user_role:
             query += """
                 AND (a.target_audience = 'all'
-                    OR (a.target_audience = 'workers' AND ? = 'worker')
-                    OR (a.target_audience = 'clients' AND ? = 'client'))
+                    OR (a.target_audience = 'bloggers' AND ? = 'blogger')
+                    OR (a.target_audience = 'advertisers' AND ? = 'advertiser'))
             """
             params.extend([user_role, user_role])
 
@@ -5699,7 +5699,7 @@ def get_active_ads(placement, user_id=None, user_categories=None, user_role=None
             """
             params.extend([user_id, today_start])
 
-        query += " ORDER BY a.id DESC"  # БЕЗ LIMIT - показываем все
+        query += " CAMPAIGN BY a.id DESC"  # БЕЗ LIMIT - показываем все
 
         cursor.execute(query, params)
         results = cursor.fetchall()
@@ -5737,12 +5737,12 @@ def has_unviewed_ads(user_id, placement='menu_banner', user_role=None):
     Проверяет, есть ли непросмотренные активные рекламы для пользователя.
 
     ВАЖНО: Учитывает фильтр target_audience, чтобы красный кружочек показывался
-    только если есть реклама для ЭТОГО типа пользователя (worker/client).
+    только если есть реклама для ЭТОГО типа пользователя (blogger/advertiser).
 
     Args:
         user_id: ID пользователя
         placement: Место размещения ('menu_banner')
-        user_role: Роль пользователя ('worker' или 'client') для фильтрации
+        user_role: Роль пользователя ('blogger' или 'advertiser') для фильтрации
     """
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
@@ -5763,8 +5763,8 @@ def has_unviewed_ads(user_id, placement='menu_banner', user_role=None):
         if user_role:
             query += """
                 AND (a.target_audience = 'all'
-                    OR (a.target_audience = 'workers' AND ? = 'worker')
-                    OR (a.target_audience = 'clients' AND ? = 'client'))
+                    OR (a.target_audience = 'bloggers' AND ? = 'blogger')
+                    OR (a.target_audience = 'advertisers' AND ? = 'advertiser'))
             """
             params.extend([user_role, user_role])
 
@@ -5788,7 +5788,7 @@ def get_all_ads(limit=None, offset=0):
     """Получает все рекламы (активные и неактивные) для админ-панели"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
-        query = "SELECT * FROM ads ORDER BY created_at DESC"
+        query = "SELECT * FROM ads CAMPAIGN BY created_at DESC"
         if limit:
             query += f" LIMIT {limit} OFFSET {offset}"
         cursor.execute(query)
@@ -5906,7 +5906,7 @@ def get_all_orders_for_export():
     """Получает все заказы для экспорта"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
-        cursor.execute("SELECT * FROM orders ORDER BY created_at DESC")
+        cursor.execute("SELECT * FROM campaigns CAMPAIGN BY created_at DESC")
         return cursor.fetchall()
 
 
@@ -5914,7 +5914,7 @@ def get_all_bids_for_export():
     """Получает все отклики для экспорта"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
-        cursor.execute("SELECT * FROM bids ORDER BY created_at DESC")
+        cursor.execute("SELECT * FROM offers CAMPAIGN BY created_at DESC")
         return cursor.fetchall()
 
 
@@ -5922,7 +5922,7 @@ def get_all_reviews_for_export():
     """Получает все отзывы для экспорта"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
-        cursor.execute("SELECT * FROM reviews ORDER BY created_at DESC")
+        cursor.execute("SELECT * FROM reviews CAMPAIGN BY created_at DESC")
         return cursor.fetchall()
 
 
@@ -5938,9 +5938,9 @@ def get_category_reports():
         # === ТОП КАТЕГОРИЙ ЗАКАЗОВ ===
         cursor.execute("""
             SELECT category, COUNT(*) as count
-            FROM orders
+            FROM campaigns
             GROUP BY category
-            ORDER BY count DESC
+            CAMPAIGN BY count DESC
             LIMIT 10
         """)
         reports['top_categories'] = cursor.fetchall()
@@ -5948,10 +5948,10 @@ def get_category_reports():
         # === ТОП ГОРОДОВ ПО ЗАКАЗАМ ===
         cursor.execute("""
             SELECT city, COUNT(*) as count
-            FROM orders
+            FROM campaigns
             WHERE city IS NOT NULL AND city != ''
             GROUP BY city
-            ORDER BY count DESC
+            CAMPAIGN BY count DESC
             LIMIT 10
         """)
         reports['top_cities_orders'] = cursor.fetchall()
@@ -5959,10 +5959,10 @@ def get_category_reports():
         # === ТОП КАТЕГОРИЙ МАСТЕРОВ ===
         cursor.execute("""
             SELECT categories, COUNT(*) as count
-            FROM workers
+            FROM bloggers
             WHERE categories IS NOT NULL AND categories != ''
             GROUP BY categories
-            ORDER BY count DESC
+            CAMPAIGN BY count DESC
             LIMIT 10
         """)
         reports['top_specializations'] = cursor.fetchall()
@@ -5975,9 +5975,9 @@ def get_category_reports():
                 SUM(CASE WHEN status IN ('master_selected', 'contact_shared', 'master_confirmed') THEN 1 ELSE 0 END) as active_count,
                 SUM(CASE WHEN status IN ('done', 'completed') THEN 1 ELSE 0 END) as completed_count,
                 COUNT(*) as total_count
-            FROM orders
+            FROM campaigns
             GROUP BY category
-            ORDER BY total_count DESC
+            CAMPAIGN BY total_count DESC
             LIMIT 15
         """)
         reports['category_statuses'] = cursor.fetchall()
@@ -5986,26 +5986,26 @@ def get_category_reports():
         cursor.execute("""
             SELECT
                 city,
-                COUNT(*) as order_count
-            FROM orders
+                COUNT(*) as campaign_count
+            FROM campaigns
             WHERE city IS NOT NULL AND city != ''
             GROUP BY city
-            ORDER BY order_count DESC
+            CAMPAIGN BY campaign_count DESC
             LIMIT 10
         """)
-        city_orders = {dict(row)['city']: dict(row)['order_count'] for row in cursor.fetchall()}
+        city_orders = {dict(row)['city']: dict(row)['campaign_count'] for row in cursor.fetchall()}
 
         # Получаем количество мастеров по городам
         cursor.execute("""
             SELECT
                 wc.city,
-                COUNT(DISTINCT wc.worker_id) as worker_count
-            FROM worker_cities wc
+                COUNT(DISTINCT wc.blogger_id) as blogger_count
+            FROM blogger_cities wc
             GROUP BY wc.city
-            ORDER BY worker_count DESC
+            CAMPAIGN BY blogger_count DESC
             LIMIT 15
         """)
-        city_workers = {dict(row)['city']: dict(row)['worker_count'] for row in cursor.fetchall()}
+        city_workers = {dict(row)['city']: dict(row)['blogger_count'] for row in cursor.fetchall()}
 
         # Объединяем данные
         all_cities = set(city_orders.keys()) | set(city_workers.keys())
@@ -6013,8 +6013,8 @@ def get_category_reports():
         for city in all_cities:
             city_activity.append({
                 'city': city,
-                'orders': city_orders.get(city, 0),
-                'workers': city_workers.get(city, 0),
+                'campaigns': city_orders.get(city, 0),
+                'bloggers': city_workers.get(city, 0),
                 'total': city_orders.get(city, 0) + city_workers.get(city, 0)
             })
 
@@ -6027,15 +6027,15 @@ def get_category_reports():
             SELECT
                 o.category,
                 AVG(CAST(b.proposed_price AS REAL)) as avg_price,
-                COUNT(b.id) as bid_count
-            FROM bids b
-            INNER JOIN orders o ON b.order_id = o.id
+                COUNT(b.id) as offer_count
+            FROM offers b
+            INNER JOIN campaigns o ON b.campaign_id = o.id
             WHERE b.proposed_price IS NOT NULL
               AND b.proposed_price > 0
               AND b.currency = 'BYN'
             GROUP BY o.category
             HAVING COUNT(b.id) >= 3
-            ORDER BY avg_price DESC
+            CAMPAIGN BY avg_price DESC
             LIMIT 10
         """)
         reports['avg_prices_by_category'] = cursor.fetchall()
@@ -6045,43 +6045,43 @@ def get_category_reports():
 
 # ------- ФУНКЦИИ ДЛЯ РАБОТЫ С ГОРОДАМИ МАСТЕРА -------
 
-def add_worker_city(worker_id, city):
+def add_worker_city(blogger_id, city):
     """Добавляет город к мастеру"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         if USE_POSTGRES:
             cursor.execute("""
-                INSERT INTO worker_cities (worker_id, city)
+                INSERT INTO blogger_cities (blogger_id, city)
                 VALUES (%s, %s)
-                ON CONFLICT (worker_id, city) DO NOTHING
-            """, (worker_id, city))
+                ON CONFLICT (blogger_id, city) DO NOTHING
+            """, (blogger_id, city))
         else:
             cursor.execute("""
-                INSERT OR IGNORE INTO worker_cities (worker_id, city)
+                INSERT OR IGNORE INTO blogger_cities (blogger_id, city)
                 VALUES (?, ?)
-            """, (worker_id, city))
+            """, (blogger_id, city))
         conn.commit()
-        logger.info(f"✅ Город '{city}' добавлен мастеру worker_id={worker_id}")
+        logger.info(f"✅ Город '{city}' добавлен мастеру blogger_id={blogger_id}")
 
 
-def remove_worker_city(worker_id, city):
+def remove_worker_city(blogger_id, city):
     """Удаляет город у мастера"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         cursor.execute("""
-            DELETE FROM worker_cities WHERE worker_id = ? AND city = ?
-        """, (worker_id, city))
+            DELETE FROM blogger_cities WHERE blogger_id = ? AND city = ?
+        """, (blogger_id, city))
         conn.commit()
-        logger.info(f"✅ Город '{city}' удален у мастера worker_id={worker_id}")
+        logger.info(f"✅ Город '{city}' удален у мастера blogger_id={blogger_id}")
 
 
-def get_worker_cities(worker_id):
+def get_worker_cities(blogger_id):
     """Получает список всех городов мастера"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         cursor.execute("""
-            SELECT city FROM worker_cities WHERE worker_id = ? ORDER BY id
-        """, (worker_id,))
+            SELECT city FROM blogger_cities WHERE blogger_id = ? CAMPAIGN BY id
+        """, (blogger_id,))
         rows = cursor.fetchall()
 
         # ИСПРАВЛЕНО: Поддержка PostgreSQL (dict) и SQLite (tuple)
@@ -6096,39 +6096,39 @@ def get_worker_cities(worker_id):
             return [row[0] for row in rows]
 
 
-def clear_worker_cities(worker_id):
+def clear_worker_cities(blogger_id):
     """Удаляет все города у мастера"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
-        cursor.execute("DELETE FROM worker_cities WHERE worker_id = ?", (worker_id,))
+        cursor.execute("DELETE FROM blogger_cities WHERE blogger_id = ?", (blogger_id,))
         conn.commit()
-        logger.info(f"✅ Все города удалены у мастера worker_id={worker_id}")
+        logger.info(f"✅ Все города удалены у мастера blogger_id={blogger_id}")
 
 
-def set_worker_cities(worker_id, cities):
+def set_worker_cities(blogger_id, cities):
     """Устанавливает список городов мастера (заменяет все существующие)"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         # Удаляем все существующие
         if USE_POSTGRES:
-            cursor.execute("DELETE FROM worker_cities WHERE worker_id = %s", (worker_id,))
+            cursor.execute("DELETE FROM blogger_cities WHERE blogger_id = %s", (blogger_id,))
         else:
-            cursor.execute("DELETE FROM worker_cities WHERE worker_id = ?", (worker_id,))
+            cursor.execute("DELETE FROM blogger_cities WHERE blogger_id = ?", (blogger_id,))
         # Добавляем новые
         for city in cities:
             if USE_POSTGRES:
                 cursor.execute("""
-                    INSERT INTO worker_cities (worker_id, city)
+                    INSERT INTO blogger_cities (blogger_id, city)
                     VALUES (%s, %s)
-                    ON CONFLICT (worker_id, city) DO NOTHING
-                """, (worker_id, city))
+                    ON CONFLICT (blogger_id, city) DO NOTHING
+                """, (blogger_id, city))
             else:
                 cursor.execute("""
-                    INSERT OR IGNORE INTO worker_cities (worker_id, city)
+                    INSERT OR IGNORE INTO blogger_cities (blogger_id, city)
                     VALUES (?, ?)
-                """, (worker_id, city))
+                """, (blogger_id, city))
         conn.commit()
-        logger.info(f"✅ Установлено {len(cities)} городов для мастера worker_id={worker_id}")
+        logger.info(f"✅ Установлено {len(cities)} городов для мастера blogger_id={blogger_id}")
 
 
 # ============================================================
@@ -6235,7 +6235,7 @@ def has_active_notification(user_id, notification_type):
         cursor.execute("""
             SELECT id FROM sent_notifications
             WHERE user_id = ? AND notification_type = ? AND cleared_at IS NULL
-            ORDER BY sent_at DESC
+            CAMPAIGN BY sent_at DESC
             LIMIT 1
         """, (user_id, notification_type))
 
@@ -6305,7 +6305,7 @@ def get_active_notification_message_id(user_id, notification_type):
         cursor.execute("""
             SELECT message_id FROM sent_notifications
             WHERE user_id = ? AND notification_type = ? AND cleared_at IS NULL
-            ORDER BY sent_at DESC
+            CAMPAIGN BY sent_at DESC
             LIMIT 1
         """, (user_id, notification_type))
 
@@ -6313,7 +6313,7 @@ def get_active_notification_message_id(user_id, notification_type):
         return row['message_id'] if row else None
 
 
-def get_workers_for_new_order_notification(order_city, order_category):
+def get_workers_for_new_order_notification(campaign_city, campaign_category):
     """
     Получает список мастеров, которым нужно отправить уведомление о новом заказе.
     Учитывает:
@@ -6322,8 +6322,8 @@ def get_workers_for_new_order_notification(order_city, order_category):
     - Отсутствие активных уведомлений
 
     Args:
-        order_city: Город заказа
-        order_category: Категория заказа
+        campaign_city: Город заказа
+        campaign_category: Категория заказа
 
     Returns:
         list: Список словарей с данными мастеров (user_id, telegram_id, name)
@@ -6341,7 +6341,7 @@ def get_workers_for_new_order_notification(order_city, order_category):
                 w.user_id,
                 u.telegram_id,
                 w.name
-            FROM workers w
+            FROM bloggers w
             INNER JOIN users u ON w.user_id = u.id
             LEFT JOIN notification_settings ns ON w.user_id = ns.user_id
             LEFT JOIN sent_notifications sn ON (
@@ -6356,16 +6356,16 @@ def get_workers_for_new_order_notification(order_city, order_category):
                     w.city LIKE ? OR
                     w.regions LIKE ? OR
                     EXISTS (
-                        SELECT 1 FROM worker_cities wc
-                        WHERE wc.worker_id = w.id AND wc.city = ?
+                        SELECT 1 FROM blogger_cities wc
+                        WHERE wc.blogger_id = w.id AND wc.city = ?
                     )
                 )
                 AND w.categories LIKE ?
         """, (
-            f'%{order_city}%',
-            f'%{order_city}%',
-            order_city,
-            f'%{order_category}%'
+            f'%{campaign_city}%',
+            f'%{campaign_city}%',
+            campaign_city,
+            f'%{campaign_category}%'
         ))
 
         return [dict(row) for row in cursor.fetchall()]
@@ -6408,7 +6408,7 @@ def get_all_suggestions(status=None):
                     FROM suggestions s
                     JOIN users u ON s.user_id = u.id
                     WHERE s.status = %s
-                    ORDER BY s.created_at DESC
+                    CAMPAIGN BY s.created_at DESC
                 """, (status,))
             else:
                 cursor.execute("""
@@ -6416,14 +6416,14 @@ def get_all_suggestions(status=None):
                     FROM suggestions s
                     JOIN users u ON s.user_id = u.id
                     WHERE s.status = ?
-                    ORDER BY s.created_at DESC
+                    CAMPAIGN BY s.created_at DESC
                 """, (status,))
         else:
             cursor.execute("""
                 SELECT s.*, u.telegram_id
                 FROM suggestions s
                 JOIN users u ON s.user_id = u.id
-                ORDER BY s.created_at DESC
+                CAMPAIGN BY s.created_at DESC
             """)
         
         return cursor.fetchall()
@@ -6494,13 +6494,13 @@ def get_suggestions_count(status='new'):
 # НОВОЕ: Функции для отказа мастеров от заказов
 # ============================================================
 
-def decline_order(worker_id, order_id):
+def decline_order(blogger_id, campaign_id):
     """
     Мастер отказывается от заказа (больше не будет его видеть)
 
     Args:
-        worker_id: ID мастера (из таблицы workers или users, зависит от контекста)
-        order_id: ID заказа
+        blogger_id: ID мастера (из таблицы bloggers или users, зависит от контекста)
+        campaign_id: ID заказа
 
     Returns:
         True если успешно, False если ошибка
@@ -6512,15 +6512,15 @@ def decline_order(worker_id, order_id):
         try:
             if USE_POSTGRES:
                 cursor.execute("""
-                    INSERT INTO declined_orders (worker_id, order_id, declined_at)
+                    INSERT INTO declined_orders (blogger_id, campaign_id, declined_at)
                     VALUES (%s, %s, %s)
-                    ON CONFLICT (worker_id, order_id) DO NOTHING
-                """, (worker_id, order_id, declined_at))
+                    ON CONFLICT (blogger_id, campaign_id) DO NOTHING
+                """, (blogger_id, campaign_id, declined_at))
             else:
                 cursor.execute("""
-                    INSERT OR IGNORE INTO declined_orders (worker_id, order_id, declined_at)
+                    INSERT OR IGNORE INTO declined_orders (blogger_id, campaign_id, declined_at)
                     VALUES (?, ?, ?)
-                """, (worker_id, order_id, declined_at))
+                """, (blogger_id, campaign_id, declined_at))
 
             conn.commit()
             return True
@@ -6530,13 +6530,13 @@ def decline_order(worker_id, order_id):
             return False
 
 
-def check_order_declined(worker_id, order_id):
+def check_order_declined(blogger_id, campaign_id):
     """
     Проверяет, отказался ли мастер от этого заказа
 
     Args:
-        worker_id: ID мастера
-        order_id: ID заказа
+        blogger_id: ID мастера
+        campaign_id: ID заказа
 
     Returns:
         True если отказался, False если нет
@@ -6548,14 +6548,14 @@ def check_order_declined(worker_id, order_id):
             cursor.execute("""
                 SELECT COUNT(*) as count
                 FROM declined_orders
-                WHERE worker_id = %s AND order_id = %s
-            """, (worker_id, order_id))
+                WHERE blogger_id = %s AND campaign_id = %s
+            """, (blogger_id, campaign_id))
         else:
             cursor.execute("""
                 SELECT COUNT(*) as count
                 FROM declined_orders
-                WHERE worker_id = ? AND order_id = ?
-            """, (worker_id, order_id))
+                WHERE blogger_id = ? AND campaign_id = ?
+            """, (blogger_id, campaign_id))
 
         result = cursor.fetchone()
         if isinstance(result, dict):
@@ -6566,12 +6566,12 @@ def check_order_declined(worker_id, order_id):
         return count > 0
 
 
-def get_declined_orders(worker_id):
+def get_declined_orders(blogger_id):
     """
     Получает список ID заказов, от которых отказался мастер
 
     Args:
-        worker_id: ID мастера
+        blogger_id: ID мастера
 
     Returns:
         Список ID заказов
@@ -6581,14 +6581,14 @@ def get_declined_orders(worker_id):
 
         if USE_POSTGRES:
             cursor.execute("""
-                SELECT order_id FROM declined_orders
-                WHERE worker_id = %s
-            """, (worker_id,))
+                SELECT campaign_id FROM declined_orders
+                WHERE blogger_id = %s
+            """, (blogger_id,))
         else:
             cursor.execute("""
-                SELECT order_id FROM declined_orders
-                WHERE worker_id = ?
-            """, (worker_id,))
+                SELECT campaign_id FROM declined_orders
+                WHERE blogger_id = ?
+            """, (blogger_id,))
 
         results = cursor.fetchall()
-        return [row['order_id'] if isinstance(row, dict) else row[0] for row in results]
+        return [row['campaign_id'] if isinstance(row, dict) else row[0] for row in results]

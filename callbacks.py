@@ -15,32 +15,32 @@ ROLE_WORKER = "role_worker"
 ROLE_CLIENT = "role_client"
 
 # ===== КЛИЕНТ =====
-CLIENT_MY_ORDERS = "client_my_orders"
-CLIENT_WAITING_ORDERS = "client_waiting_orders"
-CLIENT_IN_PROGRESS_ORDERS = "client_in_progress_orders"
-CLIENT_COMPLETED_ORDERS = "client_completed_orders"
-CLIENT_CREATE_ORDER = "client_create_order"
-CLIENT_VIEW_BIDS = "client_view_bids"
-CLIENT_SELECT_BID = "client_select_bid_{bid_id}"  # Template
-CLIENT_CONFIRM_SELECT_BID = "client_confirm_select_bid_{bid_id}"  # Template
+CLIENT_MY_ORDERS = "advertiser_my_orders"
+CLIENT_WAITING_ORDERS = "advertiser_waiting_orders"
+CLIENT_IN_PROGRESS_ORDERS = "advertiser_in_progress_orders"
+CLIENT_COMPLETED_ORDERS = "advertiser_completed_orders"
+CLIENT_CREATE_ORDER = "advertiser_create_order"
+CLIENT_VIEW_BIDS = "advertiser_view_bids"
+CLIENT_SELECT_BID = "advertiser_select_bid_{offer_id}"  # Template
+CLIENT_CONFIRM_SELECT_BID = "advertiser_confirm_select_bid_{offer_id}"  # Template
 
 # ===== МАСТЕР =====
-WORKER_MY_ORDERS = "worker_my_orders"
-WORKER_IN_PROGRESS_ORDERS = "worker_in_progress_orders"
-WORKER_COMPLETED_ORDERS = "worker_completed_orders"
-WORKER_VIEW_ORDERS = "worker_view_orders"
-WORKER_PROFILE = "worker_profile"
-WORKER_EDIT_PROFILE = "worker_edit_profile"
+WORKER_MY_ORDERS = "blogger_my_orders"
+WORKER_IN_PROGRESS_ORDERS = "blogger_in_progress_orders"
+WORKER_COMPLETED_ORDERS = "blogger_completed_orders"
+WORKER_VIEW_ORDERS = "blogger_view_orders"
+WORKER_PROFILE = "blogger_profile"
+WORKER_EDIT_PROFILE = "blogger_edit_profile"
 MANAGE_COMPLETED_PHOTOS = "manage_completed_photos"
 
 # ===== ЗАКАЗЫ =====
-ORDER_DETAILS = "order_details_{order_id}"  # Template
-COMPLETE_ORDER = "complete_order_{order_id}"  # Template
-WORKER_COMPLETE_ORDER = "worker_complete_order_{order_id}"  # Template
-CANCEL_ORDER = "cancel_order_{order_id}"  # Template
+ORDER_DETAILS = "campaign_details_{campaign_id}"  # Template
+COMPLETE_ORDER = "complete_order_{campaign_id}"  # Template
+WORKER_COMPLETE_ORDER = "blogger_complete_order_{campaign_id}"  # Template
+CANCEL_ORDER = "cancel_order_{campaign_id}"  # Template
 
 # ===== ОТЗЫВЫ =====
-LEAVE_REVIEW = "leave_review_{order_id}"  # Template
+LEAVE_REVIEW = "leave_review_{campaign_id}"  # Template
 REVIEW_RATING = "review_rating_{rating}"  # Template
 REVIEW_SKIP_COMMENT = "review_skip_comment"
 CANCEL_REVIEW = "cancel_review"
@@ -96,17 +96,17 @@ NOOP = "noop"
 
 # ===== УТИЛИТЫ =====
 
-def order_details(order_id: int) -> str:
+def campaign_details(campaign_id: int) -> str:
     """Создаёт callback_data для деталей заказа"""
-    return f"order_details_{order_id}"
+    return f"campaign_details_{campaign_id}"
 
-def complete_order(order_id: int) -> str:
+def complete_order(campaign_id: int) -> str:
     """Создаёт callback_data для завершения заказа"""
-    return f"complete_order_{order_id}"
+    return f"complete_order_{campaign_id}"
 
-def leave_review(order_id: int) -> str:
+def leave_review(campaign_id: int) -> str:
     """Создаёт callback_data для оставления отзыва"""
-    return f"leave_review_{order_id}"
+    return f"leave_review_{campaign_id}"
 
 def open_chat(chat_id: int) -> str:
     """Создаёт callback_data для открытия чата"""

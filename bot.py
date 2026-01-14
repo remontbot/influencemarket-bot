@@ -75,23 +75,23 @@ def main():
 
     db.init_db()
     db.migrate_add_portfolio_photos()  # Добавляем колонку если её нет
-    db.migrate_add_order_photos()  # Добавляем колонку photos в orders
-    db.migrate_add_currency_to_bids()  # Добавляем колонку currency в bids
+    db.migrate_add_campaign_photos()  # Добавляем колонку photos в campaigns
+    db.migrate_add_currency_to_offers()  # Добавляем колонку currency в offers
     db.migrate_add_cascading_deletes()  # Добавляем cascading deletes для PostgreSQL
-    db.migrate_add_order_completion_tracking()  # Добавляем отслеживание завершения заказов
-    db.migrate_add_profile_photo()  # Добавляем поле для фото профиля мастера
+    db.migrate_add_campaign_completion_tracking()  # Добавляем отслеживание завершения кампаний
+    db.migrate_add_profile_photo()  # Добавляем поле для фото профиля блогера
     db.migrate_add_premium_features()  # Добавляем поля для premium функций (выключены по умолчанию)
     db.migrate_add_moderation()  # Добавляем поля для модерации и банов
-    db.migrate_add_regions_to_clients()  # Добавляем поле regions в таблицу clients
-    db.migrate_add_videos_to_orders()  # Добавляем поле videos в таблицу orders
-    db.migrate_add_chat_system()  # Создаём таблицы для чата между клиентом и мастером
+    db.migrate_add_regions_to_advertisers()  # Добавляем поле regions в таблицу advertisers
+    db.migrate_add_videos_to_campaigns()  # Добавляем поле videos в таблицу campaigns
+    db.migrate_add_chat_system()  # Создаём таблицы для чата между рекламодателем и блогером
     db.migrate_add_transactions()  # Создаём таблицу для истории транзакций
-    db.migrate_add_notification_settings()  # Добавляем настройки уведомлений для мастеров
-    db.migrate_normalize_categories()  # ИСПРАВЛЕНИЕ: Нормализация категорий мастеров (точный поиск вместо LIKE)
-    db.migrate_normalize_order_categories()  # ИСПРАВЛЕНИЕ: Нормализация категорий заказов (точный поиск вместо LIKE)
-    db.migrate_add_ready_in_days_and_notifications()  # Добавляем ready_in_days в bids и worker_notifications
+    db.migrate_add_notification_settings()  # Добавляем настройки уведомлений для блогеров
+    db.migrate_normalize_categories()  # ИСПРАВЛЕНИЕ: Нормализация категорий блогеров (точный поиск вместо LIKE)
+    db.migrate_normalize_campaign_categories()  # ИСПРАВЛЕНИЕ: Нормализация категорий кампаний (точный поиск вместо LIKE)
+    db.migrate_add_ready_in_days_and_notifications()  # Добавляем ready_in_days в offers и blogger_notifications
     db.migrate_add_admin_and_ads()  # Добавляем систему админ-панели, broadcast и рекламы
-    db.migrate_add_worker_cities()  # Добавляем таблицу для множественного выбора городов мастером
+    db.migrate_add_blogger_cities()  # Добавляем таблицу для множественного выбора городов блогером
     db.migrate_add_chat_message_notifications()  # Добавляем таблицу для агрегированных уведомлений о сообщениях в чате
     db.migrate_fix_portfolio_photos_size()  # ИСПРАВЛЕНИЕ: Увеличиваем размер portfolio_photos с VARCHAR(1000) на TEXT
     db.create_indexes()  # Создаем индексы для оптимизации производительности
@@ -123,8 +123,8 @@ def main():
     reg_conv_handler = ConversationHandler(
         entry_points=[
             CallbackQueryHandler(handlers.select_role, pattern="^select_role_"),
-            CallbackQueryHandler(handlers.add_second_role_worker, pattern="^role_worker$"),
-            CallbackQueryHandler(handlers.add_second_role_client, pattern="^role_client$"),
+            CallbackQueryHandler(handlers.add_second_role_blogger, pattern="^role_blogger$"),
+            CallbackQueryHandler(handlers.add_second_role_advertiser, pattern="^role_advertiser$"),
         ],
         states={
             # Выбор роли
@@ -132,179 +132,179 @@ def main():
                 CallbackQueryHandler(handlers.select_role, pattern="^select_role_"),
             ],
 
-            # Регистрация мастера
-            handlers.REGISTER_MASTER_NAME: [
+            # Регистрация блогера
+            handlers.REGISTER_BLOGGER_NAME: [
                 MessageHandler(
                     filters.TEXT & ~filters.COMMAND,
-                    handlers.register_master_name,
+                    handlers.register_blogger_name,
                 )
             ],
-            handlers.REGISTER_MASTER_PHONE: [
+            handlers.REGISTER_BLOGGER_PHONE: [
                 MessageHandler(
                     filters.TEXT & ~filters.COMMAND,
-                    handlers.register_master_phone,
+                    handlers.register_blogger_phone,
                 )
             ],
-            handlers.REGISTER_MASTER_REGION_SELECT: [
+            handlers.REGISTER_BLOGGER_REGION_SELECT: [
                 CallbackQueryHandler(
-                    handlers.register_master_region_select,
-                    pattern="^masterregion_",
+                    handlers.register_blogger_region_select,
+                    pattern="^bloggerregion_",
                 )
             ],
-            handlers.REGISTER_MASTER_CITY: [
+            handlers.REGISTER_BLOGGER_CITY: [
                 CallbackQueryHandler(
-                    handlers.register_master_city_select,
-                    pattern="^mastercity_",
+                    handlers.register_blogger_city_select,
+                    pattern="^bloggercity_",
                 )
             ],
-            handlers.REGISTER_MASTER_CITY_SELECT: [
+            handlers.REGISTER_BLOGGER_CITY_SELECT: [
                 CallbackQueryHandler(
-                    handlers.register_master_city_select,
-                    pattern="^mastercity_",
+                    handlers.register_blogger_city_select,
+                    pattern="^bloggercity_",
                 )
             ],
-            handlers.REGISTER_MASTER_CITY_OTHER: [
+            handlers.REGISTER_BLOGGER_CITY_OTHER: [
                 MessageHandler(
                     filters.TEXT & ~filters.COMMAND,
-                    handlers.register_master_city_other,
+                    handlers.register_blogger_city_other,
                 )
             ],
-            handlers.REGISTER_MASTER_CITIES_CONFIRM: [
+            handlers.REGISTER_BLOGGER_CITIES_CONFIRM: [
                 CallbackQueryHandler(
-                    handlers.register_master_cities_confirm,
+                    handlers.register_blogger_cities_confirm,
                     pattern="^(add_more_cities|finish_cities)$",
                 )
             ],
             # Новые состояния для выбора категорий (7 основных категорий)
-            handlers.REGISTER_MASTER_MAIN_CATEGORY: [
+            handlers.REGISTER_BLOGGER_MAIN_CATEGORY: [
                 CallbackQueryHandler(
-                    handlers.register_master_main_category,
+                    handlers.register_blogger_main_category,
                     pattern="^maincat_",
                 )
             ],
-            handlers.REGISTER_MASTER_SUBCATEGORY_SELECT: [
+            handlers.REGISTER_BLOGGER_SUBCATEGORY_SELECT: [
                 CallbackQueryHandler(
-                    handlers.register_master_subcategory_select,
+                    handlers.register_blogger_subcategory_select,
                     pattern="^subcat_",
                 )
             ],
-            handlers.REGISTER_MASTER_ASK_MORE_CATEGORIES: [
+            handlers.REGISTER_BLOGGER_ASK_MORE_CATEGORIES: [
                 CallbackQueryHandler(
-                    handlers.register_master_ask_more_categories,
+                    handlers.register_blogger_ask_more_categories,
                     pattern="^more_",
                 )
             ],
             # ОБНОВЛЕНО: Теперь опыт выбирается кнопками
-            handlers.REGISTER_MASTER_EXPERIENCE: [
+            handlers.REGISTER_BLOGGER_EXPERIENCE: [
                 CallbackQueryHandler(
-                    handlers.register_master_experience,
+                    handlers.register_blogger_experience,
                     pattern="^exp_",
                 )
             ],
-            handlers.REGISTER_MASTER_DESCRIPTION: [
+            handlers.REGISTER_BLOGGER_DESCRIPTION: [
                 MessageHandler(
                     filters.TEXT & ~filters.COMMAND,
-                    handlers.register_master_description,
+                    handlers.register_blogger_description,
                 )
             ],
             # НОВОЕ: Обработка фото работ
-            handlers.REGISTER_MASTER_PHOTOS: [
+            handlers.REGISTER_BLOGGER_PHOTOS: [
                 CallbackQueryHandler(
-                    handlers.register_master_photos,
+                    handlers.register_blogger_photos,
                     pattern="^add_photos_",
                 ),
                 MessageHandler(
                     filters.PHOTO | filters.TEXT | filters.VIDEO | filters.Document.ALL,
-                    handlers.handle_master_photos,
+                    handlers.handle_blogger_photos,
                 ),
             ],
 
-            # Регистрация заказчика
-            handlers.REGISTER_CLIENT_NAME: [
+            # Регистрация рекламодателя
+            handlers.REGISTER_ADVERTISER_NAME: [
                 MessageHandler(
                     filters.TEXT & ~filters.COMMAND,
-                    handlers.register_client_name,
+                    handlers.register_advertiser_name,
                 )
             ],
-            handlers.REGISTER_CLIENT_PHONE: [
+            handlers.REGISTER_ADVERTISER_PHONE: [
                 MessageHandler(
                     filters.TEXT & ~filters.COMMAND,
-                    handlers.register_client_phone,
+                    handlers.register_advertiser_phone,
                 )
             ],
-            handlers.REGISTER_CLIENT_REGION_SELECT: [
+            handlers.REGISTER_ADVERTISER_REGION_SELECT: [
                 CallbackQueryHandler(
-                    handlers.register_client_region_select,
-                    pattern="^clientregion_",
+                    handlers.register_advertiser_region_select,
+                    pattern="^advertiserregion_",
                 )
             ],
-            handlers.REGISTER_CLIENT_CITY: [
+            handlers.REGISTER_ADVERTISER_CITY: [
                 CallbackQueryHandler(
-                    handlers.register_client_city_select,
-                    pattern="^clientcity_",
+                    handlers.register_advertiser_city_select,
+                    pattern="^advertisercity_",
                 )
             ],
-            handlers.REGISTER_CLIENT_CITY_SELECT: [
+            handlers.REGISTER_ADVERTISER_CITY_SELECT: [
                 CallbackQueryHandler(
-                    handlers.register_client_city_select,
-                    pattern="^clientcity_",
+                    handlers.register_advertiser_city_select,
+                    pattern="^advertisercity_",
                 )
             ],
-            handlers.REGISTER_CLIENT_CITY_OTHER: [
+            handlers.REGISTER_ADVERTISER_CITY_OTHER: [
                 MessageHandler(
                     filters.TEXT & ~filters.COMMAND,
-                    handlers.register_client_city_other,
+                    handlers.register_advertiser_city_other,
                 )
             ],
-            # REGISTER_CLIENT_DESCRIPTION удалено - регистрация завершается сразу после города
+            # REGISTER_ADVERTISER_DESCRIPTION удалено - регистрация завершается сразу после города
         },
         fallbacks=[
             CommandHandler("cancel", handlers.cancel),
             CommandHandler("start", handlers.cancel_from_start),  # КРИТИЧНО: выход из застрявшего диалога
             MessageHandler(filters.Regex("^(Отмена|отмена|cancel)$"), handlers.cancel),
             CallbackQueryHandler(handlers.cancel_from_callback, pattern="^go_main_menu$"),  # КРИТИЧНО: выход через кнопку меню
-            CallbackQueryHandler(handlers.cancel_from_callback, pattern="^show_worker_menu$"),  # КРИТИЧНО: выход через кнопку меню мастера
-            CallbackQueryHandler(handlers.cancel_from_callback, pattern="^show_client_menu$"),  # КРИТИЧНО: выход через кнопку меню клиента
+            CallbackQueryHandler(handlers.cancel_from_callback, pattern="^show_blogger_menu$"),  # КРИТИЧНО: выход через кнопку меню блогера
+            CallbackQueryHandler(handlers.cancel_from_callback, pattern="^show_advertiser_menu$"),  # КРИТИЧНО: выход через кнопку меню рекламодателя
         ],
         allow_reentry=True,
     )
 
     application.add_handler(reg_conv_handler)
 
-    # --- ConversationHandler для создания заказа ---
-    
-    create_order_handler = ConversationHandler(
+    # --- ConversationHandler для создания кампании ---
+
+    create_campaign_handler = ConversationHandler(
         entry_points=[
-            CallbackQueryHandler(handlers.client_create_order, pattern="^client_create_order$")
+            CallbackQueryHandler(handlers.advertiser_create_campaign, pattern="^advertiser_create_campaign$")
         ],
         states={
-            handlers.CREATE_ORDER_REGION_SELECT: [
-                CallbackQueryHandler(handlers.create_order_region_select, pattern="^orderregion_"),
+            handlers.CREATE_CAMPAIGN_REGION_SELECT: [
+                CallbackQueryHandler(handlers.create_campaign_region_select, pattern="^campaignregion_"),
             ],
-            handlers.CREATE_ORDER_CITY: [
-                CallbackQueryHandler(handlers.create_order_city_select, pattern="^ordercity_"),
-                CallbackQueryHandler(handlers.create_order_city_other, pattern="^ordercity_other$"),
-                MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.create_order_city_other),
-                CallbackQueryHandler(handlers.create_order_back_to_region, pattern="^create_order_back_to_region$"),
+            handlers.CREATE_CAMPAIGN_CITY: [
+                CallbackQueryHandler(handlers.create_campaign_city_select, pattern="^campaigncity_"),
+                CallbackQueryHandler(handlers.create_campaign_city_other, pattern="^campaigncity_other$"),
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.create_campaign_city_other),
+                CallbackQueryHandler(handlers.create_campaign_back_to_region, pattern="^create_campaign_back_to_region$"),
             ],
-            handlers.CREATE_ORDER_MAIN_CATEGORY: [
-                CallbackQueryHandler(handlers.create_order_main_category, pattern="^order_maincat_"),
-                CallbackQueryHandler(handlers.create_order_back_to_region, pattern="^create_order_back_to_region$"),
-                CallbackQueryHandler(handlers.create_order_back_to_city, pattern="^create_order_back_to_city$"),
+            handlers.CREATE_CAMPAIGN_MAIN_CATEGORY: [
+                CallbackQueryHandler(handlers.create_campaign_main_category, pattern="^campaign_maincat_"),
+                CallbackQueryHandler(handlers.create_campaign_back_to_region, pattern="^create_campaign_back_to_region$"),
+                CallbackQueryHandler(handlers.create_campaign_back_to_city, pattern="^create_campaign_back_to_city$"),
             ],
-            handlers.CREATE_ORDER_SUBCATEGORY_SELECT: [
-                CallbackQueryHandler(handlers.create_order_subcategory_select, pattern="^order_subcat_"),
-                CallbackQueryHandler(handlers.create_order_back_to_maincat, pattern="^create_order_back_to_maincat$"),
+            handlers.CREATE_CAMPAIGN_SUBCATEGORY_SELECT: [
+                CallbackQueryHandler(handlers.create_campaign_subcategory_select, pattern="^campaign_subcat_"),
+                CallbackQueryHandler(handlers.create_campaign_back_to_maincat, pattern="^create_campaign_back_to_maincat$"),
             ],
-            handlers.CREATE_ORDER_DESCRIPTION: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.create_order_description),
+            handlers.CREATE_CAMPAIGN_DESCRIPTION: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.create_campaign_description),
             ],
-            handlers.CREATE_ORDER_PHOTOS: [
-                MessageHandler(filters.PHOTO, handlers.create_order_photo_upload),
-                MessageHandler(filters.VIDEO, handlers.create_order_photo_upload),
-                CommandHandler("done", handlers.create_order_done_uploading),
-                CallbackQueryHandler(handlers.create_order_skip_photos, pattern="^order_skip_photos$"),
-                CallbackQueryHandler(handlers.create_order_publish, pattern="^order_publish$"),
+            handlers.CREATE_CAMPAIGN_PHOTOS: [
+                MessageHandler(filters.PHOTO, handlers.create_campaign_photo_upload),
+                MessageHandler(filters.VIDEO, handlers.create_campaign_photo_upload),
+                CommandHandler("done", handlers.create_campaign_done_uploading),
+                CallbackQueryHandler(handlers.create_campaign_skip_photos, pattern="^campaign_skip_photos$"),
+                CallbackQueryHandler(handlers.create_campaign_publish, pattern="^campaign_publish$"),
             ],
         },
         fallbacks=[
@@ -314,8 +314,8 @@ def main():
         ],
         allow_reentry=True,
     )
-    
-    application.add_handler(create_order_handler)
+
+    application.add_handler(create_campaign_handler)
 
     # --- ConversationHandler для редактирования профиля ---
     
@@ -365,7 +365,7 @@ def main():
             CommandHandler("cancel", handlers.cancel_edit_profile),
             CommandHandler("start", handlers.cancel_from_start),  # КРИТИЧНО: выход из застрявшего диалога
             MessageHandler(filters.Regex("^(Отмена|отмена|cancel)$"), handlers.cancel_edit_profile),
-            CallbackQueryHandler(handlers.show_worker_profile, pattern="^worker_profile$"),
+            CallbackQueryHandler(handlers.show_blogger_profile, pattern="^blogger_profile$"),
         ],
         allow_reentry=True,
     )
@@ -376,100 +376,100 @@ def main():
     application.add_handler(CallbackQueryHandler(handlers.remove_city_menu, pattern="^remove_city_menu$"))
     application.add_handler(CallbackQueryHandler(handlers.remove_city_confirm, pattern="^remove_city_"))
 
-    # --- ConversationHandler для откликов мастеров ---
-    
-    bid_conv_handler = ConversationHandler(
+    # --- ConversationHandler для предложений блогеров ---
+
+    offer_conv_handler = ConversationHandler(
         entry_points=[
-            CallbackQueryHandler(handlers.worker_bid_on_order, pattern="^bid_on_order_")
+            CallbackQueryHandler(handlers.blogger_offer_on_campaign, pattern="^offer_on_campaign_")
         ],
         states={
-            handlers.BID_SELECT_CURRENCY: [
-                CallbackQueryHandler(handlers.worker_bid_select_currency, pattern="^bid_currency_"),
+            handlers.OFFER_SELECT_CURRENCY: [
+                CallbackQueryHandler(handlers.blogger_offer_select_currency, pattern="^offer_currency_"),
             ],
-            handlers.BID_ENTER_PRICE: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.worker_bid_enter_price),
+            handlers.OFFER_ENTER_PRICE: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.blogger_offer_enter_price),
             ],
-            handlers.BID_SELECT_READY_DAYS: [
-                CallbackQueryHandler(handlers.worker_bid_select_ready_days, pattern="^ready_days_"),
+            handlers.OFFER_SELECT_READY_DAYS: [
+                CallbackQueryHandler(handlers.blogger_offer_select_ready_days, pattern="^ready_days_"),
             ],
-            handlers.BID_ENTER_COMMENT: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.worker_bid_enter_comment),
-                CallbackQueryHandler(handlers.worker_bid_skip_comment, pattern="^bid_skip_comment$"),
+            handlers.OFFER_ENTER_COMMENT: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.blogger_offer_enter_comment),
+                CallbackQueryHandler(handlers.blogger_offer_skip_comment, pattern="^offer_skip_comment$"),
             ],
         },
         fallbacks=[
-            CallbackQueryHandler(handlers.worker_bid_cancel, pattern="^cancel_bid$"),
+            CallbackQueryHandler(handlers.blogger_offer_cancel, pattern="^cancel_offer$"),
         ],
         allow_reentry=True,
     )
-    
-    application.add_handler(bid_conv_handler)
 
-    # --- Обработчик "Мои заказы" (НЕ в ConversationHandler) ---
+    application.add_handler(offer_conv_handler)
+
+    # --- Обработчик "Мои кампании" (НЕ в ConversationHandler) ---
     application.add_handler(
         CallbackQueryHandler(
-            handlers.client_my_orders,
-            pattern="^client_my_orders$",
+            handlers.advertiser_my_campaigns,
+            pattern="^advertiser_my_campaigns$",
         )
     )
 
-    # --- Обработчики категорий заказов КЛИЕНТА ---
+    # --- Обработчики категорий кампаний РЕКЛАМОДАТЕЛЯ ---
     application.add_handler(
         CallbackQueryHandler(
-            handlers.client_waiting_orders,
-            pattern="^client_waiting_orders$",
-        )
-    )
-
-    application.add_handler(
-        CallbackQueryHandler(
-            handlers.client_in_progress_orders,
-            pattern="^client_in_progress_orders$",
+            handlers.advertiser_waiting_campaigns,
+            pattern="^advertiser_waiting_campaigns$",
         )
     )
 
     application.add_handler(
         CallbackQueryHandler(
-            handlers.client_completed_orders,
-            pattern="^client_completed_orders$",
-        )
-    )
-
-    # --- Обработчики категорий заказов МАСТЕРА ---
-    application.add_handler(
-        CallbackQueryHandler(
-            handlers.worker_active_orders,
-            pattern="^worker_active_orders$",
+            handlers.advertiser_in_progress_campaigns,
+            pattern="^advertiser_in_progress_campaigns$",
         )
     )
 
     application.add_handler(
         CallbackQueryHandler(
-            handlers.worker_completed_orders,
-            pattern="^worker_completed_orders$",
+            handlers.advertiser_completed_campaigns,
+            pattern="^advertiser_completed_campaigns$",
         )
     )
 
-    # --- Обработчик отмены заказа ---
+    # --- Обработчики категорий кампаний БЛОГЕРА ---
     application.add_handler(
         CallbackQueryHandler(
-            handlers.cancel_order_handler,
-            pattern="^cancel_order_"
-        )
-    )
-
-    # НОВОЕ: Обработчики завершения заказа и оценки мастера
-    application.add_handler(
-        CallbackQueryHandler(
-            handlers.complete_order_handler,
-            pattern="^complete_order_"
+            handlers.blogger_active_campaigns,
+            pattern="^blogger_active_campaigns$",
         )
     )
 
     application.add_handler(
         CallbackQueryHandler(
-            handlers.submit_order_rating,
-            pattern="^rate_order_"
+            handlers.blogger_completed_campaigns,
+            pattern="^blogger_completed_campaigns$",
+        )
+    )
+
+    # --- Обработчик отмены кампании ---
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.cancel_campaign_handler,
+            pattern="^cancel_campaign_"
+        )
+    )
+
+    # НОВОЕ: Обработчики завершения кампании и оценки блогера
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.complete_campaign_handler,
+            pattern="^complete_campaign_"
+        )
+    )
+
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.submit_campaign_rating,
+            pattern="^rate_campaign_"
         )
     )
 
@@ -484,42 +484,42 @@ def main():
     # НОВОЕ: Обработчики фотографий завершённых работ
     application.add_handler(
         CallbackQueryHandler(
-            handlers.worker_upload_work_photo_start,
+            handlers.blogger_upload_work_photo_start,
             pattern="^upload_work_photo_"
         )
     )
 
     application.add_handler(
         CallbackQueryHandler(
-            handlers.worker_skip_work_photo,
+            handlers.blogger_skip_work_photo,
             pattern="^skip_work_photo_"
         )
     )
 
     application.add_handler(
         CallbackQueryHandler(
-            handlers.worker_finish_work_photos,
+            handlers.blogger_finish_work_photos,
             pattern="^finish_work_photos_"
         )
     )
 
     application.add_handler(
         CallbackQueryHandler(
-            handlers.worker_cancel_work_photos,
+            handlers.blogger_cancel_work_photos,
             pattern="^cancel_work_photos_"
         )
     )
 
     application.add_handler(
         CallbackQueryHandler(
-            handlers.client_check_work_photos,
+            handlers.advertiser_check_work_photos,
             pattern="^check_work_photos_"
         )
     )
 
     application.add_handler(
         CallbackQueryHandler(
-            handlers.client_verify_work_photo,
+            handlers.advertiser_verify_work_photo,
             pattern="^verify_photo_"
         )
     )
@@ -570,15 +570,15 @@ def main():
     )
 
     # --- Обработчики для добавления фото (БЕЗ ConversationHandler) ---
-    
+
     # Начало добавления фото
     application.add_handler(
-        CallbackQueryHandler(handlers.worker_add_photos_start, pattern="^worker_add_photos$")
+        CallbackQueryHandler(handlers.blogger_add_photos_start, pattern="^blogger_add_photos$")
     )
-    
+
     # Завершение добавления фото
     application.add_handler(
-        CallbackQueryHandler(handlers.worker_add_photos_finish_callback, pattern="^finish_adding_photos$")
+        CallbackQueryHandler(handlers.blogger_add_photos_finish_callback, pattern="^finish_adding_photos$")
     )
 
     # --- Обработчики фото профиля ---
@@ -603,44 +603,44 @@ def main():
         CallbackQueryHandler(handlers.delete_portfolio_photo, pattern="^delete_portfolio_photo_")
     )
 
-    # --- Просмотр портфолио другого мастера ---
+    # --- Просмотр портфолио другого блогера ---
     application.add_handler(
-        CallbackQueryHandler(handlers.view_worker_portfolio, pattern="^view_worker_portfolio_")
+        CallbackQueryHandler(handlers.view_blogger_portfolio, pattern="^view_blogger_portfolio_")
     )
 
     application.add_handler(
-        CallbackQueryHandler(handlers.worker_portfolio_view_navigate, pattern="^worker_portfolio_view_(prev|next)$")
+        CallbackQueryHandler(handlers.blogger_portfolio_view_navigate, pattern="^blogger_portfolio_view_(prev|next)$")
     )
 
     application.add_handler(
-        CallbackQueryHandler(handlers.back_to_bid_card, pattern="^back_to_bid_card$")
+        CallbackQueryHandler(handlers.back_to_offer_card, pattern="^back_to_offer_card$")
     )
 
     # Загрузка фото (обрабатывает и portfolio_photos и profile_photo)
     # КРИТИЧНО: Группа -1 чтобы выполнялось РАНЬШЕ ConversationHandler
     application.add_handler(
-        MessageHandler(filters.PHOTO, handlers.worker_add_photos_upload),
+        MessageHandler(filters.PHOTO, handlers.blogger_add_photos_upload),
         group=-1
     )
 
     # Загрузка видео (для портфолио)
     application.add_handler(
-        MessageHandler(filters.VIDEO, handlers.worker_add_photos_upload),
+        MessageHandler(filters.VIDEO, handlers.blogger_add_photos_upload),
         group=-1
     )
 
     # Загрузка документов (когда пользователь перетягивает файл)
     application.add_handler(
-        MessageHandler(filters.Document.ALL, handlers.worker_add_photos_upload),
+        MessageHandler(filters.Document.ALL, handlers.blogger_add_photos_upload),
         group=-1
     )
 
-    # --- Меню мастера и заказчика ---
+    # --- Меню блогера и рекламодателя ---
 
     application.add_handler(
         CallbackQueryHandler(
-            handlers.show_worker_menu,
-            pattern="^show_worker_menu$",
+            handlers.show_blogger_menu,
+            pattern="^show_blogger_menu$",
         )
     )
 
@@ -653,8 +653,8 @@ def main():
 
     application.add_handler(
         CallbackQueryHandler(
-            handlers.toggle_client_notifications,
-            pattern="^toggle_client_notifications$",
+            handlers.toggle_advertiser_notifications,
+            pattern="^toggle_advertiser_notifications$",
         )
     )
 
@@ -668,131 +668,131 @@ def main():
 
     application.add_handler(
         CallbackQueryHandler(
-            handlers.worker_my_bids,
-            pattern="^worker_my_bids$",
+            handlers.blogger_my_offers,
+            pattern="^blogger_my_offers$",
         )
     )
 
-    # НОВОЕ: Мои заказы мастера (заказы в работе)
+    # НОВОЕ: Мои кампании блогера (кампании в работе)
     application.add_handler(
         CallbackQueryHandler(
-            handlers.worker_my_orders,
-            pattern="^worker_my_orders$",
-        )
-    )
-
-    application.add_handler(
-        CallbackQueryHandler(
-            handlers.show_client_menu,
-            pattern="^show_client_menu$",
+            handlers.blogger_my_campaigns,
+            pattern="^blogger_my_campaigns$",
         )
     )
 
     application.add_handler(
         CallbackQueryHandler(
-            handlers.client_my_payments,
-            pattern="^client_my_payments$",
-        )
-    )
-
-    # "Мой профиль" мастера
-    application.add_handler(
-        CallbackQueryHandler(
-            handlers.show_worker_profile,
-            pattern="^worker_profile$",
-        )
-    )
-
-    # "Доступные заказы" для мастера
-    application.add_handler(
-        CallbackQueryHandler(
-            handlers.worker_view_orders,
-            pattern="^worker_view_orders$",
-        )
-    )
-    
-    # Детальный просмотр заказа мастером
-    application.add_handler(
-        CallbackQueryHandler(
-            handlers.worker_view_order_details,
-            pattern="^view_order_"
-        )
-    )
-    
-    # Навигация по фото заказа
-    application.add_handler(
-        CallbackQueryHandler(
-            handlers.worker_order_photo_nav,
-            pattern="^order_photo_(prev|next)_"
-        )
-    )
-
-    # НОВОЕ: Отказ от заказа мастером
-    application.add_handler(
-        CallbackQueryHandler(
-            handlers.worker_decline_order_confirm,
-            pattern="^decline_order_\d+$"
+            handlers.show_advertiser_menu,
+            pattern="^show_advertiser_menu$",
         )
     )
 
     application.add_handler(
         CallbackQueryHandler(
-            handlers.worker_decline_order_yes,
-            pattern="^decline_order_yes_"
+            handlers.advertiser_my_payments,
+            pattern="^advertiser_my_payments$",
+        )
+    )
+
+    # "Мой профиль" блогера
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.show_blogger_profile,
+            pattern="^blogger_profile$",
+        )
+    )
+
+    # "Доступные кампании" для блогера
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.blogger_view_campaigns,
+            pattern="^blogger_view_campaigns$",
+        )
+    )
+
+    # Детальный просмотр кампании блогером
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.blogger_view_campaign_details,
+            pattern="^view_campaign_"
+        )
+    )
+
+    # Навигация по фото кампании
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.blogger_campaign_photo_nav,
+            pattern="^campaign_photo_(prev|next)_"
+        )
+    )
+
+    # НОВОЕ: Отказ от кампании блогером
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.blogger_decline_campaign_confirm,
+            pattern="^decline_campaign_\d+$"
         )
     )
 
     application.add_handler(
         CallbackQueryHandler(
-            handlers.worker_decline_order_no,
-            pattern="^decline_order_no_"
+            handlers.blogger_decline_campaign_yes,
+            pattern="^decline_campaign_yes_"
         )
     )
 
-    # --- Обработчики для листания мастеров ---
-    
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.blogger_decline_campaign_no,
+            pattern="^decline_campaign_no_"
+        )
+    )
+
+    # --- Обработчики для листания блогеров ---
+
     application.add_handler(
         CallbackQueryHandler(
             handlers.go_main_menu,
             pattern="^go_main_menu$",
         )
     )
-    
+
     application.add_handler(
         CallbackQueryHandler(
-            handlers.client_browse_workers,
-            pattern="^client_browse_workers$",
+            handlers.advertiser_browse_bloggers,
+            pattern="^advertiser_browse_bloggers$",
         )
     )
-    
+
     application.add_handler(
         CallbackQueryHandler(
             handlers.browse_start_viewing,
             pattern="^browse_start_now$",
         )
     )
-    
+
     application.add_handler(
         CallbackQueryHandler(
-            handlers.browse_next_worker,
-            pattern="^browse_next_worker$",
+            handlers.browse_next_blogger,
+            pattern="^browse_next_blogger$",
         )
     )
-    
+
     application.add_handler(
         CallbackQueryHandler(
             handlers.browse_photo_prev,
             pattern="^browse_photo_prev$",
         )
     )
-    
+
     application.add_handler(
         CallbackQueryHandler(
             handlers.browse_photo_next,
             pattern="^browse_photo_next$",
         )
     )
-    
+
     application.add_handler(
         CallbackQueryHandler(
             handlers.browse_restart,
@@ -800,18 +800,18 @@ def main():
         )
     )
 
-    # --- Обработчики завершения заказа ---
+    # --- Обработчики завершения кампании ---
     application.add_handler(
         CallbackQueryHandler(
-            handlers.client_complete_order,
-            pattern="^complete_order_"
+            handlers.advertiser_complete_campaign,
+            pattern="^complete_campaign_"
         )
     )
 
     application.add_handler(
         CallbackQueryHandler(
-            handlers.worker_complete_order,
-            pattern="^worker_complete_order_"
+            handlers.blogger_complete_campaign,
+            pattern="^blogger_complete_campaign_"
         )
     )
 
@@ -838,33 +838,33 @@ def main():
         )
     )
 
-    # --- Обработчики просмотра откликов ---
+    # --- Обработчики просмотра предложений ---
     application.add_handler(
         CallbackQueryHandler(
-            handlers.view_order_bids,
-            pattern="^view_bids_"
+            handlers.view_campaign_offers,
+            pattern="^view_offers_"
         )
     )
 
     application.add_handler(
         CallbackQueryHandler(
-            handlers.sort_bids_handler,
-            pattern="^sort_bids_"
+            handlers.sort_offers_handler,
+            pattern="^sort_offers_"
         )
     )
 
     application.add_handler(
         CallbackQueryHandler(
-            handlers.bid_navigate,
-            pattern="^bid_(prev|next)$"
+            handlers.offer_navigate,
+            pattern="^offer_(prev|next)$"
         )
     )
 
-    # --- Обработчики выбора мастера и оплаты ---
+    # --- Обработчики выбора блогера и оплаты ---
     application.add_handler(
         CallbackQueryHandler(
-            handlers.select_master,
-            pattern="^select_master_"
+            handlers.select_blogger,
+            pattern="^select_blogger_"
         )
     )
 
@@ -939,19 +939,19 @@ def main():
         CommandHandler("reset_profile", handlers.reset_profile_command)
     )
 
-    # Команда для добавления тестовых заказов
+    # Команда для добавления тестовых кампаний
     application.add_handler(
-        CommandHandler("add_test_orders", handlers.add_test_orders_command)
+        CommandHandler("add_test_campaigns", handlers.add_test_campaigns_command)
     )
 
-    # Команда для добавления тестовых мастеров
+    # Команда для добавления тестовых блогеров
     application.add_handler(
-        CommandHandler("add_test_workers", handlers.add_test_workers_command)
+        CommandHandler("add_test_bloggers", handlers.add_test_bloggers_command)
     )
 
-    # Команда для добавления тестовых откликов
+    # Команда для добавления тестовых предложений
     application.add_handler(
-        CommandHandler("add_test_bids", handlers.add_test_bids_command)
+        CommandHandler("add_test_offers", handlers.add_test_offers_command)
     )
 
     # === ADMIN КОМАНДЫ ===
@@ -1345,58 +1345,58 @@ def main():
     # Регистрируем обработчик ошибок
     application.add_error_handler(error_handler)
 
-    # --- ФОНОВАЯ ЗАДАЧА: Проверка просроченных заказов ---
+    # --- ФОНОВАЯ ЗАДАЧА: Проверка просроченных кампаний ---
     async def check_deadlines_job(context):
         """
-        Периодическая проверка просроченных заказов.
+        Периодическая проверка просроченных кампаний.
         Запускается каждый час.
         """
-        logger.info("🔍 Запуск проверки просроченных заказов...")
+        logger.info("🔍 Запуск проверки просроченных кампаний...")
 
-        expired_orders = db.check_expired_orders()
+        expired_campaigns = db.check_expired_campaigns()
 
-        if not expired_orders:
-            logger.debug("Просроченных заказов не найдено")
+        if not expired_campaigns:
+            logger.debug("Просроченных кампаний не найдено")
             return
 
-        logger.info(f"📋 Найдено просроченных заказов: {len(expired_orders)}")
+        logger.info(f"📋 Найдено просроченных кампаний: {len(expired_campaigns)}")
 
         # Отправляем уведомления
-        for order_data in expired_orders:
-            order_id = order_data['order_id']
-            client_user_id = order_data['client_user_id']
-            worker_user_ids = order_data['worker_user_ids']
-            title = order_data['title']
+        for campaign_data in expired_campaigns:
+            campaign_id = campaign_data['campaign_id']
+            advertiser_user_id = campaign_data['advertiser_user_id']
+            blogger_user_ids = campaign_data['blogger_user_ids']
+            title = campaign_data['title']
 
-            # Уведомляем клиента
+            # Уведомляем рекламодателя
             try:
-                client_user = db.get_user_by_id(client_user_id)
-                if client_user:
+                advertiser_user = db.get_user_by_id(advertiser_user_id)
+                if advertiser_user:
                     await context.bot.send_message(
-                        chat_id=client_user['telegram_id'],
-                        text=f"⏰ Заказ #{order_id} истёк по дедлайну\n\n"
+                        chat_id=advertiser_user['telegram_id'],
+                        text=f"⏰ Кампания #{campaign_id} истекла по дедлайну\n\n"
                              f"📝 {title}\n\n"
-                             f"Заказ автоматически закрыт, так как прошёл указанный срок выполнения."
+                             f"Кампания автоматически закрыта, так как прошёл указанный срок выполнения."
                     )
-                    logger.info(f"✅ Уведомление клиента {client_user_id} отправлено")
+                    logger.info(f"✅ Уведомление рекламодателя {advertiser_user_id} отправлено")
             except Exception as e:
-                logger.error(f"❌ Ошибка отправки уведомления клиенту {client_user_id}: {e}")
+                logger.error(f"❌ Ошибка отправки уведомления рекламодателю {advertiser_user_id}: {e}")
 
-            # Уведомляем мастеров
-            for worker_user_id in worker_user_ids:
+            # Уведомляем блогеров
+            for blogger_user_id in blogger_user_ids:
                 try:
-                    worker_user = db.get_user_by_id(worker_user_id)
-                    if worker_user:
+                    blogger_user = db.get_user_by_id(blogger_user_id)
+                    if blogger_user:
                         await context.bot.send_message(
-                            chat_id=worker_user['telegram_id'],
-                            text=f"⏰ Заказ #{order_id} истёк по дедлайну\n\n"
+                            chat_id=blogger_user['telegram_id'],
+                            text=f"⏰ Кампания #{campaign_id} истекла по дедлайну\n\n"
                                  f"📝 {title}\n\n"
-                                 f"Заказ автоматически закрыт."
+                                 f"Кампания автоматически закрыта."
                         )
                 except Exception as e:
-                    logger.error(f"❌ Ошибка отправки уведомления мастеру {worker_user_id}: {e}")
+                    logger.error(f"❌ Ошибка отправки уведомления блогеру {blogger_user_id}: {e}")
 
-        logger.info(f"✅ Проверка просроченных заказов завершена. Обработано: {len(expired_orders)}")
+        logger.info(f"✅ Проверка просроченных кампаний завершена. Обработано: {len(expired_campaigns)}")
 
     # Добавляем задачу в очередь (запуск каждый час)
     job_queue = application.job_queue
