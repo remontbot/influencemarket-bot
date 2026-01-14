@@ -6592,3 +6592,502 @@ def get_declined_orders(blogger_id):
 
         results = cursor.fetchall()
         return [row['campaign_id'] if isinstance(row, dict) else row[0] for row in results]
+
+
+# ===== NEW MIGRATIONS FOR INFLUENCEMARKET =====
+
+def migrate_add_blogger_platform_fields():
+    """
+    Добавляет поля для платформ блогеров и верификации.
+    Новые поля:
+    - platform_instagram, platform_tiktok, platform_youtube
+    - instagram_link, tiktok_link, youtube_link
+    - format_stories, format_reels, format_posts, format_integration
+    - price_stories, price_reels, price_posts
+    - verified_ownership, verification_code, trust_score
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        
+        try:
+            # Платформы
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS platform_instagram BOOLEAN DEFAULT FALSE")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS platform_tiktok BOOLEAN DEFAULT FALSE")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS platform_youtube BOOLEAN DEFAULT FALSE")
+            
+            # Ссылки на профили
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS instagram_link VARCHAR(200)")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS tiktok_link VARCHAR(200)")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS youtube_link VARCHAR(200)")
+            
+            # Форматы контента
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS format_stories BOOLEAN DEFAULT FALSE")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS format_reels BOOLEAN DEFAULT FALSE")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS format_posts BOOLEAN DEFAULT FALSE")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS format_integration BOOLEAN DEFAULT FALSE")
+            
+            # Прайс
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS price_stories INTEGER")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS price_reels INTEGER")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS price_posts INTEGER")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS currency VARCHAR(3) DEFAULT 'BYN'")
+            
+            # Верификация и Trust Score
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS verified_ownership BOOLEAN DEFAULT FALSE")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS verification_code VARCHAR(20)")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS trust_score INTEGER DEFAULT 0")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS content_language VARCHAR(50) DEFAULT 'Русский'")
+            
+            conn.commit()
+            logger.info("✅ Migration completed: blogger platform fields added!")
+            
+        except Exception as e:
+            logger.error(f"⚠️ Error in migrate_add_blogger_platform_fields: {e}")
+            conn.rollback()
+
+
+def migrate_add_blogger_stats():
+    """
+    Создаёт таблицу blogger_stats для хранения статистики блогеров.
+    Хранит метрики по платформам: подписчики, охваты, вовлечённость, демографию.
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        
+        try:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS blogger_stats (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    blogger_id INTEGER NOT NULL,
+                    platform VARCHAR(20) NOT NULL,
+                    
+                    -- Метрики
+                    followers INTEGER,
+                    avg_story_reach INTEGER,
+                    median_reels_views INTEGER,
+                    engagement_rate DECIMAL(5,2),
+                    
+                    -- Гео аудитории (детально по городам Беларуси)
+                    belarus_audience_percent INTEGER,
+                    
+                    -- Топ-3 города Беларуси в аудитории
+                    city_1 VARCHAR(50),
+                    city_1_percent INTEGER,
+                    city_2 VARCHAR(50),
+                    city_2_percent INTEGER,
+                    city_3 VARCHAR(50),
+                    city_3_percent INTEGER,
+                    
+                    -- Демография
+                    demographics TEXT,  -- JSON: {"male": 40, "female": 60, "age_18_24": 30}
+                    
+                    -- Доказательства (скриншоты)
+                    proof_screenshots TEXT,  -- JSON array с file_id
+                    
+                    -- Статус верификации
+                    verified BOOLEAN DEFAULT FALSE,
+                    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    expires_at TIMESTAMP,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    
+                    FOREIGN KEY (blogger_id) REFERENCES bloggers(user_id) ON DELETE CASCADE
+                )
+            """)
+            
+            conn.commit()
+            logger.info("✅ Migration completed: blogger_stats table created!")
+            
+        except Exception as e:
+            logger.error(f"⚠️ Error in migrate_add_blogger_stats: {e}")
+            conn.rollback()
+
+
+def migrate_add_campaign_reports():
+    """
+    Создаёт таблицу campaign_reports для отчётов о выполненных кампаниях.
+    Блогер загружает отчёт, рекламодатель подтверждает.
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        
+        try:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS campaign_reports (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    campaign_id INTEGER NOT NULL,
+                    offer_id INTEGER NOT NULL,
+                    
+                    -- Ссылка и скрины размещения
+                    post_link VARCHAR(300),
+                    post_screenshots TEXT,  -- JSON array с file_id
+                    
+                    -- Результаты
+                    reach INTEGER,
+                    views INTEGER,
+                    engagement INTEGER,
+                    result_screenshots TEXT,  -- JSON array с file_id статистики
+                    
+                    -- Даты
+                    published_at TIMESTAMP,
+                    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    
+                    -- Подтверждение рекламодателя
+                    advertiser_confirmed BOOLEAN DEFAULT FALSE,
+                    advertiser_satisfied BOOLEAN,
+                    confirmed_at TIMESTAMP,
+                    
+                    FOREIGN KEY (campaign_id) REFERENCES campaigns(order_id) ON DELETE CASCADE,
+                    FOREIGN KEY (offer_id) REFERENCES offers(bid_id) ON DELETE CASCADE
+                )
+            """)
+            
+            conn.commit()
+            logger.info("✅ Migration completed: campaign_reports table created!")
+            
+        except Exception as e:
+            logger.error(f"⚠️ Error in migrate_add_campaign_reports: {e}")
+            conn.rollback()
+
+
+def migrate_add_campaign_fields():
+    """
+    Добавляет новые поля в таблицу campaigns для маркетплейса блогеров:
+    - product_description, platform, required_topics
+    - budget_type, budget_amount, requirements, deadline
+    - min_trust_score, only_verified
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        
+        try:
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS product_description TEXT")
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS platform VARCHAR(20)")
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS required_topics TEXT")  # JSON array
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS required_format VARCHAR(20)")
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS budget_type VARCHAR(20)")
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS budget_amount INTEGER")
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS requirements TEXT")
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS deadline DATE")
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS min_trust_score INTEGER DEFAULT 0")
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS only_verified BOOLEAN DEFAULT FALSE")
+            
+            conn.commit()
+            logger.info("✅ Migration completed: campaign fields added!")
+            
+        except Exception as e:
+            logger.error(f"⚠️ Error in migrate_add_campaign_fields: {e}")
+            conn.rollback()
+
+
+def create_indexes():
+    """
+    Создаёт индексы для оптимизации производительности БД.
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        
+        try:
+            # Индексы для быстрого поиска
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_bloggers_telegram_id ON bloggers(telegram_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_bloggers_verified ON bloggers(verified_ownership)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_bloggers_trust_score ON bloggers(trust_score)")
+            
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_campaigns_status ON campaigns(status)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_campaigns_advertiser ON campaigns(advertiser_id)")
+            
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_offers_campaign ON offers(campaign_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_offers_blogger ON offers(blogger_id)")
+            
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_stats_blogger ON blogger_stats(blogger_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_stats_active ON blogger_stats(is_active)")
+            
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_campaign ON campaign_reports(campaign_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_offer ON campaign_reports(offer_id)")
+            
+            conn.commit()
+            logger.info("✅ All indexes created successfully!")
+            
+        except Exception as e:
+            logger.error(f"⚠️ Error creating indexes: {e}")
+            conn.rollback()
+
+
+# ===== VERIFICATION AND TRUST SCORE FUNCTIONS =====
+
+def generate_verification_code(blogger_id):
+    """
+    Генерирует код верификации для блогера.
+    Формат: BH-XXXX (BH = Belarus Bloggers, 4 цифры)
+    """
+    import random
+    code = f"BH-{random.randint(1000, 9999)}"
+    
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        cursor.execute("""
+            UPDATE bloggers
+            SET verification_code = ?, verified_ownership = FALSE
+            WHERE user_id = ?
+        """, (code, blogger_id))
+        conn.commit()
+        
+        logger.info(f"✅ Код верификации создан для blogger_id={blogger_id}: {code}")
+        return code
+
+
+def verify_blogger_ownership(blogger_id):
+    """
+    Подтверждает верификацию владения аккаунтом.
+    Добавляет +20 к Trust Score.
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        
+        # Устанавливаем verified_ownership = TRUE
+        cursor.execute("""
+            UPDATE bloggers
+            SET verified_ownership = TRUE
+            WHERE user_id = ?
+        """, (blogger_id,))
+        
+        # Пересчитываем Trust Score
+        new_score = calculate_trust_score(blogger_id)
+        
+        conn.commit()
+        logger.info(f"✅ Блогер {blogger_id} верифицирован! Trust Score: {new_score}")
+        return new_score
+
+
+def add_blogger_stats(blogger_id, platform, followers, avg_story_reach, median_reels_views, 
+                      engagement_rate, belarus_percent, city_1=None, city_1_percent=None,
+                      city_2=None, city_2_percent=None, city_3=None, city_3_percent=None,
+                      demographics=None, proof_screenshots=None):
+    """
+    Добавляет статистику блогера.
+    proof_screenshots - JSON array с file_id скринов.
+    demographics - JSON: {"male": 40, "female": 60, "age_18_24": 30}
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        expires = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S")
+        
+        import json
+        demographics_json = json.dumps(demographics) if demographics else None
+        screenshots_json = json.dumps(proof_screenshots) if proof_screenshots else None
+        
+        cursor.execute("""
+            INSERT INTO blogger_stats (
+                blogger_id, platform, followers, avg_story_reach, median_reels_views,
+                engagement_rate, belarus_audience_percent, 
+                city_1, city_1_percent, city_2, city_2_percent, city_3, city_3_percent,
+                demographics, proof_screenshots, verified, uploaded_at, expires_at, is_active
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE, ?, ?, TRUE)
+        """, (blogger_id, platform, followers, avg_story_reach, median_reels_views,
+              engagement_rate, belarus_percent,
+              city_1, city_1_percent, city_2, city_2_percent, city_3, city_3_percent,
+              demographics_json, screenshots_json, now, expires))
+        
+        stats_id = cursor.lastrowid
+        conn.commit()
+        
+        logger.info(f"✅ Статистика добавлена: blogger_id={blogger_id}, platform={platform}, stats_id={stats_id}")
+        return stats_id
+
+
+def verify_blogger_stats(stats_id):
+    """
+    Верифицирует статистику блогера (admin подтверждает).
+    Добавляет +25 к Trust Score если полная, +10 если актуальна.
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        
+        # Получаем статистику
+        cursor.execute("SELECT blogger_id FROM blogger_stats WHERE id = ?", (stats_id,))
+        result = cursor.fetchone()
+        if not result:
+            logger.warning(f"⚠️ Статистика {stats_id} не найдена")
+            return None
+        
+        blogger_id = result['blogger_id'] if isinstance(result, dict) else result[0]
+        
+        # Устанавливаем verified = TRUE
+        cursor.execute("""
+            UPDATE blogger_stats
+            SET verified = TRUE
+            WHERE id = ?
+        """, (stats_id,))
+        
+        # Пересчитываем Trust Score
+        new_score = calculate_trust_score(blogger_id)
+        
+        conn.commit()
+        logger.info(f"✅ Статистика {stats_id} верифицирована! Trust Score блогера {blogger_id}: {new_score}")
+        return new_score
+
+
+def calculate_trust_score(blogger_id):
+    """
+    Рассчитывает Trust Score блогера (0-100).
+    
+    Формула:
+    - Verified ownership: +20
+    - Stats verified (полная): +25
+    - Stats актуальны (<30 дней): +10
+    - Выполнено кампаний: +2 за каждую (макс +30)
+    - Средняя оценка 4.5+: +10
+    - Споры: -15 за каждый
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        score = 0
+        
+        # 1. Verified ownership: +20
+        cursor.execute("SELECT verified_ownership FROM bloggers WHERE user_id = ?", (blogger_id,))
+        blogger = cursor.fetchone()
+        if blogger and (blogger['verified_ownership'] if isinstance(blogger, dict) else blogger[0]):
+            score += 20
+        
+        # 2. Stats verified: +25
+        cursor.execute("""
+            SELECT COUNT(*) as cnt FROM blogger_stats 
+            WHERE blogger_id = ? AND verified = TRUE AND is_active = TRUE
+        """, (blogger_id,))
+        verified_stats = cursor.fetchone()
+        if verified_stats and (verified_stats['cnt'] if isinstance(verified_stats, dict) else verified_stats[0]) > 0:
+            score += 25
+        
+        # 3. Stats актуальны (<30 дней): +10
+        now = datetime.now()
+        cursor.execute("""
+            SELECT expires_at FROM blogger_stats 
+            WHERE blogger_id = ? AND verified = TRUE AND is_active = TRUE
+            ORDER BY uploaded_at DESC LIMIT 1
+        """, (blogger_id,))
+        latest_stats = cursor.fetchone()
+        if latest_stats:
+            expires = latest_stats['expires_at'] if isinstance(latest_stats, dict) else latest_stats[0]
+            if isinstance(expires, str):
+                expires = datetime.strptime(expires, "%Y-%m-%d %H:%M:%S")
+            if expires > now:
+                score += 10
+        
+        # 4. Выполнено кампаний: +2 за каждую (макс +30)
+        cursor.execute("""
+            SELECT COUNT(*) as cnt FROM campaign_reports r
+            JOIN offers o ON r.offer_id = o.bid_id
+            WHERE o.blogger_id = ? AND r.advertiser_confirmed = TRUE
+        """, (blogger_id,))
+        completed = cursor.fetchone()
+        if completed:
+            cnt = completed['cnt'] if isinstance(completed, dict) else completed[0]
+            score += min(cnt * 2, 30)
+        
+        # 5. Средняя оценка 4.5+: +10
+        # TODO: Добавить когда будет таблица ratings
+        
+        # 6. Споры: -15 за каждый
+        # TODO: Добавить когда будет таблица disputes
+        
+        # Ограничиваем 0-100
+        score = max(0, min(100, score))
+        
+        # Сохраняем в БД
+        cursor.execute("""
+            UPDATE bloggers
+            SET trust_score = ?
+            WHERE user_id = ?
+        """, (score, blogger_id))
+        
+        conn.commit()
+        logger.info(f"✅ Trust Score пересчитан для blogger_id={blogger_id}: {score}")
+        return score
+
+
+def get_blogger_stats(blogger_id, platform=None):
+    """
+    Получает статистику блогера (последнюю активную).
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        
+        if platform:
+            cursor.execute("""
+                SELECT * FROM blogger_stats
+                WHERE blogger_id = ? AND platform = ? AND is_active = TRUE
+                ORDER BY uploaded_at DESC LIMIT 1
+            """, (blogger_id, platform))
+        else:
+            cursor.execute("""
+                SELECT * FROM blogger_stats
+                WHERE blogger_id = ? AND is_active = TRUE
+                ORDER BY uploaded_at DESC
+            """, (blogger_id,))
+        
+        return cursor.fetchall() if not platform else cursor.fetchone()
+
+
+def create_campaign_report(campaign_id, offer_id, post_link, post_screenshots, 
+                           reach=None, views=None, engagement=None, result_screenshots=None):
+    """
+    Создаёт отчёт о кампании.
+    post_screenshots и result_screenshots - JSON arrays с file_id.
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        import json
+        post_screens = json.dumps(post_screenshots) if post_screenshots else None
+        result_screens = json.dumps(result_screenshots) if result_screenshots else None
+        
+        cursor.execute("""
+            INSERT INTO campaign_reports (
+                campaign_id, offer_id, post_link, post_screenshots,
+                reach, views, engagement, result_screenshots,
+                published_at, uploaded_at, advertiser_confirmed
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE)
+        """, (campaign_id, offer_id, post_link, post_screens,
+              reach, views, engagement, result_screens, now, now))
+        
+        report_id = cursor.lastrowid
+        conn.commit()
+        
+        logger.info(f"✅ Отчёт создан: campaign_id={campaign_id}, report_id={report_id}")
+        return report_id
+
+
+def confirm_campaign_report(report_id, satisfied, advertiser_id):
+    """
+    Рекламодатель подтверждает отчёт о кампании.
+    satisfied - True/False (устроил ли результат).
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        cursor.execute("""
+            UPDATE campaign_reports
+            SET advertiser_confirmed = TRUE,
+                advertiser_satisfied = ?,
+                confirmed_at = ?
+            WHERE id = ?
+        """, (satisfied, now, report_id))
+        
+        # Если подтверждено, увеличиваем Trust Score блогера
+        if satisfied:
+            # Получаем blogger_id из offer
+            cursor.execute("""
+                SELECT o.blogger_id FROM campaign_reports r
+                JOIN offers o ON r.offer_id = o.bid_id
+                WHERE r.id = ?
+            """, (report_id,))
+            result = cursor.fetchone()
+            if result:
+                blogger_id = result['blogger_id'] if isinstance(result, dict) else result[0]
+                calculate_trust_score(blogger_id)
+        
+        conn.commit()
+        logger.info(f"✅ Отчёт {report_id} подтверждён: satisfied={satisfied}")
+        return True

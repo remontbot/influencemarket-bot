@@ -16,7 +16,9 @@ import db
 import handlers
 
 # Версия бота
-BOT_VERSION = "1.2.5 - AD CALLBACKS FIX"  # КРИТИЧНО: Добавлены глобальные обработчики для callbacks создания рекламы
+BOT_VERSION = "2.0.0 - INFLUENCEMARKET MVP"  # Адаптация для маркетплейса блогеров
+BOT_NAME = "InfluenceMarket"
+BOT_USERNAME = "@influencemarketplace_bot"
 
 # --- НАЧАЛО ИСПРАВЛЕННОГО БЛОКА ДЛЯ ИМПОРТА CONFIG.PY И ЗАГРУЗКИ ENV ---
 # Попытка импортировать config, если он есть рядом (локально)
@@ -94,6 +96,13 @@ def main():
     db.migrate_add_blogger_cities()  # Добавляем таблицу для множественного выбора городов блогером
     db.migrate_add_chat_message_notifications()  # Добавляем таблицу для агрегированных уведомлений о сообщениях в чате
     db.migrate_fix_portfolio_photos_size()  # ИСПРАВЛЕНИЕ: Увеличиваем размер portfolio_photos с VARCHAR(1000) на TEXT
+
+    # === НОВЫЕ МИГРАЦИИ ДЛЯ INFLUENCEMARKET ===
+    db.migrate_add_blogger_platform_fields()  # Добавляем поля платформ, цен, верификации
+    db.migrate_add_blogger_stats()  # Создаём таблицу статистики блогеров
+    db.migrate_add_campaign_reports()  # Создаём таблицу отчётов о кампаниях
+    db.migrate_add_campaign_fields()  # Добавляем поля для кампаний (бюджет, требования)
+
     db.create_indexes()  # Создаем индексы для оптимизации производительности
 
     # Добавляем супер-админа
