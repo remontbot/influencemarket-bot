@@ -77,7 +77,7 @@ def main():
 
     db.init_db()
     db.migrate_add_portfolio_photos()  # Добавляем колонку если её нет
-    db.migrate_add_campaign_photos()  # Добавляем колонку photos в campaigns
+    # db.migrate_add_campaign_photos() удалено - функция не существует
     db.migrate_add_currency_to_offers()  # Добавляем колонку currency в offers
     db.migrate_add_cascading_deletes()  # Добавляем cascading deletes для PostgreSQL
     db.migrate_add_campaign_completion_tracking()  # Добавляем отслеживание завершения кампаний
@@ -740,7 +740,7 @@ def main():
     application.add_handler(
         CallbackQueryHandler(
             handlers.blogger_decline_campaign_confirm,
-            pattern="^decline_campaign_\d+$"
+            pattern=r"^decline_campaign_\d+$"
         )
     )
 
