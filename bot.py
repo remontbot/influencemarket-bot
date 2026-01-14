@@ -96,6 +96,13 @@ def main():
     db.migrate_add_blogger_cities()  # Добавляем таблицу для множественного выбора городов блогером
     db.migrate_add_chat_message_notifications()  # Добавляем таблицу для агрегированных уведомлений о сообщениях в чате
     db.migrate_fix_portfolio_photos_size()  # ИСПРАВЛЕНИЕ: Увеличиваем размер portfolio_photos с VARCHAR(1000) на TEXT
+
+    # === НОВЫЕ МИГРАЦИИ ДЛЯ INFLUENCEMARKET ===
+    db.migrate_add_blogger_platform_fields()  # Добавляем поля платформ, цен, верификации
+    db.migrate_add_blogger_stats()  # Создаём таблицу статистики блогеров
+    db.migrate_add_campaign_reports()  # Создаём таблицу отчётов о кампаниях
+    db.migrate_add_campaign_fields()  # Добавляем поля для кампаний (бюджет, требования)
+
     db.create_indexes()  # Создаем индексы для оптимизации производительности
 
     # Добавляем супер-админа

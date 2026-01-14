@@ -6592,3 +6592,221 @@ def get_declined_orders(blogger_id):
 
         results = cursor.fetchall()
         return [row['campaign_id'] if isinstance(row, dict) else row[0] for row in results]
+
+
+# ===== NEW MIGRATIONS FOR INFLUENCEMARKET =====
+
+def migrate_add_blogger_platform_fields():
+    """
+    Добавляет поля для платформ блогеров и верификации.
+    Новые поля:
+    - platform_instagram, platform_tiktok, platform_youtube
+    - instagram_link, tiktok_link, youtube_link
+    - format_stories, format_reels, format_posts, format_integration
+    - price_stories, price_reels, price_posts
+    - verified_ownership, verification_code, trust_score
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        
+        try:
+            # Платформы
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS platform_instagram BOOLEAN DEFAULT FALSE")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS platform_tiktok BOOLEAN DEFAULT FALSE")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS platform_youtube BOOLEAN DEFAULT FALSE")
+            
+            # Ссылки на профили
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS instagram_link VARCHAR(200)")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS tiktok_link VARCHAR(200)")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS youtube_link VARCHAR(200)")
+            
+            # Форматы контента
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS format_stories BOOLEAN DEFAULT FALSE")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS format_reels BOOLEAN DEFAULT FALSE")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS format_posts BOOLEAN DEFAULT FALSE")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS format_integration BOOLEAN DEFAULT FALSE")
+            
+            # Прайс
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS price_stories INTEGER")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS price_reels INTEGER")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS price_posts INTEGER")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS currency VARCHAR(3) DEFAULT 'BYN'")
+            
+            # Верификация и Trust Score
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS verified_ownership BOOLEAN DEFAULT FALSE")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS verification_code VARCHAR(20)")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS trust_score INTEGER DEFAULT 0")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS content_language VARCHAR(50) DEFAULT 'Русский'")
+            
+            conn.commit()
+            logger.info("✅ Migration completed: blogger platform fields added!")
+            
+        except Exception as e:
+            logger.error(f"⚠️ Error in migrate_add_blogger_platform_fields: {e}")
+            conn.rollback()
+
+
+def migrate_add_blogger_stats():
+    """
+    Создаёт таблицу blogger_stats для хранения статистики блогеров.
+    Хранит метрики по платформам: подписчики, охваты, вовлечённость, демографию.
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        
+        try:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS blogger_stats (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    blogger_id INTEGER NOT NULL,
+                    platform VARCHAR(20) NOT NULL,
+                    
+                    -- Метрики
+                    followers INTEGER,
+                    avg_story_reach INTEGER,
+                    median_reels_views INTEGER,
+                    engagement_rate DECIMAL(5,2),
+                    
+                    -- Гео аудитории (детально по городам Беларуси)
+                    belarus_audience_percent INTEGER,
+                    
+                    -- Топ-3 города Беларуси в аудитории
+                    city_1 VARCHAR(50),
+                    city_1_percent INTEGER,
+                    city_2 VARCHAR(50),
+                    city_2_percent INTEGER,
+                    city_3 VARCHAR(50),
+                    city_3_percent INTEGER,
+                    
+                    -- Демография
+                    demographics TEXT,  -- JSON: {"male": 40, "female": 60, "age_18_24": 30}
+                    
+                    -- Доказательства (скриншоты)
+                    proof_screenshots TEXT,  -- JSON array с file_id
+                    
+                    -- Статус верификации
+                    verified BOOLEAN DEFAULT FALSE,
+                    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    expires_at TIMESTAMP,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    
+                    FOREIGN KEY (blogger_id) REFERENCES bloggers(user_id) ON DELETE CASCADE
+                )
+            """)
+            
+            conn.commit()
+            logger.info("✅ Migration completed: blogger_stats table created!")
+            
+        except Exception as e:
+            logger.error(f"⚠️ Error in migrate_add_blogger_stats: {e}")
+            conn.rollback()
+
+
+def migrate_add_campaign_reports():
+    """
+    Создаёт таблицу campaign_reports для отчётов о выполненных кампаниях.
+    Блогер загружает отчёт, рекламодатель подтверждает.
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        
+        try:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS campaign_reports (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    campaign_id INTEGER NOT NULL,
+                    offer_id INTEGER NOT NULL,
+                    
+                    -- Ссылка и скрины размещения
+                    post_link VARCHAR(300),
+                    post_screenshots TEXT,  -- JSON array с file_id
+                    
+                    -- Результаты
+                    reach INTEGER,
+                    views INTEGER,
+                    engagement INTEGER,
+                    result_screenshots TEXT,  -- JSON array с file_id статистики
+                    
+                    -- Даты
+                    published_at TIMESTAMP,
+                    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    
+                    -- Подтверждение рекламодателя
+                    advertiser_confirmed BOOLEAN DEFAULT FALSE,
+                    advertiser_satisfied BOOLEAN,
+                    confirmed_at TIMESTAMP,
+                    
+                    FOREIGN KEY (campaign_id) REFERENCES campaigns(order_id) ON DELETE CASCADE,
+                    FOREIGN KEY (offer_id) REFERENCES offers(bid_id) ON DELETE CASCADE
+                )
+            """)
+            
+            conn.commit()
+            logger.info("✅ Migration completed: campaign_reports table created!")
+            
+        except Exception as e:
+            logger.error(f"⚠️ Error in migrate_add_campaign_reports: {e}")
+            conn.rollback()
+
+
+def migrate_add_campaign_fields():
+    """
+    Добавляет новые поля в таблицу campaigns для маркетплейса блогеров:
+    - product_description, platform, required_topics
+    - budget_type, budget_amount, requirements, deadline
+    - min_trust_score, only_verified
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        
+        try:
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS product_description TEXT")
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS platform VARCHAR(20)")
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS required_topics TEXT")  # JSON array
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS required_format VARCHAR(20)")
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS budget_type VARCHAR(20)")
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS budget_amount INTEGER")
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS requirements TEXT")
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS deadline DATE")
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS min_trust_score INTEGER DEFAULT 0")
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS only_verified BOOLEAN DEFAULT FALSE")
+            
+            conn.commit()
+            logger.info("✅ Migration completed: campaign fields added!")
+            
+        except Exception as e:
+            logger.error(f"⚠️ Error in migrate_add_campaign_fields: {e}")
+            conn.rollback()
+
+
+def create_indexes():
+    """
+    Создаёт индексы для оптимизации производительности БД.
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        
+        try:
+            # Индексы для быстрого поиска
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_bloggers_telegram_id ON bloggers(telegram_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_bloggers_verified ON bloggers(verified_ownership)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_bloggers_trust_score ON bloggers(trust_score)")
+            
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_campaigns_status ON campaigns(status)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_campaigns_advertiser ON campaigns(advertiser_id)")
+            
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_offers_campaign ON offers(campaign_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_offers_blogger ON offers(blogger_id)")
+            
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_stats_blogger ON blogger_stats(blogger_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_stats_active ON blogger_stats(is_active)")
+            
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_campaign ON campaign_reports(campaign_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_offer ON campaign_reports(offer_id)")
+            
+            conn.commit()
+            logger.info("✅ All indexes created successfully!")
+            
+        except Exception as e:
+            logger.error(f"⚠️ Error creating indexes: {e}")
+            conn.rollback()
