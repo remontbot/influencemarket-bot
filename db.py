@@ -6810,3 +6810,284 @@ def create_indexes():
         except Exception as e:
             logger.error(f"⚠️ Error creating indexes: {e}")
             conn.rollback()
+
+
+# ===== VERIFICATION AND TRUST SCORE FUNCTIONS =====
+
+def generate_verification_code(blogger_id):
+    """
+    Генерирует код верификации для блогера.
+    Формат: BH-XXXX (BH = Belarus Bloggers, 4 цифры)
+    """
+    import random
+    code = f"BH-{random.randint(1000, 9999)}"
+    
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        cursor.execute("""
+            UPDATE bloggers
+            SET verification_code = ?, verified_ownership = FALSE
+            WHERE user_id = ?
+        """, (code, blogger_id))
+        conn.commit()
+        
+        logger.info(f"✅ Код верификации создан для blogger_id={blogger_id}: {code}")
+        return code
+
+
+def verify_blogger_ownership(blogger_id):
+    """
+    Подтверждает верификацию владения аккаунтом.
+    Добавляет +20 к Trust Score.
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        
+        # Устанавливаем verified_ownership = TRUE
+        cursor.execute("""
+            UPDATE bloggers
+            SET verified_ownership = TRUE
+            WHERE user_id = ?
+        """, (blogger_id,))
+        
+        # Пересчитываем Trust Score
+        new_score = calculate_trust_score(blogger_id)
+        
+        conn.commit()
+        logger.info(f"✅ Блогер {blogger_id} верифицирован! Trust Score: {new_score}")
+        return new_score
+
+
+def add_blogger_stats(blogger_id, platform, followers, avg_story_reach, median_reels_views, 
+                      engagement_rate, belarus_percent, city_1=None, city_1_percent=None,
+                      city_2=None, city_2_percent=None, city_3=None, city_3_percent=None,
+                      demographics=None, proof_screenshots=None):
+    """
+    Добавляет статистику блогера.
+    proof_screenshots - JSON array с file_id скринов.
+    demographics - JSON: {"male": 40, "female": 60, "age_18_24": 30}
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        expires = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S")
+        
+        import json
+        demographics_json = json.dumps(demographics) if demographics else None
+        screenshots_json = json.dumps(proof_screenshots) if proof_screenshots else None
+        
+        cursor.execute("""
+            INSERT INTO blogger_stats (
+                blogger_id, platform, followers, avg_story_reach, median_reels_views,
+                engagement_rate, belarus_audience_percent, 
+                city_1, city_1_percent, city_2, city_2_percent, city_3, city_3_percent,
+                demographics, proof_screenshots, verified, uploaded_at, expires_at, is_active
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE, ?, ?, TRUE)
+        """, (blogger_id, platform, followers, avg_story_reach, median_reels_views,
+              engagement_rate, belarus_percent,
+              city_1, city_1_percent, city_2, city_2_percent, city_3, city_3_percent,
+              demographics_json, screenshots_json, now, expires))
+        
+        stats_id = cursor.lastrowid
+        conn.commit()
+        
+        logger.info(f"✅ Статистика добавлена: blogger_id={blogger_id}, platform={platform}, stats_id={stats_id}")
+        return stats_id
+
+
+def verify_blogger_stats(stats_id):
+    """
+    Верифицирует статистику блогера (admin подтверждает).
+    Добавляет +25 к Trust Score если полная, +10 если актуальна.
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        
+        # Получаем статистику
+        cursor.execute("SELECT blogger_id FROM blogger_stats WHERE id = ?", (stats_id,))
+        result = cursor.fetchone()
+        if not result:
+            logger.warning(f"⚠️ Статистика {stats_id} не найдена")
+            return None
+        
+        blogger_id = result['blogger_id'] if isinstance(result, dict) else result[0]
+        
+        # Устанавливаем verified = TRUE
+        cursor.execute("""
+            UPDATE blogger_stats
+            SET verified = TRUE
+            WHERE id = ?
+        """, (stats_id,))
+        
+        # Пересчитываем Trust Score
+        new_score = calculate_trust_score(blogger_id)
+        
+        conn.commit()
+        logger.info(f"✅ Статистика {stats_id} верифицирована! Trust Score блогера {blogger_id}: {new_score}")
+        return new_score
+
+
+def calculate_trust_score(blogger_id):
+    """
+    Рассчитывает Trust Score блогера (0-100).
+    
+    Формула:
+    - Verified ownership: +20
+    - Stats verified (полная): +25
+    - Stats актуальны (<30 дней): +10
+    - Выполнено кампаний: +2 за каждую (макс +30)
+    - Средняя оценка 4.5+: +10
+    - Споры: -15 за каждый
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        score = 0
+        
+        # 1. Verified ownership: +20
+        cursor.execute("SELECT verified_ownership FROM bloggers WHERE user_id = ?", (blogger_id,))
+        blogger = cursor.fetchone()
+        if blogger and (blogger['verified_ownership'] if isinstance(blogger, dict) else blogger[0]):
+            score += 20
+        
+        # 2. Stats verified: +25
+        cursor.execute("""
+            SELECT COUNT(*) as cnt FROM blogger_stats 
+            WHERE blogger_id = ? AND verified = TRUE AND is_active = TRUE
+        """, (blogger_id,))
+        verified_stats = cursor.fetchone()
+        if verified_stats and (verified_stats['cnt'] if isinstance(verified_stats, dict) else verified_stats[0]) > 0:
+            score += 25
+        
+        # 3. Stats актуальны (<30 дней): +10
+        now = datetime.now()
+        cursor.execute("""
+            SELECT expires_at FROM blogger_stats 
+            WHERE blogger_id = ? AND verified = TRUE AND is_active = TRUE
+            ORDER BY uploaded_at DESC LIMIT 1
+        """, (blogger_id,))
+        latest_stats = cursor.fetchone()
+        if latest_stats:
+            expires = latest_stats['expires_at'] if isinstance(latest_stats, dict) else latest_stats[0]
+            if isinstance(expires, str):
+                expires = datetime.strptime(expires, "%Y-%m-%d %H:%M:%S")
+            if expires > now:
+                score += 10
+        
+        # 4. Выполнено кампаний: +2 за каждую (макс +30)
+        cursor.execute("""
+            SELECT COUNT(*) as cnt FROM campaign_reports r
+            JOIN offers o ON r.offer_id = o.bid_id
+            WHERE o.blogger_id = ? AND r.advertiser_confirmed = TRUE
+        """, (blogger_id,))
+        completed = cursor.fetchone()
+        if completed:
+            cnt = completed['cnt'] if isinstance(completed, dict) else completed[0]
+            score += min(cnt * 2, 30)
+        
+        # 5. Средняя оценка 4.5+: +10
+        # TODO: Добавить когда будет таблица ratings
+        
+        # 6. Споры: -15 за каждый
+        # TODO: Добавить когда будет таблица disputes
+        
+        # Ограничиваем 0-100
+        score = max(0, min(100, score))
+        
+        # Сохраняем в БД
+        cursor.execute("""
+            UPDATE bloggers
+            SET trust_score = ?
+            WHERE user_id = ?
+        """, (score, blogger_id))
+        
+        conn.commit()
+        logger.info(f"✅ Trust Score пересчитан для blogger_id={blogger_id}: {score}")
+        return score
+
+
+def get_blogger_stats(blogger_id, platform=None):
+    """
+    Получает статистику блогера (последнюю активную).
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        
+        if platform:
+            cursor.execute("""
+                SELECT * FROM blogger_stats
+                WHERE blogger_id = ? AND platform = ? AND is_active = TRUE
+                ORDER BY uploaded_at DESC LIMIT 1
+            """, (blogger_id, platform))
+        else:
+            cursor.execute("""
+                SELECT * FROM blogger_stats
+                WHERE blogger_id = ? AND is_active = TRUE
+                ORDER BY uploaded_at DESC
+            """, (blogger_id,))
+        
+        return cursor.fetchall() if not platform else cursor.fetchone()
+
+
+def create_campaign_report(campaign_id, offer_id, post_link, post_screenshots, 
+                           reach=None, views=None, engagement=None, result_screenshots=None):
+    """
+    Создаёт отчёт о кампании.
+    post_screenshots и result_screenshots - JSON arrays с file_id.
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        import json
+        post_screens = json.dumps(post_screenshots) if post_screenshots else None
+        result_screens = json.dumps(result_screenshots) if result_screenshots else None
+        
+        cursor.execute("""
+            INSERT INTO campaign_reports (
+                campaign_id, offer_id, post_link, post_screenshots,
+                reach, views, engagement, result_screenshots,
+                published_at, uploaded_at, advertiser_confirmed
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE)
+        """, (campaign_id, offer_id, post_link, post_screens,
+              reach, views, engagement, result_screens, now, now))
+        
+        report_id = cursor.lastrowid
+        conn.commit()
+        
+        logger.info(f"✅ Отчёт создан: campaign_id={campaign_id}, report_id={report_id}")
+        return report_id
+
+
+def confirm_campaign_report(report_id, satisfied, advertiser_id):
+    """
+    Рекламодатель подтверждает отчёт о кампании.
+    satisfied - True/False (устроил ли результат).
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        cursor.execute("""
+            UPDATE campaign_reports
+            SET advertiser_confirmed = TRUE,
+                advertiser_satisfied = ?,
+                confirmed_at = ?
+            WHERE id = ?
+        """, (satisfied, now, report_id))
+        
+        # Если подтверждено, увеличиваем Trust Score блогера
+        if satisfied:
+            # Получаем blogger_id из offer
+            cursor.execute("""
+                SELECT o.blogger_id FROM campaign_reports r
+                JOIN offers o ON r.offer_id = o.bid_id
+                WHERE r.id = ?
+            """, (report_id,))
+            result = cursor.fetchone()
+            if result:
+                blogger_id = result['blogger_id'] if isinstance(result, dict) else result[0]
+                calculate_trust_score(blogger_id)
+        
+        conn.commit()
+        logger.info(f"✅ Отчёт {report_id} подтверждён: satisfied={satisfied}")
+        return True
