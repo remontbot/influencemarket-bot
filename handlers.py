@@ -1982,7 +1982,7 @@ async def toggle_advertiser_notifications(update: Update, context: ContextTypes.
     await show_client_menu(update, context)
 
 
-async def blogger_my_bids(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_my_offers(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает только АКТИВНЫЕ отклики мастера (где мастера ещё не выбрали)"""
     query = update.callback_query
     await query.answer()
@@ -6030,7 +6030,7 @@ def _get_photos_word(count):
         return "фото"
 
 
-async def view_campaign_bids(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def view_campaign_offers(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Просмотр откликов на заказ клиента с навигацией"""
     query = update.callback_query
     await query.answer()
@@ -6112,7 +6112,7 @@ async def view_campaign_bids(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
 
 
-async def sort_bids_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def sort_offers_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик сортировки откликов"""
     query = update.callback_query
     await query.answer()
@@ -6137,7 +6137,7 @@ async def sort_bids_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.answer("❌ Ошибка при сортировке откликов", show_alert=True)
 
 
-async def show_bid_card(update: Update, context: ContextTypes.DEFAULT_TYPE, query=None):
+async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, query=None):
     """Показывает карточку отклика с информацией о мастере"""
     if not query:
         query = update.callback_query
@@ -6372,7 +6372,7 @@ async def bid_navigate(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"Ошибка в bid_navigate: {e}", exc_info=True)
 
 
-async def back_to_bid_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def back_to_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Возврат к карточке отклика из просмотра портфолио"""
     query = update.callback_query
     await query.answer()
@@ -6600,7 +6600,7 @@ async def confirm_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
-async def process_bid_selection(update: Update, context: ContextTypes.DEFAULT_TYPE, bid_id: int):
+async def process_offer_selection(update: Update, context: ContextTypes.DEFAULT_TYPE, bid_id: int):
     """
     Общая функция для обработки выбора мастера (с оплатой или без).
     Вызывается из thank_platform и test_payment_success.
@@ -7247,7 +7247,7 @@ async def add_test_bloggers_command(update: Update, context: ContextTypes.DEFAUL
     await update.message.reply_text(message)
 
 
-async def add_test_bids_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def add_test_offers_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Команда для добавления тестовых откликов на заказ
     Использование: /add_test_bids order_id
@@ -8039,7 +8039,7 @@ async def browse_restart(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ------- ОТКЛИКИ МАСТЕРОВ НА ЗАКАЗЫ -------
 
-async def blogger_bid_on_campaign(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_offer_on_campaign(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало создания отклика - выбор валюты"""
     query = update.callback_query
     await query.answer()
@@ -8111,7 +8111,7 @@ async def blogger_bid_on_campaign(update: Update, context: ContextTypes.DEFAULT_
     return OFFER_SELECT_CURRENCY
 
 
-async def blogger_bid_enter_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_offer_enter_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка ввода цены - переход к комментарию"""
     price_text = update.message.text.strip()
 
@@ -8160,7 +8160,7 @@ async def blogger_bid_enter_price(update: Update, context: ContextTypes.DEFAULT_
     return OFFER_SELECT_READY_DAYS
 
 
-async def blogger_bid_select_currency(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_offer_select_currency(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора валюты - переход к вводу цены"""
     query = update.callback_query
     await query.answer()
@@ -8205,7 +8205,7 @@ async def blogger_bid_select_currency(update: Update, context: ContextTypes.DEFA
     return OFFER_ENTER_PRICE
 
 
-async def blogger_bid_select_ready_days(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_offer_select_ready_days(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора срока готовности - переход к комментарию"""
     query = update.callback_query
     await query.answer()
@@ -8257,7 +8257,7 @@ async def blogger_bid_select_ready_days(update: Update, context: ContextTypes.DE
     return OFFER_ENTER_COMMENT
 
 
-async def blogger_bid_enter_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_offer_enter_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка ввода комментария"""
     comment = update.message.text.strip()
     context.user_data['bid_comment'] = comment
@@ -8265,7 +8265,7 @@ async def blogger_bid_enter_comment(update: Update, context: ContextTypes.DEFAUL
     return await worker_bid_publish(update, context)
 
 
-async def blogger_bid_skip_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_offer_skip_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Пропуск комментария"""
     query = update.callback_query
     await query.answer()
@@ -8275,7 +8275,7 @@ async def blogger_bid_skip_comment(update: Update, context: ContextTypes.DEFAULT
     return await worker_bid_publish(update, context)
 
 
-async def blogger_bid_publish(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_offer_publish(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Публикация отклика"""
     try:
         # Получаем данные
@@ -8383,7 +8383,7 @@ async def blogger_bid_publish(update: Update, context: ContextTypes.DEFAULT_TYPE
         return ConversationHandler.END
 
 
-async def blogger_bid_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_offer_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Отмена создания отклика"""
     query = update.callback_query
     await query.answer()
