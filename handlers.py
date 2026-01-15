@@ -397,26 +397,26 @@ def _get_bids_word(count):
 
 (
     SELECTING_ROLE,
-    REGISTER_MASTER_NAME,
-    REGISTER_MASTER_PHONE,
-    REGISTER_MASTER_REGION_SELECT,
-    REGISTER_MASTER_CITY,
-    REGISTER_MASTER_CITY_SELECT,
-    REGISTER_MASTER_CITY_OTHER,
-    REGISTER_MASTER_CITIES_CONFIRM,
-    REGISTER_MASTER_MAIN_CATEGORY,
-    REGISTER_MASTER_SUBCATEGORY_SELECT,
-    REGISTER_MASTER_ASK_MORE_CATEGORIES,
-    REGISTER_MASTER_EXPERIENCE,
-    REGISTER_MASTER_DESCRIPTION,
-    REGISTER_MASTER_PHOTOS,
-    REGISTER_CLIENT_NAME,
-    REGISTER_CLIENT_PHONE,
-    REGISTER_CLIENT_REGION_SELECT,
-    REGISTER_CLIENT_CITY,
-    REGISTER_CLIENT_CITY_SELECT,
-    REGISTER_CLIENT_CITY_OTHER,
-    REGISTER_CLIENT_DESCRIPTION,
+    REGISTER_BLOGGER_NAME,
+    REGISTER_BLOGGER_PHONE,
+    REGISTER_BLOGGER_REGION_SELECT,
+    REGISTER_BLOGGER_CITY,
+    REGISTER_BLOGGER_CITY_SELECT,
+    REGISTER_BLOGGER_CITY_OTHER,
+    REGISTER_BLOGGER_CITIES_CONFIRM,
+    REGISTER_BLOGGER_MAIN_CATEGORY,
+    REGISTER_BLOGGER_SUBCATEGORY_SELECT,
+    REGISTER_BLOGGER_ASK_MORE_CATEGORIES,
+    REGISTER_BLOGGER_EXPERIENCE,
+    REGISTER_BLOGGER_DESCRIPTION,
+    REGISTER_BLOGGER_PHOTOS,
+    REGISTER_ADVERTISER_NAME,
+    REGISTER_ADVERTISER_PHONE,
+    REGISTER_ADVERTISER_REGION_SELECT,
+    REGISTER_ADVERTISER_CITY,
+    REGISTER_ADVERTISER_CITY_SELECT,
+    REGISTER_ADVERTISER_CITY_OTHER,
+    REGISTER_ADVERTISER_DESCRIPTION,
     # Новые состояния для редактирования профиля
     EDIT_PROFILE_MENU,
     EDIT_NAME,
@@ -431,17 +431,17 @@ def _get_bids_word(count):
     ADD_PHOTOS_MENU,
     ADD_PHOTOS_UPLOAD,
     # Состояния для создания заказа
-    CREATE_ORDER_REGION_SELECT,
-    CREATE_ORDER_CITY,
-    CREATE_ORDER_MAIN_CATEGORY,
-    CREATE_ORDER_SUBCATEGORY_SELECT,
-    CREATE_ORDER_DESCRIPTION,
-    CREATE_ORDER_PHOTOS,
+    CREATE_CAMPAIGN_REGION_SELECT,
+    CREATE_CAMPAIGN_CITY,
+    CREATE_CAMPAIGN_MAIN_CATEGORY,
+    CREATE_CAMPAIGN_SUBCATEGORY_SELECT,
+    CREATE_CAMPAIGN_DESCRIPTION,
+    CREATE_CAMPAIGN_PHOTOS,
     # Состояния для создания отклика
-    BID_ENTER_PRICE,
-    BID_SELECT_CURRENCY,
-    BID_SELECT_READY_DAYS,
-    BID_ENTER_COMMENT,
+    OFFER_ENTER_PRICE,
+    OFFER_SELECT_CURRENCY,
+    OFFER_SELECT_READY_DAYS,
+    OFFER_ENTER_COMMENT,
     # Состояния для оставления отзыва
     REVIEW_SELECT_RATING,
     REVIEW_ENTER_COMMENT,
@@ -578,7 +578,7 @@ async def select_role(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Иван Петров",
             parse_mode="HTML",
         )
-        return REGISTER_MASTER_NAME
+        return REGISTER_BLOGGER_NAME
     else:
         await query.edit_message_text(
             "Сейчас мы создадим для вас профиль заказчика.\n\n"
@@ -587,7 +587,7 @@ async def select_role(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "✏️ Введите ваше имя.",
             parse_mode="HTML",
         )
-        return REGISTER_CLIENT_NAME
+        return REGISTER_ADVERTISER_NAME
 
 
 # ------- РЕГИСТРАЦИЯ МАСТЕРА -------
@@ -599,14 +599,14 @@ async def register_master_name(update: Update, context: ContextTypes.DEFAULT_TYP
             "Пожалуйста, укажите только ваше имя или имя и фамилию, без ссылок и рекламы.\n"
             "Пример: «Александр», «Иван Петров», «Сергей (мастер по электрике)»."
         )
-        return REGISTER_MASTER_NAME
+        return REGISTER_BLOGGER_NAME
     context.user_data["name"] = name
     await update.message.reply_text(
         "📱 Укажите номер телефона.\n"
         "Он необходим для регистрации и не будет виден всем подряд.\n\n"
         "Пример: +375 29 123 45 67"
     )
-    return REGISTER_MASTER_PHONE
+    return REGISTER_BLOGGER_PHONE
 
 
 async def register_master_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -616,7 +616,7 @@ async def register_master_phone(update: Update, context: ContextTypes.DEFAULT_TY
             "Не могу распознать номер.\n"
             "Пожалуйста, укажите номер в формате: +375 29 123 45 67"
         )
-        return REGISTER_MASTER_PHONE
+        return REGISTER_BLOGGER_PHONE
 
     context.user_data["phone"] = phone
 
@@ -634,7 +634,7 @@ async def register_master_phone(update: Update, context: ContextTypes.DEFAULT_TY
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
-    return REGISTER_MASTER_REGION_SELECT
+    return REGISTER_BLOGGER_REGION_SELECT
 
 
 async def register_master_region_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -647,7 +647,7 @@ async def register_master_region_select(update: Update, context: ContextTypes.DE
 
     if not region_data:
         await query.edit_message_text("❌ Ошибка выбора региона. Попробуйте снова.")
-        return REGISTER_MASTER_REGION_SELECT
+        return REGISTER_BLOGGER_REGION_SELECT
 
     context.user_data["region"] = region
 
@@ -704,7 +704,7 @@ async def register_master_region_select(update: Update, context: ContextTypes.DE
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
-        return REGISTER_MASTER_CITY_SELECT
+        return REGISTER_BLOGGER_CITY_SELECT
 
 
 async def register_master_city_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -730,7 +730,7 @@ async def register_master_city_select(update: Update, context: ContextTypes.DEFA
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
-        return REGISTER_MASTER_REGION_SELECT
+        return REGISTER_BLOGGER_REGION_SELECT
 
     if city == "other":
         region = context.user_data.get("region", "")
@@ -738,7 +738,7 @@ async def register_master_city_select(update: Update, context: ContextTypes.DEFA
             f"🏙 Напишите название города в регионе <b>{region}</b>:",
             parse_mode="HTML"
         )
-        return REGISTER_MASTER_CITY_OTHER
+        return REGISTER_BLOGGER_CITY_OTHER
     else:
         # Инициализируем список городов если его нет
         if "cities" not in context.user_data:
@@ -820,7 +820,7 @@ async def show_cities_confirmation(query, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-    return REGISTER_MASTER_CITIES_CONFIRM
+    return REGISTER_BLOGGER_CITIES_CONFIRM
 
 
 async def register_master_cities_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -846,7 +846,7 @@ async def register_master_cities_confirm(update: Update, context: ContextTypes.D
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
-        return REGISTER_MASTER_REGION_SELECT
+        return REGISTER_BLOGGER_REGION_SELECT
 
     elif query.data == "finish_cities":
         # Завершаем выбор городов, переходим к категориям
@@ -866,7 +866,7 @@ async def register_master_cities_confirm(update: Update, context: ContextTypes.D
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-        return REGISTER_MASTER_MAIN_CATEGORY
+        return REGISTER_BLOGGER_MAIN_CATEGORY
 
 
 async def register_master_main_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -912,7 +912,7 @@ async def register_master_main_category(update: Update, context: ContextTypes.DE
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
-    return REGISTER_MASTER_SUBCATEGORY_SELECT
+    return REGISTER_BLOGGER_SUBCATEGORY_SELECT
 
 
 async def register_master_subcategory_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -926,7 +926,7 @@ async def register_master_subcategory_select(update: Update, context: ContextTyp
         # Проверяем что выбрана хотя бы одна подкатегория
         if not context.user_data.get("categories"):
             await query.answer("Выберите хотя бы одну подкатегорию!", show_alert=True)
-            return REGISTER_MASTER_SUBCATEGORY_SELECT
+            return REGISTER_BLOGGER_SUBCATEGORY_SELECT
 
         # Спрашиваем хочет ли добавить еще категории
         keyboard = [
@@ -942,7 +942,7 @@ async def register_master_subcategory_select(update: Update, context: ContextTyp
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-        return REGISTER_MASTER_ASK_MORE_CATEGORIES
+        return REGISTER_BLOGGER_ASK_MORE_CATEGORIES
 
     elif selected == "back":
         # Кнопка "Назад" - возвращаемся к выбору основной категории
@@ -960,7 +960,7 @@ async def register_master_subcategory_select(update: Update, context: ContextTyp
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-        return REGISTER_MASTER_MAIN_CATEGORY
+        return REGISTER_BLOGGER_MAIN_CATEGORY
 
     else:
         # Парсим cat_id:index из callback_data
@@ -1012,7 +1012,7 @@ async def register_master_subcategory_select(update: Update, context: ContextTyp
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
 
-        return REGISTER_MASTER_SUBCATEGORY_SELECT
+        return REGISTER_BLOGGER_SUBCATEGORY_SELECT
 
 
 async def register_master_ask_more_categories(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1041,7 +1041,7 @@ async def register_master_ask_more_categories(update: Update, context: ContextTy
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-        return REGISTER_MASTER_MAIN_CATEGORY
+        return REGISTER_BLOGGER_MAIN_CATEGORY
 
     else:
         # Переходим к выбору уровня мастерства
@@ -1068,7 +1068,7 @@ async def register_master_ask_more_categories(update: Update, context: ContextTy
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-        return REGISTER_MASTER_EXPERIENCE
+        return REGISTER_BLOGGER_EXPERIENCE
 
 
 async def register_master_experience(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1092,7 +1092,7 @@ async def register_master_experience(update: Update, context: ContextTypes.DEFAU
         "весь мусор убираю. Даю гарантию 2 года. Свой профессиональный инструмент.»",
         parse_mode="HTML"
     )
-    return REGISTER_MASTER_DESCRIPTION
+    return REGISTER_BLOGGER_DESCRIPTION
 
 
 async def register_master_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1118,7 +1118,7 @@ async def register_master_description(update: Update, context: ContextTypes.DEFA
         reply_markup=InlineKeyboardMarkup(keyboard),
         parse_mode="HTML",
     )
-    return REGISTER_MASTER_PHOTOS
+    return REGISTER_BLOGGER_PHOTOS
 
 
 async def register_master_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1139,7 +1139,7 @@ async def register_master_photos(update: Update, context: ContextTypes.DEFAULT_T
             "💡 Фото с лицом повышает доверие клиентов и увеличивает отклики в 5 раз!",
             parse_mode="HTML",
         )
-        return REGISTER_MASTER_PHOTOS
+        return REGISTER_BLOGGER_PHOTOS
     else:
         # Пропускаем фото, завершаем регистрацию
         return await finalize_master_registration(update, context)
@@ -1180,7 +1180,7 @@ async def handle_master_photos(update: Update, context: ContextTypes.DEFAULT_TYP
             "• Напишите: готово",
             parse_mode="HTML"
         )
-        return REGISTER_MASTER_PHOTOS
+        return REGISTER_BLOGGER_PHOTOS
 
     # КРИТИЧНО: Проверка на документы (файлы)
     if update.message.document:
@@ -1198,7 +1198,7 @@ async def handle_master_photos(update: Update, context: ContextTypes.DEFAULT_TYP
                 "• Напишите: готово",
                 parse_mode="HTML"
             )
-            return REGISTER_MASTER_PHOTOS
+            return REGISTER_BLOGGER_PHOTOS
 
     # Проверяем текст сообщения
     if update.message.text:
@@ -1232,7 +1232,7 @@ async def handle_master_photos(update: Update, context: ContextTypes.DEFAULT_TYP
                 "Попробуйте отправить фото еще раз или используйте другое изображение.\n\n"
                 "Отправьте /done_photos для завершения регистрации без этого фото."
             )
-            return REGISTER_MASTER_PHOTOS
+            return REGISTER_BLOGGER_PHOTOS
 
         if len(context.user_data["portfolio_photos"]) < 10:
             context.user_data["portfolio_photos"].append(file_id)
@@ -1272,7 +1272,7 @@ async def handle_master_photos(update: Update, context: ContextTypes.DEFAULT_TYP
                 "Отправьте /done_photos для завершения."
             )
 
-        return REGISTER_MASTER_PHOTOS
+        return REGISTER_BLOGGER_PHOTOS
     
     # Если пришло что-то другое
     logger.warning(f"Неожиданный ввод: {update.message.text}")
@@ -1282,7 +1282,7 @@ async def handle_master_photos(update: Update, context: ContextTypes.DEFAULT_TYP
         "• Команду /done_photos для завершения\n"
         "• Или напишите: готово"
     )
-    return REGISTER_MASTER_PHOTOS
+    return REGISTER_BLOGGER_PHOTOS
 
 
 async def finalize_master_registration(update, context):
@@ -1444,7 +1444,7 @@ async def register_client_name(update: Update, context: ContextTypes.DEFAULT_TYP
         "📱 Укажите свой номер телефона (в формате: +375 29 123 45 67)\n\n"
         "Он необходим для регистрации и не будет виден всем подряд."
     )
-    return REGISTER_CLIENT_PHONE
+    return REGISTER_ADVERTISER_PHONE
 
 
 async def register_client_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1454,7 +1454,7 @@ async def register_client_phone(update: Update, context: ContextTypes.DEFAULT_TY
             "Не могу распознать номер.\n"
             "Пожалуйста, укажите номер в формате: +375 29 123 45 67"
         )
-        return REGISTER_CLIENT_PHONE
+        return REGISTER_ADVERTISER_PHONE
 
     context.user_data["phone"] = phone
 
@@ -1472,7 +1472,7 @@ async def register_client_phone(update: Update, context: ContextTypes.DEFAULT_TY
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
-    return REGISTER_CLIENT_REGION_SELECT
+    return REGISTER_ADVERTISER_REGION_SELECT
 
 
 async def register_client_region_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1485,7 +1485,7 @@ async def register_client_region_select(update: Update, context: ContextTypes.DE
 
     if not region_data:
         await query.edit_message_text("❌ Ошибка выбора региона. Попробуйте снова.")
-        return REGISTER_CLIENT_REGION_SELECT
+        return REGISTER_ADVERTISER_REGION_SELECT
 
     context.user_data["region"] = region
 
@@ -1620,7 +1620,7 @@ async def register_client_region_select(update: Update, context: ContextTypes.DE
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
-        return REGISTER_CLIENT_CITY_SELECT
+        return REGISTER_ADVERTISER_CITY_SELECT
 
 
 async def register_client_city_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1646,7 +1646,7 @@ async def register_client_city_select(update: Update, context: ContextTypes.DEFA
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
-        return REGISTER_CLIENT_REGION_SELECT
+        return REGISTER_ADVERTISER_REGION_SELECT
 
     if city == "other":
         region = context.user_data.get("region", "")
@@ -1654,7 +1654,7 @@ async def register_client_city_select(update: Update, context: ContextTypes.DEFA
             f"🏙 Напишите название города в регионе <b>{region}</b>:",
             parse_mode="HTML"
         )
-        return REGISTER_CLIENT_CITY_OTHER
+        return REGISTER_ADVERTISER_CITY_OTHER
     else:
         context.user_data["city"] = city
         region = context.user_data.get("region", city)
@@ -8108,7 +8108,7 @@ async def worker_bid_on_campaign(update: Update, context: ContextTypes.DEFAULT_T
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-    return BID_SELECT_CURRENCY
+    return OFFER_SELECT_CURRENCY
 
 
 async def worker_bid_enter_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -8127,7 +8127,7 @@ async def worker_bid_enter_price(update: Update, context: ContextTypes.DEFAULT_T
             "Например: <code>150</code> или <code>99.50</code>",
             parse_mode="HTML"
         )
-        return BID_ENTER_PRICE
+        return OFFER_ENTER_PRICE
 
     context.user_data['bid_price'] = price
     currency = context.user_data.get('bid_currency', 'BYN')
@@ -8157,7 +8157,7 @@ async def worker_bid_enter_price(update: Update, context: ContextTypes.DEFAULT_T
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-    return BID_SELECT_READY_DAYS
+    return OFFER_SELECT_READY_DAYS
 
 
 async def worker_bid_select_currency(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -8202,7 +8202,7 @@ async def worker_bid_select_currency(update: Update, context: ContextTypes.DEFAU
             reply_markup=keyboard
         )
 
-    return BID_ENTER_PRICE
+    return OFFER_ENTER_PRICE
 
 
 async def worker_bid_select_ready_days(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -8254,7 +8254,7 @@ async def worker_bid_select_ready_days(update: Update, context: ContextTypes.DEF
         ]])
     )
 
-    return BID_ENTER_COMMENT
+    return OFFER_ENTER_COMMENT
 
 
 async def worker_bid_enter_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -8476,7 +8476,7 @@ async def add_second_role_blogger(update: Update, context: ContextTypes.DEFAULT_
     )
     
     # Переходим в состояние ввода имени мастера
-    return REGISTER_MASTER_NAME
+    return REGISTER_BLOGGER_NAME
 
 
 async def add_second_role_advertiser(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -8492,7 +8492,7 @@ async def add_second_role_advertiser(update: Update, context: ContextTypes.DEFAU
     )
     
     # Переходим в состояние ввода имени клиента
-    return REGISTER_CLIENT_NAME
+    return REGISTER_ADVERTISER_NAME
 
 
 # ------- СОЗДАНИЕ ЗАКАЗА -------
@@ -8530,7 +8530,7 @@ async def client_create_campaign(update: Update, context: ContextTypes.DEFAULT_T
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
-    return CREATE_ORDER_REGION_SELECT
+    return CREATE_CAMPAIGN_REGION_SELECT
 
 
 async def create_order_region_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -8543,7 +8543,7 @@ async def create_order_region_select(update: Update, context: ContextTypes.DEFAU
 
     if not region_data:
         await query.edit_message_text("❌ Ошибка выбора региона. Попробуйте снова.")
-        return CREATE_ORDER_REGION_SELECT
+        return CREATE_CAMPAIGN_REGION_SELECT
 
     context.user_data["order_region"] = region
 
@@ -8568,7 +8568,7 @@ async def create_order_region_select(update: Update, context: ContextTypes.DEFAU
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-        return CREATE_ORDER_MAIN_CATEGORY
+        return CREATE_CAMPAIGN_MAIN_CATEGORY
 
     # Если выбрана область - показываем города
     else:
@@ -8602,7 +8602,7 @@ async def create_order_region_select(update: Update, context: ContextTypes.DEFAU
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-        return CREATE_ORDER_CITY
+        return CREATE_CAMPAIGN_CITY
 
 
 async def create_order_city_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -8616,7 +8616,7 @@ async def create_order_city_select(update: Update, context: ContextTypes.DEFAULT
         await query.edit_message_text(
             "🏙 Напишите название города:"
         )
-        return CREATE_ORDER_CITY
+        return CREATE_CAMPAIGN_CITY
     else:
         context.user_data["order_city"] = city
 
@@ -8637,7 +8637,7 @@ async def create_order_city_select(update: Update, context: ContextTypes.DEFAULT
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-        return CREATE_ORDER_MAIN_CATEGORY
+        return CREATE_CAMPAIGN_MAIN_CATEGORY
 
 
 async def create_order_main_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -8677,7 +8677,7 @@ async def create_order_main_category(update: Update, context: ContextTypes.DEFAU
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
-    return CREATE_ORDER_SUBCATEGORY_SELECT
+    return CREATE_CAMPAIGN_SUBCATEGORY_SELECT
 
 
 async def create_order_subcategory_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -8711,7 +8711,7 @@ async def create_order_subcategory_select(update: Update, context: ContextTypes.
         "Чем точнее описание - тем точнее цена и меньше недопониманий!",
         parse_mode="HTML"
     )
-    return CREATE_ORDER_DESCRIPTION
+    return CREATE_CAMPAIGN_DESCRIPTION
 
 
 
@@ -8724,7 +8724,7 @@ async def create_order_description(update: Update, context: ContextTypes.DEFAULT
         await update.message.reply_text(
             "⚠️ Опишите подробнее (минимум 10 символов)"
         )
-        return CREATE_ORDER_DESCRIPTION
+        return CREATE_CAMPAIGN_DESCRIPTION
     
     context.user_data["order_description"] = description
 
@@ -8743,7 +8743,7 @@ async def create_order_description(update: Update, context: ContextTypes.DEFAULT
 
     context.user_data["order_photos"] = []
     context.user_data["order_videos"] = []
-    return CREATE_ORDER_PHOTOS
+    return CREATE_CAMPAIGN_PHOTOS
 
 
 async def create_order_photo_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -8763,7 +8763,7 @@ async def create_order_photo_upload(update: Update, context: ContextTypes.DEFAUL
             await update.message.reply_text(
                 "⚠️ Максимум 10 фото.\n\nМожете добавить видео или завершить командой /done"
             )
-            return CREATE_ORDER_PHOTOS
+            return CREATE_CAMPAIGN_PHOTOS
 
         # Получаем file_id
         file_id = update.message.photo[-1].file_id
@@ -8778,7 +8778,7 @@ async def create_order_photo_upload(update: Update, context: ContextTypes.DEFAUL
                 "Или завершите создание заказа без этого фото.",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
-            return CREATE_ORDER_PHOTOS
+            return CREATE_CAMPAIGN_PHOTOS
 
         # Сохраняем file_id
         photos.append(file_id)
@@ -8793,7 +8793,7 @@ async def create_order_photo_upload(update: Update, context: ContextTypes.DEFAUL
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-        return CREATE_ORDER_PHOTOS
+        return CREATE_CAMPAIGN_PHOTOS
 
     # Обработка видео
     elif update.message.video:
@@ -8801,7 +8801,7 @@ async def create_order_photo_upload(update: Update, context: ContextTypes.DEFAUL
             await update.message.reply_text(
                 "⚠️ Максимум 3 видео.\n\nМожете добавить фото или завершить командой /done"
             )
-            return CREATE_ORDER_PHOTOS
+            return CREATE_CAMPAIGN_PHOTOS
 
         # Проверка размера видео (50 МБ = 50 * 1024 * 1024 байт)
         video_size = update.message.video.file_size
@@ -8813,7 +8813,7 @@ async def create_order_photo_upload(update: Update, context: ContextTypes.DEFAUL
                 f"Максимальный размер: 50 МБ.\n\n"
                 f"Попробуйте сжать видео или отправьте другое."
             )
-            return CREATE_ORDER_PHOTOS
+            return CREATE_CAMPAIGN_PHOTOS
 
         # Получаем file_id
         file_id = update.message.video.file_id
@@ -8828,7 +8828,7 @@ async def create_order_photo_upload(update: Update, context: ContextTypes.DEFAUL
                 "Или завершите создание заказа без этого видео.",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
-            return CREATE_ORDER_PHOTOS
+            return CREATE_CAMPAIGN_PHOTOS
 
         # Сохраняем file_id
         videos.append(file_id)
@@ -8843,9 +8843,9 @@ async def create_order_photo_upload(update: Update, context: ContextTypes.DEFAUL
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-        return CREATE_ORDER_PHOTOS
+        return CREATE_CAMPAIGN_PHOTOS
 
-    return CREATE_ORDER_PHOTOS
+    return CREATE_CAMPAIGN_PHOTOS
 
 
 async def create_order_done_uploading(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -8887,7 +8887,7 @@ async def create_order_back_to_region(update: Update, context: ContextTypes.DEFA
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
-    return CREATE_ORDER_REGION_SELECT
+    return CREATE_CAMPAIGN_REGION_SELECT
 
 
 async def create_order_back_to_city(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -8932,7 +8932,7 @@ async def create_order_back_to_city(update: Update, context: ContextTypes.DEFAUL
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
-    return CREATE_ORDER_CITY
+    return CREATE_CAMPAIGN_CITY
 
 
 async def create_order_back_to_maincat(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -8957,7 +8957,7 @@ async def create_order_back_to_maincat(update: Update, context: ContextTypes.DEF
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
-    return CREATE_ORDER_MAIN_CATEGORY
+    return CREATE_CAMPAIGN_MAIN_CATEGORY
 
 
 async def create_order_city_other(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -8973,7 +8973,7 @@ async def create_order_city_other(update: Update, context: ContextTypes.DEFAULT_
             "Или нажмите /cancel для отмены.",
             parse_mode="HTML"
         )
-        return CREATE_ORDER_CITY  # Ожидаем текстовое сообщение
+        return CREATE_CAMPAIGN_CITY  # Ожидаем текстовое сообщение
     else:
         # Это текстовое сообщение с названием города
         city = update.message.text.strip()
@@ -8995,7 +8995,7 @@ async def create_order_city_other(update: Update, context: ContextTypes.DEFAULT_
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-        return CREATE_ORDER_MAIN_CATEGORY
+        return CREATE_CAMPAIGN_MAIN_CATEGORY
 
 
 
