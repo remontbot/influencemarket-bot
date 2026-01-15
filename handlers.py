@@ -592,7 +592,7 @@ async def select_role(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ------- РЕГИСТРАЦИЯ МАСТЕРА -------
 
-async def register_master_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_blogger_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     name = update.message.text.strip()
     if not is_valid_name(name):
         await update.message.reply_text(
@@ -609,7 +609,7 @@ async def register_master_name(update: Update, context: ContextTypes.DEFAULT_TYP
     return REGISTER_BLOGGER_PHONE
 
 
-async def register_master_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_blogger_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     phone = update.message.text.strip()
     if not is_valid_phone(phone):
         await update.message.reply_text(
@@ -637,7 +637,7 @@ async def register_master_phone(update: Update, context: ContextTypes.DEFAULT_TY
     return REGISTER_BLOGGER_REGION_SELECT
 
 
-async def register_master_region_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_blogger_region_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора региона мастером"""
     query = update.callback_query
     await query.answer()
@@ -707,7 +707,7 @@ async def register_master_region_select(update: Update, context: ContextTypes.DE
         return REGISTER_BLOGGER_CITY_SELECT
 
 
-async def register_master_city_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_blogger_city_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора города мастером после выбора региона"""
     query = update.callback_query
     await query.answer()
@@ -762,7 +762,7 @@ async def register_master_city_select(update: Update, context: ContextTypes.DEFA
         return await show_cities_confirmation(query, context)
 
 
-async def register_master_city_other(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_blogger_city_other(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Ввод другого города мастером вручную"""
     city = update.message.text.strip()
 
@@ -823,7 +823,7 @@ async def show_cities_confirmation(query, context: ContextTypes.DEFAULT_TYPE):
     return REGISTER_BLOGGER_CITIES_CONFIRM
 
 
-async def register_master_cities_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_blogger_cities_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора: добавить еще город или завершить"""
     query = update.callback_query
     await query.answer()
@@ -869,7 +869,7 @@ async def register_master_cities_confirm(update: Update, context: ContextTypes.D
         return REGISTER_BLOGGER_MAIN_CATEGORY
 
 
-async def register_master_main_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_blogger_main_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора основной категории работ"""
     query = update.callback_query
     await query.answer()
@@ -915,7 +915,7 @@ async def register_master_main_category(update: Update, context: ContextTypes.DE
     return REGISTER_BLOGGER_SUBCATEGORY_SELECT
 
 
-async def register_master_subcategory_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_blogger_subcategory_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора подкатегорий с переключением галочек"""
     query = update.callback_query
     await query.answer()
@@ -1015,7 +1015,7 @@ async def register_master_subcategory_select(update: Update, context: ContextTyp
         return REGISTER_BLOGGER_SUBCATEGORY_SELECT
 
 
-async def register_master_ask_more_categories(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_blogger_ask_more_categories(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Спрашиваем хочет ли мастер добавить еще категории"""
     query = update.callback_query
     await query.answer()
@@ -1071,7 +1071,7 @@ async def register_master_ask_more_categories(update: Update, context: ContextTy
         return REGISTER_BLOGGER_EXPERIENCE
 
 
-async def register_master_experience(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_blogger_experience(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     
@@ -1095,7 +1095,7 @@ async def register_master_experience(update: Update, context: ContextTypes.DEFAU
     return REGISTER_BLOGGER_DESCRIPTION
 
 
-async def register_master_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_blogger_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["description"] = update.message.text.strip()
     
     # НОВОЕ: Предлагаем добавить фото работ
@@ -1121,7 +1121,7 @@ async def register_master_description(update: Update, context: ContextTypes.DEFA
     return REGISTER_BLOGGER_PHOTOS
 
 
-async def register_master_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_blogger_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора: добавлять фото или нет"""
     query = update.callback_query
     await query.answer()
@@ -1438,7 +1438,7 @@ async def finalize_master_registration(update, context):
 
 # ------- РЕГИСТРАЦИЯ ЗАКАЗЧИКА -------
 
-async def register_client_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_advertiser_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["name"] = update.message.text.strip()
     await update.message.reply_text(
         "📱 Укажите свой номер телефона (в формате: +375 29 123 45 67)\n\n"
@@ -1447,7 +1447,7 @@ async def register_client_name(update: Update, context: ContextTypes.DEFAULT_TYP
     return REGISTER_ADVERTISER_PHONE
 
 
-async def register_client_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_advertiser_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     phone = update.message.text.strip()
     if not is_valid_phone(phone):
         await update.message.reply_text(
@@ -1475,7 +1475,7 @@ async def register_client_phone(update: Update, context: ContextTypes.DEFAULT_TY
     return REGISTER_ADVERTISER_REGION_SELECT
 
 
-async def register_client_region_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_advertiser_region_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора региона клиентом"""
     query = update.callback_query
     await query.answer()
@@ -1623,7 +1623,7 @@ async def register_client_region_select(update: Update, context: ContextTypes.DE
         return REGISTER_ADVERTISER_CITY_SELECT
 
 
-async def register_client_city_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_advertiser_city_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора города клиентом после выбора региона"""
     query = update.callback_query
     await query.answer()
@@ -1758,7 +1758,7 @@ async def register_client_city_select(update: Update, context: ContextTypes.DEFA
         return ConversationHandler.END
 
 
-async def register_client_city_other(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def register_advertiser_city_other(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Ввод другого города клиентом вручную"""
     city = update.message.text.strip()
     context.user_data["city"] = city
@@ -8533,7 +8533,7 @@ async def client_create_campaign(update: Update, context: ContextTypes.DEFAULT_T
     return CREATE_CAMPAIGN_REGION_SELECT
 
 
-async def create_order_region_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def create_campaign_region_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора региона для заказа"""
     query = update.callback_query
     await query.answer()
@@ -8605,7 +8605,7 @@ async def create_order_region_select(update: Update, context: ContextTypes.DEFAU
         return CREATE_CAMPAIGN_CITY
 
 
-async def create_order_city_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def create_campaign_city_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора города для заказа"""
     query = update.callback_query
     await query.answer()
@@ -8640,7 +8640,7 @@ async def create_order_city_select(update: Update, context: ContextTypes.DEFAULT
         return CREATE_CAMPAIGN_MAIN_CATEGORY
 
 
-async def create_order_main_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def create_campaign_main_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора основной категории для заказа"""
     query = update.callback_query
     await query.answer()
@@ -8680,7 +8680,7 @@ async def create_order_main_category(update: Update, context: ContextTypes.DEFAU
     return CREATE_CAMPAIGN_SUBCATEGORY_SELECT
 
 
-async def create_order_subcategory_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def create_campaign_subcategory_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора подкатегории для заказа"""
     query = update.callback_query
     await query.answer()
@@ -8716,7 +8716,7 @@ async def create_order_subcategory_select(update: Update, context: ContextTypes.
 
 
 
-async def create_order_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def create_campaign_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка описания заказа"""
     description = update.message.text.strip()
     
@@ -8746,7 +8746,7 @@ async def create_order_description(update: Update, context: ContextTypes.DEFAULT
     return CREATE_CAMPAIGN_PHOTOS
 
 
-async def create_order_photo_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def create_campaign_photo_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка загрузки фото и видео для заказа"""
 
     if "order_photos" not in context.user_data:
@@ -8848,12 +8848,12 @@ async def create_order_photo_upload(update: Update, context: ContextTypes.DEFAUL
     return CREATE_CAMPAIGN_PHOTOS
 
 
-async def create_order_done_uploading(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def create_campaign_done_uploading(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Завершение загрузки фото и видео по команде /done"""
     return await create_order_publish(update, context)
 
 
-async def create_order_skip_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def create_campaign_skip_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Пропуск загрузки фото и видео"""
     query = update.callback_query
     await query.answer()
@@ -8868,7 +8868,7 @@ async def create_order_skip_photos(update: Update, context: ContextTypes.DEFAULT
 
 # ------- ОБРАБОТЧИКИ КНОПОК "НАЗАД" ДЛЯ СОЗДАНИЯ ЗАКАЗА -------
 
-async def create_order_back_to_region(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def create_campaign_back_to_region(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Возврат к выбору региона"""
     query = update.callback_query
     await query.answer()
@@ -8890,7 +8890,7 @@ async def create_order_back_to_region(update: Update, context: ContextTypes.DEFA
     return CREATE_CAMPAIGN_REGION_SELECT
 
 
-async def create_order_back_to_city(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def create_campaign_back_to_city(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Возврат к выбору города"""
     query = update.callback_query
     await query.answer()
@@ -8935,7 +8935,7 @@ async def create_order_back_to_city(update: Update, context: ContextTypes.DEFAUL
     return CREATE_CAMPAIGN_CITY
 
 
-async def create_order_back_to_maincat(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def create_campaign_back_to_maincat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Возврат к выбору основной категории"""
     query = update.callback_query
     await query.answer()
@@ -8960,7 +8960,7 @@ async def create_order_back_to_maincat(update: Update, context: ContextTypes.DEF
     return CREATE_CAMPAIGN_MAIN_CATEGORY
 
 
-async def create_order_city_other(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def create_campaign_city_other(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка ввода города вручную при создании заказа"""
     if update.callback_query:
         # Это callback от кнопки "Другой город"
@@ -8999,7 +8999,7 @@ async def create_order_city_other(update: Update, context: ContextTypes.DEFAULT_
 
 
 
-async def create_order_publish(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def create_campaign_publish(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Публикация заказа.
     ИСПРАВЛЕНО: Валидация обязательных полей перед созданием.
