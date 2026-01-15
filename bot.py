@@ -90,7 +90,7 @@ def main():
     db.migrate_add_transactions()  # Создаём таблицу для истории транзакций
     db.migrate_add_notification_settings()  # Добавляем настройки уведомлений для блогеров
     db.migrate_normalize_categories()  # ИСПРАВЛЕНИЕ: Нормализация категорий блогеров (точный поиск вместо LIKE)
-    db.migrate_normalize_order_categories()  # ИСПРАВЛЕНИЕ: Нормализация категорий заказов (точный поиск вместо LIKE)
+    db.migrate_normalize_order_categories()  # ИСПРАВЛЕНИЕ: Нормализация категорий кампаний (точный поиск вместо LIKE)
     db.migrate_add_ready_in_days_and_notifications()  # Добавляем ready_in_days в offers и blogger_notifications
     db.migrate_add_admin_and_ads()  # Добавляем систему админ-панели, broadcast и рекламы
     db.migrate_add_worker_cities()  # Добавляем таблицу для множественного выбора городов мастером (blogger)
@@ -216,7 +216,7 @@ def main():
                     handlers.register_blogger_description,
                 )
             ],
-            # НОВОЕ: Обработка фото работ
+            # НОВОЕ: Обработка фото контента
             handlers.REGISTER_BLOGGER_PHOTOS: [
                 CallbackQueryHandler(
                     handlers.register_blogger_photos,
@@ -490,7 +490,7 @@ def main():
         )
     )
 
-    # НОВОЕ: Обработчики фотографий завершённых работ
+    # НОВОЕ: Обработчики фотографий выполненного контента
     application.add_handler(
         CallbackQueryHandler(
             handlers.blogger_upload_work_photo_start,
@@ -562,7 +562,7 @@ def main():
         )
     )
 
-    # MessageHandler для приёма фото завершённых работ от мастера
+    # MessageHandler для приёма фото завершённых работ от блогера
     application.add_handler(
         MessageHandler(
             filters.PHOTO & ~filters.COMMAND,
@@ -682,7 +682,7 @@ def main():
         )
     )
 
-    # НОВОЕ: Мои кампании блогера (кампании в работе)
+    # НОВОЕ: Мои кампании блогера (активные кампании)
     application.add_handler(
         CallbackQueryHandler(
             handlers.blogger_my_campaigns,
