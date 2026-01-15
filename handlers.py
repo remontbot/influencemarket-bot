@@ -7987,7 +7987,7 @@ async def show_worker_card(query_or_message, context: ContextTypes.DEFAULT_TYPE,
             )
 
 
-async def browse_next_worker(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def browse_next_blogger(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Переключение на следующего мастера"""
     query = update.callback_query
     await query.answer()
@@ -8039,7 +8039,7 @@ async def browse_restart(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ------- ОТКЛИКИ МАСТЕРОВ НА ЗАКАЗЫ -------
 
-async def worker_bid_on_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def worker_bid_on_campaign(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало создания отклика - выбор валюты"""
     query = update.callback_query
     await query.answer()
@@ -8463,7 +8463,7 @@ async def go_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-async def add_second_role_worker(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def add_second_role_blogger(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Добавление роли мастера к существующему аккаунту"""
     query = update.callback_query
     await query.answer()
@@ -8479,7 +8479,7 @@ async def add_second_role_worker(update: Update, context: ContextTypes.DEFAULT_T
     return REGISTER_MASTER_NAME
 
 
-async def add_second_role_client(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def add_second_role_advertiser(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Добавление роли заказчика к существующему аккаунту"""
     query = update.callback_query
     await query.answer()
@@ -8497,7 +8497,7 @@ async def add_second_role_client(update: Update, context: ContextTypes.DEFAULT_T
 
 # ------- СОЗДАНИЕ ЗАКАЗА -------
 
-async def client_create_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def client_create_campaign(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало создания заказа - выбор региона"""
     query = update.callback_query
     await query.answer()
@@ -9158,7 +9158,7 @@ async def create_order_publish(update: Update, context: ContextTypes.DEFAULT_TYP
 # ЗАВЕРШЕНИЕ ЗАКАЗА И СИСТЕМА ОТЗЫВОВ
 # ============================================
 
-async def client_complete_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def client_complete_campaign(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     ИСПРАВЛЕНО: Клиент завершает заказ.
     Заказ сразу получает статус 'completed', обе стороны могут оставить отзыв.
@@ -9214,7 +9214,7 @@ async def client_complete_order(update: Update, context: ContextTypes.DEFAULT_TY
                 logger.error(f"Не удалось отправить уведомление мастеру: {e}")
 
 
-async def worker_complete_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def worker_complete_campaign(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     ИСПРАВЛЕНО: Мастер завершает заказ.
     Заказ сразу получает статус 'completed', обе стороны могут оставить отзыв.
@@ -9701,7 +9701,7 @@ def declension_bids(count):
         return "новых откликов"
 
 
-async def notify_worker_new_order(context, worker_telegram_id, worker_user_id, order_dict):
+async def notify_worker_new_campaign(context, worker_telegram_id, worker_user_id, order_dict):
     """
     Уведомление мастеру о новом заказе - ОБНОВЛЯЕТ существующее сообщение.
     Вместо спама отдельными сообщениями показывает одно обновляемое сообщение с количеством.
@@ -9761,7 +9761,7 @@ async def notify_worker_new_order(context, worker_telegram_id, worker_user_id, o
         return False
 
 
-async def notify_client_new_bid(context, client_telegram_id, client_user_id, order_id, worker_name, price, currency):
+async def notify_client_new_offer(context, client_telegram_id, client_user_id, order_id, worker_name, price, currency):
     """
     Уведомление клиенту о новом отклике - ОБНОВЛЯЕТ существующее сообщение.
     Вместо спама отдельными сообщениями показывает одно обновляемое сообщение.
