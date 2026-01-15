@@ -566,7 +566,7 @@ def main():
     application.add_handler(
         MessageHandler(
             filters.PHOTO & ~filters.COMMAND,
-            handlers.worker_upload_work_photo_receive
+            handlers.blogger_upload_work_photo_receive
         )
     )
 
