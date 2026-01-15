@@ -1145,7 +1145,7 @@ async def register_blogger_photos(update: Update, context: ContextTypes.DEFAULT_
         return await finalize_master_registration(update, context)
 
 
-async def handle_master_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_blogger_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка загруженных фотографий"""
     logger.info(f"🔧 DEBUG: handle_master_photos вызван. Текст: {update.message.text if update.message.text else 'фото'}")
 
@@ -1285,7 +1285,7 @@ async def handle_master_photos(update: Update, context: ContextTypes.DEFAULT_TYP
     return REGISTER_BLOGGER_PHOTOS
 
 
-async def finalize_master_registration(update, context):
+async def finalize_blogger_registration(update, context):
     """
     Финальное создание профиля мастера.
     ИСПРАВЛЕНО: Валидация обязательных полей перед созданием.
@@ -1852,7 +1852,7 @@ async def register_advertiser_city_other(update: Update, context: ContextTypes.D
 
 # ------- МЕНЮ -------
 
-async def show_worker_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def show_blogger_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
@@ -1948,7 +1948,7 @@ async def toggle_notifications(update: Update, context: ContextTypes.DEFAULT_TYP
     await show_worker_menu(update, context)
 
 
-async def toggle_client_notifications(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def toggle_advertiser_notifications(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Переключает уведомления для клиента"""
     query = update.callback_query
     await query.answer()
@@ -1982,7 +1982,7 @@ async def toggle_client_notifications(update: Update, context: ContextTypes.DEFA
     await show_client_menu(update, context)
 
 
-async def worker_my_bids(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_my_bids(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает только АКТИВНЫЕ отклики мастера (где мастера ещё не выбрали)"""
     query = update.callback_query
     await query.answer()
@@ -2076,7 +2076,7 @@ async def worker_my_bids(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-async def worker_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает выбор категории заказов мастера (в работе/завершённые)"""
     query = update.callback_query
     await query.answer()
@@ -2168,7 +2168,7 @@ async def worker_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
-async def worker_active_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_active_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает активные заказы мастера (в работе)"""
     query = update.callback_query
     await query.answer()
@@ -2254,7 +2254,7 @@ async def worker_active_orders(update: Update, context: ContextTypes.DEFAULT_TYP
         await safe_edit_message(query, f"❌ Ошибка: {str(e)}")
 
 
-async def worker_completed_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_completed_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает завершённые заказы мастера"""
     query = update.callback_query
     await query.answer()
@@ -2416,7 +2416,7 @@ async def show_client_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-async def client_my_payments(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def advertiser_my_payments(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает историю платежей клиента"""
     query = update.callback_query
     await query.answer()
@@ -2494,7 +2494,7 @@ async def client_my_payments(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 # ------- ПРОФИЛЬ МАСТЕРА -------
 
-async def show_worker_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def show_blogger_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показ профиля мастера с правильным доступом к базе данных"""
     query = update.callback_query
     await query.answer()
@@ -2630,7 +2630,7 @@ async def show_worker_profile(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 # ------- ДОБАВЛЕНИЕ ФОТО ПОСЛЕ РЕГИСТРАЦИИ (БЕЗ ConversationHandler) -------
 
-async def worker_add_photos_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_add_photos_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало добавления фото работ"""
     query = update.callback_query
     await query.answer()
@@ -2705,7 +2705,7 @@ async def worker_add_photos_start(update: Update, context: ContextTypes.DEFAULT_
     )
 
 
-async def worker_add_photos_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_add_photos_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка загружаемых фото (photo или document)"""
 
     telegram_id = update.effective_user.id
@@ -2841,7 +2841,7 @@ async def worker_add_photos_upload(update: Update, context: ContextTypes.DEFAULT
     )
 
 
-async def worker_add_photos_finish_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_add_photos_finish_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка нажатия кнопки завершения"""
     query = update.callback_query
     await query.answer()
@@ -2877,7 +2877,7 @@ async def worker_add_photos_finish_callback(update: Update, context: ContextType
     await worker_add_photos_finish(query, context)
 
 
-async def worker_add_photos_finish(query, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_add_photos_finish(query, context: ContextTypes.DEFAULT_TYPE):
     """Завершение добавления фото - сохранение в БД"""
 
     logger.info("=== worker_add_photos_finish вызвана ===")
@@ -3531,7 +3531,7 @@ async def delete_portfolio_photo(update: Update, context: ContextTypes.DEFAULT_T
         )
 
 
-async def view_worker_portfolio(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def view_blogger_portfolio(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Просмотр галереи работ другого мастера (для клиента)"""
     query = update.callback_query
     await query.answer()
@@ -3597,7 +3597,7 @@ async def view_worker_portfolio(update: Update, context: ContextTypes.DEFAULT_TY
         await safe_edit_message(query, "❌ Ошибка при загрузке фото")
 
 
-async def worker_portfolio_view_navigate(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_portfolio_view_navigate(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Навигация по галерее работ другого мастера"""
     query = update.callback_query
     await query.answer()
@@ -4438,7 +4438,7 @@ async def edit_description_save(update: Update, context: ContextTypes.DEFAULT_TY
 
 # ------- ЗАГЛУШКИ ДЛЯ ЗАКАЗЧИКА -------
 
-async def client_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def advertiser_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает выбор категории заказов (активные/завершённые)"""
     query = update.callback_query
     await query.answer()
@@ -4547,7 +4547,7 @@ async def client_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
-async def client_waiting_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def advertiser_waiting_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает заказы в ожидании мастера (без выбранного мастера)"""
     query = update.callback_query
     await query.answer()
@@ -4623,7 +4623,7 @@ async def client_waiting_orders(update: Update, context: ContextTypes.DEFAULT_TY
         await safe_edit_message(query, f"❌ Ошибка: {str(e)}")
 
 
-async def client_in_progress_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def advertiser_in_progress_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает заказы в работе (мастер выбран и работает)"""
     query = update.callback_query
     await query.answer()
@@ -4725,7 +4725,7 @@ async def client_in_progress_orders(update: Update, context: ContextTypes.DEFAUL
         await safe_edit_message(query, f"❌ Ошибка: {str(e)}")
 
 
-async def client_completed_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def advertiser_completed_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает завершённые заказы клиента"""
     query = update.callback_query
     await query.answer()
@@ -4808,7 +4808,7 @@ async def client_completed_orders(update: Update, context: ContextTypes.DEFAULT_
         await safe_edit_message(query, f"❌ Ошибка: {str(e)}")
 
 
-async def cancel_order_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def cancel_campaign_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     НОВОЕ: Обработчик отмены заказа клиентом.
     """
@@ -4882,7 +4882,7 @@ async def cancel_order_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         )
 
 
-async def complete_order_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def complete_campaign_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     ОБНОВЛЕНО: Обработчик завершения заказа с оценкой - работает для ОБЕИХ сторон.
     Клиент оценивает мастера, мастер оценивает клиента.
@@ -5021,7 +5021,7 @@ async def complete_order_handler(update: Update, context: ContextTypes.DEFAULT_T
         )
 
 
-async def submit_order_rating(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def submit_campaign_rating(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     ОБНОВЛЕНО: Обработчик сохранения оценки заказа - работает для ОБЕИХ сторон.
     Callback data format: rate_order_{order_id}_{rating}_{role}
@@ -5338,7 +5338,7 @@ async def receive_review_comment(update: Update, context: ContextTypes.DEFAULT_T
     del context.user_data['add_comment_order_id']
 
 
-async def worker_upload_work_photo_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_upload_work_photo_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     НОВОЕ: Начало загрузки фото завершённой работы мастером.
     """
@@ -5392,7 +5392,7 @@ async def worker_upload_work_photo_start(update: Update, context: ContextTypes.D
         )
 
 
-async def worker_skip_work_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_skip_work_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     НОВОЕ: Пропуск загрузки фото работы.
     """
@@ -5421,7 +5421,7 @@ async def worker_skip_work_photo(update: Update, context: ContextTypes.DEFAULT_T
         logger.error(f"Ошибка при пропуске загрузки фото: {e}", exc_info=True)
 
 
-async def worker_upload_work_photo_receive(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_upload_work_photo_receive(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     НОВОЕ: Получение фото завершённой работы от мастера.
     """
@@ -5477,7 +5477,7 @@ async def worker_upload_work_photo_receive(update: Update, context: ContextTypes
         logger.error(f"Ошибка при получении фото работы: {e}", exc_info=True)
 
 
-async def worker_finish_work_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_finish_work_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     НОВОЕ: Завершение загрузки фото работы и сохранение в БД.
     """
@@ -5624,7 +5624,7 @@ async def worker_finish_work_photos(update: Update, context: ContextTypes.DEFAUL
         )
 
 
-async def worker_cancel_work_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_cancel_work_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     НОВОЕ: Отмена загрузки фото работы.
     """
@@ -5885,7 +5885,7 @@ async def confirm_delete_work_photo(update: Update, context: ContextTypes.DEFAUL
         )
 
 
-async def client_check_work_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def advertiser_check_work_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     НОВОЕ: Просмотр фото работы клиентом для подтверждения.
     """
@@ -5945,7 +5945,7 @@ async def client_check_work_photos(update: Update, context: ContextTypes.DEFAULT
         )
 
 
-async def client_verify_work_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def advertiser_verify_work_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     ИСПРАВЛЕНО: Подтверждение фото работы клиентом.
     После подтверждения фото добавляется в портфолио мастера.
@@ -6030,7 +6030,7 @@ def _get_photos_word(count):
         return "фото"
 
 
-async def view_order_bids(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def view_campaign_bids(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Просмотр откликов на заказ клиента с навигацией"""
     query = update.callback_query
     await query.answer()
@@ -6406,7 +6406,7 @@ async def back_to_bid_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
-async def select_master(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def select_blogger(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора мастера клиентом"""
     query = update.callback_query
     await query.answer()
@@ -7227,7 +7227,7 @@ async def reset_profile_command(update: Update, context: ContextTypes.DEFAULT_TY
         )
 
 
-async def add_test_orders_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def add_test_campaigns_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Команда для добавления тестовых заказов (только для user_id 641830790)"""
     telegram_id = update.effective_user.id
 
@@ -7237,7 +7237,7 @@ async def add_test_orders_command(update: Update, context: ContextTypes.DEFAULT_
     await update.message.reply_text(message)
 
 
-async def add_test_workers_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def add_test_bloggers_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Команда для добавления тестовых мастеров и откликов (только для user_id 641830790)"""
     telegram_id = update.effective_user.id
 
@@ -7355,7 +7355,7 @@ async def add_test_bids_command(update: Update, context: ContextTypes.DEFAULT_TY
 
 # ------- ПРОСМОТР ЗАКАЗОВ ДЛЯ МАСТЕРОВ -------
 
-async def worker_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Просмотр доступных заказов для мастера"""
     query = update.callback_query
     await query.answer()
@@ -7465,7 +7465,7 @@ async def worker_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
 
 
-async def worker_view_order_details(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_view_campaign_details(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Детальный просмотр заказа мастером"""
     query = update.callback_query
     await query.answer()
@@ -7600,7 +7600,7 @@ async def worker_view_order_details(update: Update, context: ContextTypes.DEFAUL
         )
 
 
-async def worker_decline_order_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_decline_campaign_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """НОВОЕ: Подтверждение отказа от заказа (шаг 1)"""
     query = update.callback_query
     await query.answer()
@@ -7649,7 +7649,7 @@ async def worker_decline_order_confirm(update: Update, context: ContextTypes.DEF
         )
 
 
-async def worker_decline_order_yes(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_decline_campaign_yes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """НОВОЕ: Подтверждение отказа - ДА (шаг 2)"""
     query = update.callback_query
     await query.answer()
@@ -7699,7 +7699,7 @@ async def worker_decline_order_yes(update: Update, context: ContextTypes.DEFAULT
         )
 
 
-async def worker_decline_order_no(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_decline_campaign_no(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """НОВОЕ: Отмена отказа - НЕТ, вернуться к заказу"""
     query = update.callback_query
     await query.answer()
@@ -7723,7 +7723,7 @@ async def worker_decline_order_no(update: Update, context: ContextTypes.DEFAULT_
         )
 
 
-async def worker_order_photo_nav(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_campaign_photo_nav(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Навигация по фото заказа"""
     query = update.callback_query
     await query.answer()
@@ -7797,7 +7797,7 @@ async def worker_order_photo_nav(update: Update, context: ContextTypes.DEFAULT_T
 
 # ------- ЛИСТАНИЕ МАСТЕРОВ ДЛЯ КЛИЕНТОВ -------
 
-async def client_browse_workers(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def advertiser_browse_workers(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало просмотра мастеров - выбор фильтров"""
     query = update.callback_query
     await query.answer()
@@ -7856,7 +7856,7 @@ async def browse_start_viewing(update: Update, context: ContextTypes.DEFAULT_TYP
     await show_worker_card(query, context, edit=True)
 
 
-async def show_worker_card(query_or_message, context: ContextTypes.DEFAULT_TYPE, edit=False):
+async def show_blogger_card(query_or_message, context: ContextTypes.DEFAULT_TYPE, edit=False):
     """Показывает карточку мастера"""
     
     workers_list = context.user_data.get("workers_list", [])
@@ -8039,7 +8039,7 @@ async def browse_restart(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ------- ОТКЛИКИ МАСТЕРОВ НА ЗАКАЗЫ -------
 
-async def worker_bid_on_campaign(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_bid_on_campaign(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало создания отклика - выбор валюты"""
     query = update.callback_query
     await query.answer()
@@ -8111,7 +8111,7 @@ async def worker_bid_on_campaign(update: Update, context: ContextTypes.DEFAULT_T
     return OFFER_SELECT_CURRENCY
 
 
-async def worker_bid_enter_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_bid_enter_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка ввода цены - переход к комментарию"""
     price_text = update.message.text.strip()
 
@@ -8160,7 +8160,7 @@ async def worker_bid_enter_price(update: Update, context: ContextTypes.DEFAULT_T
     return OFFER_SELECT_READY_DAYS
 
 
-async def worker_bid_select_currency(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_bid_select_currency(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора валюты - переход к вводу цены"""
     query = update.callback_query
     await query.answer()
@@ -8205,7 +8205,7 @@ async def worker_bid_select_currency(update: Update, context: ContextTypes.DEFAU
     return OFFER_ENTER_PRICE
 
 
-async def worker_bid_select_ready_days(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_bid_select_ready_days(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора срока готовности - переход к комментарию"""
     query = update.callback_query
     await query.answer()
@@ -8257,7 +8257,7 @@ async def worker_bid_select_ready_days(update: Update, context: ContextTypes.DEF
     return OFFER_ENTER_COMMENT
 
 
-async def worker_bid_enter_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_bid_enter_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка ввода комментария"""
     comment = update.message.text.strip()
     context.user_data['bid_comment'] = comment
@@ -8265,7 +8265,7 @@ async def worker_bid_enter_comment(update: Update, context: ContextTypes.DEFAULT
     return await worker_bid_publish(update, context)
 
 
-async def worker_bid_skip_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_bid_skip_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Пропуск комментария"""
     query = update.callback_query
     await query.answer()
@@ -8275,7 +8275,7 @@ async def worker_bid_skip_comment(update: Update, context: ContextTypes.DEFAULT_
     return await worker_bid_publish(update, context)
 
 
-async def worker_bid_publish(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_bid_publish(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Публикация отклика"""
     try:
         # Получаем данные
@@ -8383,7 +8383,7 @@ async def worker_bid_publish(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return ConversationHandler.END
 
 
-async def worker_bid_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_bid_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Отмена создания отклика"""
     query = update.callback_query
     await query.answer()
@@ -8497,7 +8497,7 @@ async def add_second_role_advertiser(update: Update, context: ContextTypes.DEFAU
 
 # ------- СОЗДАНИЕ ЗАКАЗА -------
 
-async def client_create_campaign(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def advertiser_create_campaign(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало создания заказа - выбор региона"""
     query = update.callback_query
     await query.answer()
@@ -9158,7 +9158,7 @@ async def create_campaign_publish(update: Update, context: ContextTypes.DEFAULT_
 # ЗАВЕРШЕНИЕ ЗАКАЗА И СИСТЕМА ОТЗЫВОВ
 # ============================================
 
-async def client_complete_campaign(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def advertiser_complete_campaign(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     ИСПРАВЛЕНО: Клиент завершает заказ.
     Заказ сразу получает статус 'completed', обе стороны могут оставить отзыв.
@@ -9214,7 +9214,7 @@ async def client_complete_campaign(update: Update, context: ContextTypes.DEFAULT
                 logger.error(f"Не удалось отправить уведомление мастеру: {e}")
 
 
-async def worker_complete_campaign(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_complete_campaign(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     ИСПРАВЛЕНО: Мастер завершает заказ.
     Заказ сразу получает статус 'completed', обе стороны могут оставить отзыв.
@@ -9701,7 +9701,7 @@ def declension_bids(count):
         return "новых откликов"
 
 
-async def notify_worker_new_campaign(context, worker_telegram_id, worker_user_id, order_dict):
+async def notify_blogger_new_campaign(context, worker_telegram_id, worker_user_id, order_dict):
     """
     Уведомление мастеру о новом заказе - ОБНОВЛЯЕТ существующее сообщение.
     Вместо спама отдельными сообщениями показывает одно обновляемое сообщение с количеством.
@@ -9761,7 +9761,7 @@ async def notify_worker_new_campaign(context, worker_telegram_id, worker_user_id
         return False
 
 
-async def notify_client_new_offer(context, client_telegram_id, client_user_id, order_id, worker_name, price, currency):
+async def notify_advertiser_new_offer(context, client_telegram_id, client_user_id, order_id, worker_name, price, currency):
     """
     Уведомление клиенту о новом отклике - ОБНОВЛЯЕТ существующее сообщение.
     Вместо спама отдельными сообщениями показывает одно обновляемое сообщение.
@@ -9822,7 +9822,7 @@ async def notify_client_new_offer(context, client_telegram_id, client_user_id, o
         return False
 
 
-async def notify_worker_selected(context, worker_telegram_id, order_id, client_name, client_phone):
+async def notify_blogger_selected(context, worker_telegram_id, order_id, client_name, client_phone):
     """Уведомление мастеру что его выбрали для заказа"""
     try:
         text = (
@@ -9846,7 +9846,7 @@ async def notify_worker_selected(context, worker_telegram_id, order_id, client_n
         return False
 
 
-async def notify_client_master_selected(context, client_telegram_id, order_id, worker_name, worker_phone):
+async def notify_advertiser_master_selected(context, client_telegram_id, order_id, worker_name, worker_phone):
     """Уведомление клиенту что он успешно выбрал мастера"""
     try:
         text = (
@@ -9893,7 +9893,7 @@ async def notify_completion_request(context, recipient_telegram_id, order_id, re
         return False
 
 
-async def notify_order_completed(context, telegram_id, order_id, role):
+async def notify_campaign_completed(context, telegram_id, order_id, role):
     """Уведомление об успешном завершении заказа"""
     try:
         text = (
