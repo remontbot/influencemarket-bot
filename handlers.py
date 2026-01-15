@@ -2076,7 +2076,7 @@ async def blogger_my_offers(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-async def blogger_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_my_campaigns(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает выбор категории заказов мастера (в работе/завершённые)"""
     query = update.callback_query
     await query.answer()
@@ -2168,7 +2168,7 @@ async def blogger_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
-async def blogger_active_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_active_campaigns(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает активные заказы мастера (в работе)"""
     query = update.callback_query
     await query.answer()
@@ -2254,7 +2254,7 @@ async def blogger_active_orders(update: Update, context: ContextTypes.DEFAULT_TY
         await safe_edit_message(query, f"❌ Ошибка: {str(e)}")
 
 
-async def blogger_completed_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_completed_campaigns(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает завершённые заказы мастера"""
     query = update.callback_query
     await query.answer()
@@ -4438,7 +4438,7 @@ async def edit_description_save(update: Update, context: ContextTypes.DEFAULT_TY
 
 # ------- ЗАГЛУШКИ ДЛЯ ЗАКАЗЧИКА -------
 
-async def advertiser_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def advertiser_my_campaigns(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает выбор категории заказов (активные/завершённые)"""
     query = update.callback_query
     await query.answer()
@@ -4547,7 +4547,7 @@ async def advertiser_my_orders(update: Update, context: ContextTypes.DEFAULT_TYP
         )
 
 
-async def advertiser_waiting_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def advertiser_waiting_campaigns(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает заказы в ожидании мастера (без выбранного мастера)"""
     query = update.callback_query
     await query.answer()
@@ -4623,7 +4623,7 @@ async def advertiser_waiting_orders(update: Update, context: ContextTypes.DEFAUL
         await safe_edit_message(query, f"❌ Ошибка: {str(e)}")
 
 
-async def advertiser_in_progress_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def advertiser_in_progress_campaigns(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает заказы в работе (мастер выбран и работает)"""
     query = update.callback_query
     await query.answer()
@@ -4725,7 +4725,7 @@ async def advertiser_in_progress_orders(update: Update, context: ContextTypes.DE
         await safe_edit_message(query, f"❌ Ошибка: {str(e)}")
 
 
-async def advertiser_completed_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def advertiser_completed_campaigns(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает завершённые заказы клиента"""
     query = update.callback_query
     await query.answer()
@@ -7355,7 +7355,7 @@ async def add_test_offers_command(update: Update, context: ContextTypes.DEFAULT_
 
 # ------- ПРОСМОТР ЗАКАЗОВ ДЛЯ МАСТЕРОВ -------
 
-async def blogger_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def blogger_view_campaigns(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Просмотр доступных заказов для мастера"""
     query = update.callback_query
     await query.answer()
