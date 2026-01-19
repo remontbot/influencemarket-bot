@@ -469,6 +469,49 @@ def is_valid_phone(phone: str) -> bool:
     return bool(re.fullmatch(r"\+?\d[\d\s\-()]{6,20}", phone))
 
 
+def is_profile_complete(user_id: int, role: str) -> bool:
+    """
+    Проверяет, заполнен ли профиль пользователя.
+
+    Для блогера обязательны:
+    - Город (city или regions)
+    - Тематика (categories)
+    - Описание (description)
+
+    Для рекламодателя обязательны:
+    - Город (city)
+    - Описание (description)
+    """
+    if role == "blogger":
+        profile = db.get_worker_profile(user_id)
+        if not profile:
+            return False
+
+        profile_dict = dict(profile)
+        city = profile_dict.get("city", "").strip()
+        regions = profile_dict.get("regions", "").strip()
+        categories = profile_dict.get("categories", "").strip()
+        description = profile_dict.get("description", "").strip()
+
+        # Проверяем обязательные поля
+        has_location = bool(city or regions)
+        has_categories = bool(categories)
+        has_description = bool(description)
+
+        return has_location and has_categories and has_description
+
+    elif role == "advertiser":
+        profile = db.get_client_profile(user_id)
+        if not profile:
+            return False
+
+        profile_dict = dict(profile)
+        city = profile_dict.get("city", "").strip()
+        description = profile_dict.get("description", "").strip()
+
+        return bool(city and description)
+
+    return False
 
 
 # /start
@@ -601,12 +644,9 @@ async def register_blogger_name(update: Update, context: ContextTypes.DEFAULT_TY
         )
         return REGISTER_BLOGGER_NAME
     context.user_data["name"] = name
-    await update.message.reply_text(
-        "📱 Укажите номер телефона.\n"
-        "Он необходим для регистрации и не будет виден всем подряд.\n\n"
-        "Пример: +375 29 123 45 67"
-    )
-    return REGISTER_BLOGGER_PHONE
+
+    # НОВЫЙ УПРОЩЕННЫЙ ФЛОУ: Сразу завершаем регистрацию после ввода имени
+    return await finalize_simple_blogger_registration(update, context)
 
 
 async def register_blogger_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1436,15 +1476,155 @@ async def finalize_blogger_registration(update, context):
     return ConversationHandler.END
 
 
+async def finalize_simple_blogger_registration(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Упрощенная регистрация блогера: только имя.
+    Остальные поля (город, категории, описание) заполняются в настройках профиля.
+    """
+    telegram_id = update.effective_user.id
+    name = context.user_data.get("name", "").strip()
+
+    if not name:
+        await update.message.reply_text(
+            "❌ Ошибка: имя не указано.\n\n"
+            "Пожалуйста, начните регистрацию заново: /start"
+        )
+        context.user_data.clear()
+        return ConversationHandler.END
+
+    try:
+        # Создаём или получаем пользователя
+        existing_user = db.get_user(telegram_id)
+        if existing_user:
+            user_id = existing_user['id']
+            logger.info(f"Пользователь {telegram_id} уже существует")
+        else:
+            user_id = db.create_user(telegram_id, "blogger")
+            logger.info(f"Создан новый пользователь {telegram_id} с ID: {user_id}")
+
+        # Создаём минимальный профиль блогера (только с именем)
+        db.create_worker_profile(
+            user_id=user_id,
+            name=name,
+            phone="",  # Пустые значения - заполнятся в настройках
+            city="",
+            regions="",
+            categories="",
+            experience="",
+            description="",
+            portfolio_photos="",
+            profile_photo="",
+            cities=None
+        )
+
+        logger.info(f"Создан упрощенный профиль блогера для user_id={user_id}")
+
+    except Exception as e:
+        logger.error(f"❌ Ошибка при создании упрощенного профиля: {e}", exc_info=True)
+        await update.message.reply_text(
+            "❌ Произошла ошибка при создании профиля.\n\n"
+            "Пожалуйста, попробуйте еще раз: /start"
+        )
+        context.user_data.clear()
+        return ConversationHandler.END
+
+    # Успешная регистрация - отправляем в меню
+    keyboard = [[InlineKeyboardButton("🎬 Моё меню блогера", callback_data="show_worker_menu")]]
+
+    await update.message.reply_text(
+        f"✅ <b>Добро пожаловать, {name}!</b>\n\n"
+        "Ваш профиль создан. Теперь заполните информацию о себе, чтобы получать предложения от рекламодателей.\n\n"
+        "📝 <b>Что нужно заполнить:</b>\n"
+        "• Город проживания\n"
+        "• Тематики контента\n"
+        "• Описание профиля\n\n"
+        "Перейдите в <b>Профиль → Редактировать профиль</b>",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+        parse_mode="HTML"
+    )
+
+    context.user_data.clear()
+    return ConversationHandler.END
+
+
+async def finalize_simple_advertiser_registration(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Упрощенная регистрация рекламодателя: только имя.
+    Остальные поля заполняются в настройках профиля.
+    """
+    telegram_id = update.effective_user.id
+    name = context.user_data.get("name", "").strip()
+
+    if not name:
+        await update.message.reply_text(
+            "❌ Ошибка: имя не указано.\n\n"
+            "Пожалуйста, начните регистрацию заново: /start"
+        )
+        context.user_data.clear()
+        return ConversationHandler.END
+
+    try:
+        # Создаём или получаем пользователя
+        existing_user = db.get_user(telegram_id)
+        if existing_user:
+            user_id = existing_user['id']
+            logger.info(f"Пользователь {telegram_id} уже существует")
+        else:
+            user_id = db.create_user(telegram_id, "advertiser")
+            logger.info(f"Создан новый пользователь {telegram_id} с ID: {user_id}")
+
+        # Создаём минимальный профиль рекламодателя (только с именем)
+        db.create_client_profile(
+            user_id=user_id,
+            name=name,
+            phone="",  # Пустые значения - заполнятся в настройках
+            city="",
+            description=""
+        )
+
+        logger.info(f"Создан упрощенный профиль рекламодателя для user_id={user_id}")
+
+    except Exception as e:
+        logger.error(f"❌ Ошибка при создании упрощенного профиля: {e}", exc_info=True)
+        await update.message.reply_text(
+            "❌ Произошла ошибка при создании профиля.\n\n"
+            "Пожалуйста, попробуйте еще раз: /start"
+        )
+        context.user_data.clear()
+        return ConversationHandler.END
+
+    # Успешная регистрация - отправляем в меню
+    keyboard = [[InlineKeyboardButton("💼 Моё меню рекламодателя", callback_data="show_client_menu")]]
+
+    await update.message.reply_text(
+        f"✅ <b>Добро пожаловать, {name}!</b>\n\n"
+        "Ваш профиль создан. Теперь заполните информацию, чтобы начать размещать кампании.\n\n"
+        "📝 <b>Что нужно заполнить:</b>\n"
+        "• Город\n"
+        "• Описание деятельности\n\n"
+        "Перейдите в <b>Профиль → Редактировать профиль</b>",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+        parse_mode="HTML"
+    )
+
+    context.user_data.clear()
+    return ConversationHandler.END
+
+
 # ------- РЕГИСТРАЦИЯ РЕКЛАМОДАТЕЛЯ -------
 
 async def register_advertiser_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data["name"] = update.message.text.strip()
-    await update.message.reply_text(
-        "📱 Укажите свой номер телефона (в формате: +375 29 123 45 67)\n\n"
-        "Он необходим для регистрации и не будет виден всем подряд."
-    )
-    return REGISTER_ADVERTISER_PHONE
+    name = update.message.text.strip()
+    if not is_valid_name(name):
+        await update.message.reply_text(
+            "Пожалуйста, укажите только ваше имя или имя и фамилию, без ссылок и рекламы.\n"
+            "Пример: «Александр», «Иван Петров», «Компания XYZ»."
+        )
+        return REGISTER_ADVERTISER_NAME
+    context.user_data["name"] = name
+
+    # НОВЫЙ УПРОЩЕННЫЙ ФЛОУ: Сразу завершаем регистрацию после ввода имени
+    return await finalize_simple_advertiser_registration(update, context)
 
 
 async def register_advertiser_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1882,11 +2062,17 @@ async def show_blogger_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if db.has_unviewed_ads(user['id'], 'menu_banner', user_role='blogger'):
         news_button_text = "🎯 Новости и акции 🔴 НОВОЕ"
 
+    # Проверяем заполненность профиля для индикатора
+    profile_complete = is_profile_complete(user['id'], "blogger")
+    profile_button_text = "👤 Мой профиль"
+    if not profile_complete:
+        profile_button_text = "👤 Мой профиль ⚠️"
+
     keyboard = [
         [InlineKeyboardButton(orders_button_text, callback_data="worker_view_orders")],
         [InlineKeyboardButton("💼 Мои отклики", callback_data="worker_my_bids")],
         [InlineKeyboardButton("📦 Мои кампании", callback_data="worker_my_orders")],
-        [InlineKeyboardButton("👤 Мой профиль", callback_data="worker_profile")],
+        [InlineKeyboardButton(profile_button_text, callback_data="worker_profile")],
         [InlineKeyboardButton(f"{notification_status} Уведомления", callback_data="toggle_notifications")],
         [InlineKeyboardButton("💡 Предложения", callback_data="send_suggestion")],
         [InlineKeyboardButton(news_button_text, callback_data="show_news_and_ads")],  # НОВОЕ: Постоянная кнопка для рекламы с индикатором
@@ -2571,15 +2757,28 @@ async def show_blogger_profile(update: Update, context: ContextTypes.DEFAULT_TYP
 
         photos_text = f"📸 Фото контент: {photos_count}" if photos_count > 0 else "📸 Фото контент: не добавлено"
 
+        # Определяем статус профиля
+        is_banned = db.is_user_banned(telegram_id)
+        profile_complete = is_profile_complete(user_id, "blogger")
+
+        if is_banned:
+            status_banner = "🚫 <b>Ваш профиль заблокирован</b>\n\n"
+        elif not profile_complete:
+            status_banner = "⚠️ <b>Профиль недоступен для продвижения</b>\n" \
+                           "Заполните обязательные поля, чтобы получать предложения от рекламодателей.\n\n"
+        else:
+            status_banner = "✅ <b>Ваш профиль активен</b>\n\n"
+
         text = (
-            "👤 <b>Ваш профиль блогера</b>\n\n"
+            f"{status_banner}"
+            "👤 <b>Информация о профиле</b>\n\n"
             f"<b>Имя:</b> {name}\n"
-            f"<b>Телефон:</b> {phone}\n"
-            f"<b>Город:</b> {city}\n"
-            f"<b>Районы:</b> {regions}\n"
-            f"<b>Виды контент:</b> {categories}\n"
-            f"<b>Опыт:</b> {experience}\n\n"
-            f"<b>Описание:</b>\n{description}\n\n"
+            f"<b>Телефон:</b> {phone if phone else '❌ Не указан'}\n"
+            f"<b>Город:</b> {city if city else '❌ Не указан'}\n"
+            f"<b>Районы:</b> {regions if regions else '—'}\n"
+            f"<b>Виды контент:</b> {categories if categories else '❌ Не указаны'}\n"
+            f"<b>Опыт:</b> {experience if experience else '❌ Не указан'}\n\n"
+            f"<b>Описание:</b>\n{description if description else '❌ Не заполнено'}\n\n"
             f"{rating_text}\n"
             f"{reviews_text}\n"
             f"{photos_text}"
