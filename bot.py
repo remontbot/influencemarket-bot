@@ -728,6 +728,14 @@ def main():
         )
     )
 
+    # Алиас для обратной совместимости
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.show_blogger_profile,
+            pattern="^worker_profile$",
+        )
+    )
+
     # "Доступные кампании" для блогера
     application.add_handler(
         CallbackQueryHandler(
