@@ -553,10 +553,10 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         # Кнопка для создания второго профиля
         if not has_worker:
-            keyboard.append([InlineKeyboardButton("➕ Стать блогером", callback_data="role_worker")])
-        
+            keyboard.append([InlineKeyboardButton("➕ Стать блогером", callback_data="role_blogger")])
+
         if not has_client:
-            keyboard.append([InlineKeyboardButton("➕ Стать рекламодателем", callback_data="role_client")])
+            keyboard.append([InlineKeyboardButton("➕ Стать рекламодателем", callback_data="role_advertiser")])
         
         message = "👋 Добро пожаловать!\n\n"
 
@@ -574,8 +574,8 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         # Новый пользователь - выбор первой роли
         keyboard = [
-            [InlineKeyboardButton("📱 Я блогер (ищу рекламные кампании)", callback_data="select_role_worker")],
-            [InlineKeyboardButton("💼 Я рекламодатель (ищу блогеров)", callback_data="select_role_client")],
+            [InlineKeyboardButton("📱 Я блогер (ищу рекламные кампании)", callback_data="select_role_blogger")],
+            [InlineKeyboardButton("💼 Я рекламодатель (ищу блогеров)", callback_data="select_role_advertiser")],
         ]
         await update.message.reply_text(
             "<b>InfluenceMarket</b> — маркетплейс для блогеров и рекламодателей в Беларуси.\n\n"

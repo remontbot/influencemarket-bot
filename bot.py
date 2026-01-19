@@ -653,6 +653,14 @@ def main():
         )
     )
 
+    # Алиас для обратной совместимости
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.show_blogger_menu,
+            pattern="^show_worker_menu$",
+        )
+    )
+
     application.add_handler(
         CallbackQueryHandler(
             handlers.toggle_notifications,
@@ -694,6 +702,14 @@ def main():
         CallbackQueryHandler(
             handlers.show_advertiser_menu,
             pattern="^show_advertiser_menu$",
+        )
+    )
+
+    # Алиас для обратной совместимости
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.show_advertiser_menu,
+            pattern="^show_client_menu$",
         )
     )
 
