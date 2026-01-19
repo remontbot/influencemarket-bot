@@ -2073,6 +2073,48 @@ async def show_blogger_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+async def blogger_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Просмотр доступных кампаний для блогера"""
+    query = update.callback_query
+    await query.answer()
+
+    user = db.get_user_by_telegram_id(update.effective_user.id)
+    if not user:
+        await query.edit_message_text("❌ Пользователь не найден.")
+        return
+
+    user_dict = dict(user)
+    profile_complete = is_profile_complete(user_dict['id'], 'blogger')
+
+    if not profile_complete:
+        await query.edit_message_text(
+            "⚠️ <b>Профиль не заполнен</b>\n\n"
+            "Для просмотра доступных кампаний необходимо заполнить профиль:\n"
+            "• Город\n"
+            "• Тематика контента\n"
+            "• Описание\n\n"
+            "Перейдите в профиль и заполните обязательные поля.",
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("⚙️ Настройки профиля", callback_data="edit_profile_menu")
+            ], [
+                InlineKeyboardButton("⬅️ Назад", callback_data="show_worker_menu")
+            ]])
+        )
+        return
+
+    # TODO: Здесь будет логика показа доступных кампаний
+    await query.edit_message_text(
+        "📋 <b>Доступные кампании</b>\n\n"
+        "Эта функция в разработке.\n"
+        "Скоро здесь будут отображаться кампании от рекламодателей.",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton("⬅️ Назад", callback_data="show_worker_menu")
+        ]])
+    )
+
+
 async def toggle_notifications(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Переключает уведомления для блогера"""
     query = update.callback_query
@@ -13124,8 +13166,8 @@ async def admin_close(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = db.get_user(update.effective_user.id)
     if user:
         user_dict = dict(user)
-        worker_profile = db.get_worker_by_user_id(user_dict['id'])
-        client_profile = db.get_client_by_user_id(user_dict['id'])
+        worker_profile = db.get_worker_profile(user_dict['id'])
+        client_profile = db.get_client_profile(user_dict['id'])
 
         context.user_data.clear()
 
@@ -13133,11 +13175,11 @@ async def admin_close(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if worker_profile:
             await query.edit_message_text("✅ Админ-панель закрыта.")
             # Вызываем меню блогера
-            await show_worker_menu(update, context)
+            await show_blogger_menu(update, context)
         elif client_profile:
             await query.edit_message_text("✅ Админ-панель закрыта.")
             # Вызываем меню клиента
-            await show_client_menu(update, context)
+            await show_advertiser_menu(update, context)
         else:
             await query.edit_message_text("✅ Админ-панель закрыта.")
     else:

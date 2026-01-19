@@ -698,6 +698,36 @@ def main():
         )
     )
 
+    # Доступные кампании для блогера
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.blogger_view_orders,
+            pattern="^blogger_view_orders$",
+        )
+    )
+
+    # Алиасы для обратной совместимости (worker_* → blogger_*)
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.blogger_view_orders,
+            pattern="^worker_view_orders$",
+        )
+    )
+
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.blogger_my_offers,
+            pattern="^worker_my_bids$",
+        )
+    )
+
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.blogger_my_campaigns,
+            pattern="^worker_my_orders$",
+        )
+    )
+
     application.add_handler(
         CallbackQueryHandler(
             handlers.show_advertiser_menu,

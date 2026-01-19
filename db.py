@@ -5700,7 +5700,7 @@ def get_active_ads(placement, user_id=None, user_categories=None, user_role=None
             """
             params.extend([user_id, today_start])
 
-        query += " CAMPAIGN BY a.id DESC"  # БЕЗ LIMIT - показываем все
+        query += " ORDER BY a.id DESC"  # БЕЗ LIMIT - показываем все
 
         cursor.execute(query, params)
         results = cursor.fetchall()
