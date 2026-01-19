@@ -238,9 +238,10 @@ if DATABASE_URL:
             except Exception as e:
                 logger.error(f"❌ Ошибка при закрытии connection pool: {e}", exc_info=True)
 else:
-    # Используем SQLite для локальной разработки
+    # Используем SQLite для локальной разработки и тестирования
+    # ВАЖНО: База данных в /tmp очищается при каждом деплое на Railway
     import sqlite3
-    DATABASE_NAME = "repair_platform.db"
+    DATABASE_NAME = "/tmp/influencemarket_test.db"
     USE_POSTGRES = False
 
     def init_connection_pool():
