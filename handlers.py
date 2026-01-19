@@ -2818,20 +2818,29 @@ async def show_blogger_profile(update: Update, context: ContextTypes.DEFAULT_TYP
         photo_to_show = profile_photo if profile_photo else (portfolio_photos.split(",")[0] if portfolio_photos else None)
 
         if photo_to_show:
-            await query.message.reply_photo(
-                photo=photo_to_show,
-                caption=text,
-                parse_mode="HTML",
-                reply_markup=InlineKeyboardMarkup(keyboard),
-            )
-            await query.message.delete()
+            try:
+                await query.message.reply_photo(
+                    photo=photo_to_show,
+                    caption=text,
+                    parse_mode="HTML",
+                    reply_markup=InlineKeyboardMarkup(keyboard),
+                )
+                await query.message.delete()
+            except Exception as photo_error:
+                # Если не удалось отправить фото (например, file_id документа), показываем без фото
+                logger.warning(f"Не удалось отправить фото профиля: {photo_error}")
+                await query.edit_message_text(
+                    text=text,
+                    parse_mode="HTML",
+                    reply_markup=InlineKeyboardMarkup(keyboard),
+                )
         else:
             await query.edit_message_text(
                 text=text,
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup(keyboard),
             )
-        
+
         logger.info(f"Профиль успешно отображён для telegram_id={telegram_id}")
 
     except Exception as e:
