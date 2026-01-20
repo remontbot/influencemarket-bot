@@ -6620,6 +6620,8 @@ def migrate_add_blogger_platform_fields():
             cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS instagram_link VARCHAR(200)")
             cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS tiktok_link VARCHAR(200)")
             cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS youtube_link VARCHAR(200)")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS telegram_link VARCHAR(200)")
+            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS threads_link VARCHAR(200)")
             
             # Форматы контента
             cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS format_stories BOOLEAN DEFAULT FALSE")
