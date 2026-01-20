@@ -2147,7 +2147,7 @@ async def toggle_notifications(update: Update, context: ContextTypes.DEFAULT_TYP
 
     # Возвращаемся в меню блогера через 2 секунды
     await asyncio.sleep(2)
-    await show_worker_menu(update, context)
+    await show_blogger_menu(update, context)
 
 
 async def toggle_advertiser_notifications(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -2179,9 +2179,9 @@ async def toggle_advertiser_notifications(update: Update, context: ContextTypes.
         parse_mode="HTML"
     )
 
-    # Возвращаемся в меню клиента через 2 секунды
+    # Возвращаемся в меню рекламодателя через 2 секунды
     await asyncio.sleep(2)
-    await show_client_menu(update, context)
+    await show_advertiser_menu(update, context)
 
 
 async def blogger_my_offers(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -7399,9 +7399,9 @@ async def cancel_from_callback(update: Update, context: ContextTypes.DEFAULT_TYP
     if query.data == "go_main_menu":
         return await go_main_menu(update, context)
     elif query.data == "show_worker_menu":
-        return await show_worker_menu(update, context)
+        return await show_blogger_menu(update, context)
     elif query.data == "show_client_menu":
-        return await show_client_menu(update, context)
+        return await show_advertiser_menu(update, context)
 
     # По умолчанию возвращаемся в главное меню
     return await go_main_menu(update, context)

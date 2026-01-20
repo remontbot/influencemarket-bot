@@ -284,7 +284,8 @@ def main():
 
     create_campaign_handler = ConversationHandler(
         entry_points=[
-            CallbackQueryHandler(handlers.advertiser_create_campaign, pattern="^advertiser_create_campaign$")
+            CallbackQueryHandler(handlers.advertiser_create_campaign, pattern="^advertiser_create_campaign$"),
+            CallbackQueryHandler(handlers.advertiser_create_campaign, pattern="^client_create_order$"),  # Алиас
         ],
         states={
             handlers.CREATE_CAMPAIGN_REGION_SELECT: [
@@ -419,6 +420,14 @@ def main():
         CallbackQueryHandler(
             handlers.advertiser_my_campaigns,
             pattern="^advertiser_my_campaigns$",
+        )
+    )
+
+    # Алиас для обратной совместимости
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.advertiser_my_campaigns,
+            pattern="^client_my_orders$",
         )
     )
 
@@ -672,6 +681,14 @@ def main():
         CallbackQueryHandler(
             handlers.toggle_advertiser_notifications,
             pattern="^toggle_advertiser_notifications$",
+        )
+    )
+
+    # Алиас для обратной совместимости
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.toggle_advertiser_notifications,
+            pattern="^toggle_client_notifications$",
         )
     )
 
