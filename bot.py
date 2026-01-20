@@ -148,12 +148,6 @@ def main():
                     handlers.register_blogger_name,
                 )
             ],
-            handlers.REGISTER_BLOGGER_PHONE: [
-                MessageHandler(
-                    filters.TEXT & ~filters.COMMAND,
-                    handlers.register_blogger_phone,
-                )
-            ],
             handlers.REGISTER_BLOGGER_REGION_SELECT: [
                 CallbackQueryHandler(
                     handlers.register_blogger_region_select,
@@ -189,13 +183,6 @@ def main():
                 CallbackQueryHandler(
                     handlers.register_blogger_categories_select,
                     pattern="^cat_",
-                )
-            ],
-            # ОБНОВЛЕНО: Теперь опыт выбирается кнопками
-            handlers.REGISTER_BLOGGER_EXPERIENCE: [
-                CallbackQueryHandler(
-                    handlers.register_blogger_experience,
-                    pattern="^exp_",
                 )
             ],
             handlers.REGISTER_BLOGGER_DESCRIPTION: [
@@ -324,17 +311,13 @@ def main():
         states={
             handlers.EDIT_PROFILE_MENU: [
                 CallbackQueryHandler(handlers.edit_name_start, pattern="^edit_name$"),
-                CallbackQueryHandler(handlers.edit_phone_start, pattern="^edit_phone$"),
                 CallbackQueryHandler(handlers.edit_city_start, pattern="^edit_city$"),
                 CallbackQueryHandler(handlers.edit_categories_start, pattern="^edit_categories$"),
-                CallbackQueryHandler(handlers.edit_experience_start, pattern="^edit_experience$"),
+                CallbackQueryHandler(handlers.edit_social_media_start, pattern="^edit_social_media$"),
                 CallbackQueryHandler(handlers.edit_description_start, pattern="^edit_description$"),
             ],
             handlers.EDIT_NAME: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.edit_name_save),
-            ],
-            handlers.EDIT_PHONE: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.edit_phone_save),
             ],
             handlers.EDIT_REGION_SELECT: [
                 CallbackQueryHandler(handlers.edit_region_select, pattern="^editregion_"),
@@ -346,8 +329,11 @@ def main():
             handlers.EDIT_CATEGORIES_SELECT: [
                 CallbackQueryHandler(handlers.edit_categories_select, pattern="^editcat_"),
             ],
-            handlers.EDIT_EXPERIENCE: [
-                CallbackQueryHandler(handlers.edit_experience_save, pattern="^editexp_"),
+            handlers.EDIT_SOCIAL_MEDIA: [
+                CallbackQueryHandler(handlers.edit_social_media_select, pattern="^edit_sm_"),
+            ],
+            handlers.EDIT_SOCIAL_MEDIA_INPUT: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.edit_social_media_save),
             ],
             handlers.EDIT_DESCRIPTION: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.edit_description_save),

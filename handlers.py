@@ -284,14 +284,12 @@ def _get_bids_word(count):
 (
     SELECTING_ROLE,
     REGISTER_BLOGGER_NAME,
-    REGISTER_BLOGGER_PHONE,
     REGISTER_BLOGGER_REGION_SELECT,
     REGISTER_BLOGGER_CITY,
     REGISTER_BLOGGER_CITY_SELECT,
     REGISTER_BLOGGER_CITY_OTHER,
     REGISTER_BLOGGER_CITIES_CONFIRM,
     REGISTER_BLOGGER_CATEGORIES_SELECT,
-    REGISTER_BLOGGER_EXPERIENCE,
     REGISTER_BLOGGER_DESCRIPTION,
     REGISTER_BLOGGER_PHOTOS,
     REGISTER_ADVERTISER_NAME,
@@ -304,11 +302,11 @@ def _get_bids_word(count):
     # Новые состояния для редактирования профиля
     EDIT_PROFILE_MENU,
     EDIT_NAME,
-    EDIT_PHONE,
     EDIT_REGION_SELECT,
     EDIT_CITY,
     EDIT_CATEGORIES_SELECT,
-    EDIT_EXPERIENCE,
+    EDIT_SOCIAL_MEDIA,
+    EDIT_SOCIAL_MEDIA_INPUT,
     EDIT_DESCRIPTION,
     ADD_PHOTOS_MENU,
     ADD_PHOTOS_UPLOAD,
@@ -333,7 +331,7 @@ def _get_bids_word(count):
     BROADCAST_ENTER_MESSAGE,
     ADMIN_BAN_REASON,
     ADMIN_SEARCH,
-) = range(46)
+) = range(44)
 
 
 def is_valid_name(name: str) -> bool:
@@ -2533,6 +2531,13 @@ async def show_blogger_profile(update: Update, context: ContextTypes.DEFAULT_TYP
         portfolio_photos = profile_dict.get("portfolio_photos") or ""
         profile_photo = profile_dict.get("profile_photo") or ""
 
+        # Социальные сети
+        instagram = profile_dict.get("instagram_link") or ""
+        youtube = profile_dict.get("youtube_link") or ""
+        tiktok = profile_dict.get("tiktok_link") or ""
+        telegram = profile_dict.get("telegram_link") or ""
+        threads = profile_dict.get("threads_link") or ""
+
         # Подсчёт фотографий
         photos_count = len(portfolio_photos.split(",")) if portfolio_photos else 0
 
@@ -2557,15 +2562,29 @@ async def show_blogger_profile(update: Update, context: ContextTypes.DEFAULT_TYP
         else:
             status_banner = "✅ <b>Ваш профиль активен</b>\n\n"
 
+        # Формируем список социальных сетей
+        social_media_list = []
+        if instagram:
+            social_media_list.append(f"📸 Instagram: {instagram}")
+        if youtube:
+            social_media_list.append(f"📺 YouTube: {youtube}")
+        if tiktok:
+            social_media_list.append(f"🎵 TikTok: {tiktok}")
+        if telegram:
+            social_media_list.append(f"✈️ Telegram: {telegram}")
+        if threads:
+            social_media_list.append(f"🧵 Threads: {threads}")
+
+        social_media_text = "\n".join(social_media_list) if social_media_list else "❌ Не указаны"
+
         text = (
             f"{status_banner}"
             "👤 <b>Информация о профиле</b>\n\n"
             f"<b>Имя:</b> {name}\n"
-            f"<b>Телефон:</b> {phone if phone else '❌ Не указан'}\n"
             f"<b>Город:</b> {city if city else '❌ Не указан'}\n"
             f"<b>Районы:</b> {regions if regions else '—'}\n"
-            f"<b>Виды контент:</b> {categories if categories else '❌ Не указаны'}\n"
-            f"<b>Опыт:</b> {experience if experience else '❌ Не указан'}\n\n"
+            f"<b>Виды контент:</b> {categories if categories else '❌ Не указаны'}\n\n"
+            f"<b>Социальные сети:</b>\n{social_media_text}\n\n"
             f"<b>Описание:</b>\n{description if description else '❌ Не заполнено'}\n\n"
             f"{rating_text}\n"
             f"{reviews_text}\n"
@@ -3649,12 +3668,10 @@ async def show_edit_profile_menu(update: Update, context: ContextTypes.DEFAULT_T
     keyboard = [
         [InlineKeyboardButton("👤 Изменить фото профиля", callback_data="edit_profile_photo")],
         [InlineKeyboardButton("✏️ Изменить имя", callback_data="edit_name")],
-        [InlineKeyboardButton("📱 Изменить телефон", callback_data="edit_phone")],
         [InlineKeyboardButton("🏙 Изменить город", callback_data="edit_city")],
         [InlineKeyboardButton("📱 Изменить виды контент", callback_data="edit_categories")],
-        [InlineKeyboardButton("📅 Изменить опыт", callback_data="edit_experience")],
+        [InlineKeyboardButton("🌐 Социальные сети", callback_data="edit_social_media")],
         [InlineKeyboardButton("📝 Изменить описание", callback_data="edit_description")],
-        [InlineKeyboardButton("📸 Добавить фото контент", callback_data="worker_add_photos")],
         [InlineKeyboardButton("🗑 Управление фото контент", callback_data="manage_portfolio_photos")],
         [InlineKeyboardButton("⬅️ Назад к профилю", callback_data="worker_profile")],
     ]
@@ -4328,6 +4345,99 @@ async def edit_description_save(update: Update, context: ContextTypes.DEFAULT_TY
     
     await update.message.reply_text(
         f"✅ Описание успешно изменено!",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+        parse_mode="HTML",
+    )
+    return ConversationHandler.END
+
+
+async def edit_social_media_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Показывает меню редактирования социальных сетей"""
+    query = update.callback_query
+    await query.answer()
+
+    telegram_id = query.from_user.id
+    user = db.get_user(telegram_id)
+    user_dict = dict(user)
+    user_id = user_dict.get("id")
+
+    worker_profile = db.get_worker_profile(user_id)
+    profile_dict = dict(worker_profile)
+
+    instagram = profile_dict.get("instagram_link") or "Не указан"
+    youtube = profile_dict.get("youtube_link") or "Не указан"
+    tiktok = profile_dict.get("tiktok_link") or "Не указан"
+    telegram_link = profile_dict.get("telegram_link") or "Не указан"
+    threads = profile_dict.get("threads_link") or "Не указан"
+
+    keyboard = [
+        [InlineKeyboardButton(f"📸 Instagram: {instagram[:20]}...", callback_data="edit_sm_instagram")],
+        [InlineKeyboardButton(f"📺 YouTube: {youtube[:20]}...", callback_data="edit_sm_youtube")],
+        [InlineKeyboardButton(f"🎵 TikTok: {tiktok[:20]}...", callback_data="edit_sm_tiktok")],
+        [InlineKeyboardButton(f"✈️ Telegram: {telegram_link[:20]}...", callback_data="edit_sm_telegram")],
+        [InlineKeyboardButton(f"🧵 Threads: {threads[:20]}...", callback_data="edit_sm_threads")],
+        [InlineKeyboardButton("⬅️ Назад", callback_data="edit_profile_menu")],
+    ]
+
+    await query.edit_message_text(
+        "🌐 <b>Социальные сети</b>\n\n"
+        "Выберите платформу для редактирования:",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+    )
+    return EDIT_SOCIAL_MEDIA
+
+
+async def edit_social_media_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка выбора платформы для редактирования"""
+    query = update.callback_query
+    await query.answer()
+
+    platform_map = {
+        "edit_sm_instagram": ("instagram_link", "Instagram", "📸"),
+        "edit_sm_youtube": ("youtube_link", "YouTube", "📺"),
+        "edit_sm_tiktok": ("tiktok_link", "TikTok", "🎵"),
+        "edit_sm_telegram": ("telegram_link", "Telegram", "✈️"),
+        "edit_sm_threads": ("threads_link", "Threads", "🧵"),
+    }
+
+    if query.data not in platform_map:
+        return EDIT_SOCIAL_MEDIA
+
+    field_name, platform_name, emoji = platform_map[query.data]
+    context.user_data["editing_social_platform"] = field_name
+
+    await query.edit_message_text(
+        f"{emoji} <b>Редактирование {platform_name}</b>\n\n"
+        f"Введите ссылку на ваш профиль в {platform_name}:\n"
+        f"Например: https://instagram.com/username\n\n"
+        f"Или отправьте /cancel для отмены",
+        parse_mode="HTML",
+    )
+    return EDIT_SOCIAL_MEDIA_INPUT
+
+
+async def edit_social_media_save(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Сохранение ссылки на социальную сеть"""
+    new_link = update.message.text.strip()
+
+    telegram_id = update.effective_user.id
+    user = db.get_user(telegram_id)
+    user_dict = dict(user)
+    user_id = user_dict.get("id")
+
+    field_name = context.user_data.get("editing_social_platform")
+    if not field_name:
+        await update.message.reply_text("❌ Ошибка: не выбрана платформа")
+        return ConversationHandler.END
+
+    # Сохраняем ссылку
+    db.update_worker_field(user_id, field_name, new_link)
+
+    keyboard = [[InlineKeyboardButton("👤 Вернуться к профилю", callback_data="worker_profile")]]
+
+    await update.message.reply_text(
+        f"✅ Ссылка успешно сохранена!",
         reply_markup=InlineKeyboardMarkup(keyboard),
         parse_mode="HTML",
     )
