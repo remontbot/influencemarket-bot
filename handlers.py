@@ -1806,9 +1806,9 @@ async def show_blogger_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
             unread_orders_count = notification.get('available_orders_count', 0)
 
     # Формируем текст кнопки с бейджем
-    orders_button_text = "📋 Доступные кампании"
+    orders_button_text = "📋 Рекламные предложения"
     if unread_orders_count > 0:
-        orders_button_text = f"📋 Доступные кампании 🔴 {unread_orders_count}"
+        orders_button_text = f"📋 Рекламные предложения 🔴 {unread_orders_count}"
 
     # Проверяем наличие новых акций
     news_button_text = "🎯 Новости и акции"
