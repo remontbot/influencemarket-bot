@@ -315,7 +315,7 @@ def _get_bids_word(count):
     BROADCAST_ENTER_MESSAGE,
     ADMIN_BAN_REASON,
     ADMIN_SEARCH,
-) = range(50)
+) = range(45)
 
 
 def is_valid_name(name: str) -> bool:
