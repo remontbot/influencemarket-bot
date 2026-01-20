@@ -3996,7 +3996,7 @@ async def edit_city_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=InlineKeyboardMarkup(keyboard),
             parse_mode="HTML",
         )
-        return ConversationHandler.END
+        return EDIT_PROFILE_MENU
 
 
 
@@ -4040,7 +4040,7 @@ async def edit_city_save(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=InlineKeyboardMarkup(keyboard),
         parse_mode="HTML",
     )
-    return ConversationHandler.END
+    return EDIT_PROFILE_MENU
 
 
 async def remove_city_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
