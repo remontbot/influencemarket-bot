@@ -81,154 +81,23 @@ BELARUS_REGIONS = {
 
 # ===== WORK CATEGORIES HIERARCHY =====
 
-# ===== BLOGGER TOPICS HIERARCHY =====
-# Тематики контента для блогеров
+# ===== BLOGGER CATEGORIES =====
+# Простые категории контента для блогеров (без подкатегорий)
 
-BLOGGER_TOPICS = {
-    "fashion": {
-        "name": "👗 Мода и стиль",
-        "emoji": "👗",
-        "subcategories": [
-            "Женская мода",
-            "Мужская мода",
-            "Аксессуары",
-            "Образы (OOTD)",
-            "Тренды и советы"
-        ]
-    },
-    "beauty": {
-        "name": "💄 Красота и уход",
-        "emoji": "💄",
-        "subcategories": [
-            "Макияж и косметика",
-            "Уход за кожей",
-            "Уход за волосами",
-            "Маникюр и педикюр",
-            "Парфюмерия"
-        ]
-    },
-    "fitness": {
-        "name": "💪 Спорт и фитнес",
-        "emoji": "💪",
-        "subcategories": [
-            "Тренировки и упражнения",
-            "Питание и диеты",
-            "Йога и растяжка",
-            "Мотивация",
-            "Спортивное питание"
-        ]
-    },
-    "food": {
-        "name": "🍕 Еда и кулинария",
-        "emoji": "🍕",
-        "subcategories": [
-            "Рецепты",
-            "Рестораны и кафе",
-            "ПП и ЗОЖ",
-            "Выпечка и десерты",
-            "Национальная кухня"
-        ]
-    },
-    "travel": {
-        "name": "✈️ Путешествия",
-        "emoji": "✈️",
-        "subcategories": [
-            "Отдых за границей",
-            "Туризм по Беларуси",
-            "Отели и жильё",
-            "Советы путешественникам",
-            "Бюджетные поездки"
-        ]
-    },
-    "tech": {
-        "name": "📱 Технологии",
-        "emoji": "📱",
-        "subcategories": [
-            "Гаджеты и обзоры",
-            "Мобильные приложения",
-            "Компьютеры и ПО",
-            "Игровые устройства",
-            "Новинки техники"
-        ]
-    },
-    "education": {
-        "name": "📚 Образование",
-        "emoji": "📚",
-        "subcategories": [
-            "Языки",
-            "Саморазвитие",
-            "Онлайн-курсы",
-            "Лайфхаки для учёбы",
-            "Профессии и карьера"
-        ]
-    },
-    "business": {
-        "name": "💼 Бизнес и финансы",
-        "emoji": "💼",
-        "subcategories": [
-            "Предпринимательство",
-            "Инвестиции",
-            "Личные финансы",
-            "Маркетинг",
-            "Продажи"
-        ]
-    },
-    "entertainment": {
-        "name": "🎬 Развлечения",
-        "emoji": "🎬",
-        "subcategories": [
-            "Кино и сериалы",
-            "Музыка",
-            "Книги",
-            "Юмор и мемы",
-            "Челленджи"
-        ]
-    },
-    "gaming": {
-        "name": "🎮 Игры",
-        "emoji": "🎮",
-        "subcategories": [
-            "Мобильные игры",
-            "Компьютерные игры",
-            "Консольные игры",
-            "Киберспорт",
-            "Обзоры игр"
-        ]
-    },
-    "family": {
-        "name": "👨‍👩‍👧 Семья и дети",
-        "emoji": "👨‍👩‍👧",
-        "subcategories": [
-            "Материнство",
-            "Воспитание детей",
-            "Детские товары",
-            "Семейный досуг",
-            "Беременность"
-        ]
-    },
-    "pets": {
-        "name": "🐾 Животные",
-        "emoji": "🐾",
-        "subcategories": [
-            "Собаки",
-            "Кошки",
-            "Другие питомцы",
-            "Уход за животными",
-            "Дрессировка"
-        ]
-    },
-    "auto": {
-        "name": "🚗 Авто и мото",
-        "emoji": "🚗",
-        "subcategories": [
-            "Обзоры автомобилей",
-            "Тюнинг",
-            "Ремонт и обслуживание",
-            "Мотоциклы",
-            "Автоновости"
-        ]
-    }
-}
+BLOGGER_CATEGORIES = [
+    "✨ Lifestyle / Личный блог",
+    "👗 Мода и стиль",
+    "💄 Красота и уход",
+    "💪 Спорт и фитнес",
+    "🍕 Еда и рестораны",
+    "✈️ Путешествия",
+    "📱 Технологии и гаджеты",
+    "📚 Образование и инфо",
+    "💼 Бизнес и финансы",
+    "🎬 Развлечения и медиа",
+    "👨‍👩‍👧 Семья и дети",
+    "🚗 Авто и мото",
+]
 
 
 
@@ -404,9 +273,7 @@ def _get_bids_word(count):
     REGISTER_BLOGGER_CITY_SELECT,
     REGISTER_BLOGGER_CITY_OTHER,
     REGISTER_BLOGGER_CITIES_CONFIRM,
-    REGISTER_BLOGGER_MAIN_CATEGORY,
-    REGISTER_BLOGGER_SUBCATEGORY_SELECT,
-    REGISTER_BLOGGER_ASK_MORE_CATEGORIES,
+    REGISTER_BLOGGER_CATEGORIES_SELECT,
     REGISTER_BLOGGER_EXPERIENCE,
     REGISTER_BLOGGER_DESCRIPTION,
     REGISTER_BLOGGER_PHOTOS,
@@ -423,9 +290,7 @@ def _get_bids_word(count):
     EDIT_PHONE,
     EDIT_REGION_SELECT,
     EDIT_CITY,
-    EDIT_MAIN_CATEGORY,
-    EDIT_SUBCATEGORY_SELECT,
-    EDIT_ASK_MORE_CATEGORIES,
+    EDIT_CATEGORIES_SELECT,
     EDIT_EXPERIENCE,
     EDIT_DESCRIPTION,
     ADD_PHOTOS_MENU,
@@ -433,8 +298,7 @@ def _get_bids_word(count):
     # Состояния для создания кампания
     CREATE_CAMPAIGN_REGION_SELECT,
     CREATE_CAMPAIGN_CITY,
-    CREATE_CAMPAIGN_MAIN_CATEGORY,
-    CREATE_CAMPAIGN_SUBCATEGORY_SELECT,
+    CREATE_CAMPAIGN_CATEGORIES_SELECT,
     CREATE_CAMPAIGN_DESCRIPTION,
     CREATE_CAMPAIGN_PHOTOS,
     # Состояния для создания предложениа
@@ -876,197 +740,51 @@ async def register_blogger_cities_confirm(update: Update, context: ContextTypes.
         cities = context.user_data.get("cities", [])
         cities_text = ", ".join(cities)
 
-        keyboard = []
-        for cat_id, category_data in BLOGGER_TOPICS.items():
-            keyboard.append([InlineKeyboardButton(
-                category_data["name"],
-                callback_data=f"maincat_{cat_id}"
-            )])
-
-        await query.edit_message_text(
-            f"🏙 Города: {cities_text}\n\n"
-            "📱 <b>Шаг 4/7:</b> Выберите основную тематику контент:",
-            parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup(keyboard),
-        )
-        return REGISTER_BLOGGER_MAIN_CATEGORY
-
-
-async def register_blogger_main_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка выбора основной категории контент"""
-    query = update.callback_query
-    await query.answer()
-
-    cat_id = query.data.replace("maincat_", "")
-    category_name = BLOGGER_TOPICS[cat_id]["name"]
-    context.user_data["current_main_category"] = cat_id
-
-    # Получаем подкатегории для выбранной категории
-    subcategories = BLOGGER_TOPICS[cat_id]["subcategories"]
-
-    # Создаем кнопки подкатегорий (2 в ряд) с галочками
-    keyboard = []
-    row = []
-    for idx, subcat in enumerate(subcategories):
-        # Проверяем выбрана ли уже эта подкатегория
-        is_selected = subcat in context.user_data.get("categories", [])
-        button_text = f"☑️ {subcat}" if is_selected else subcat
-
-        row.append(InlineKeyboardButton(button_text, callback_data=f"subcat_{cat_id}:{idx}"))
-        if len(row) == 2:
-            keyboard.append(row)
-            row = []
-    if row:  # Добавляем оставшуюся кнопку
-        keyboard.append(row)
-
-    # Добавляем кнопки навигации
-    keyboard.append([InlineKeyboardButton("✅ Завершить выбор категорий", callback_data="subcat_done")])
-    keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="subcat_back")])
-
-    city = context.user_data.get("city", "")
-    emoji = BLOGGER_TOPICS[cat_id]["emoji"]
-
-    await query.edit_message_text(
-        f"🏙 Город: {city}\n"
-        f"{emoji} <b>Категория:</b> {category_name}\n\n"
-        "📱 <b>Выберите подкатегории:</b>\n\n"
-        "Нажимайте подходящие кнопки (можно несколько).\n"
-        "Когда закончите — нажмите «✅ Завершить выбор категорий».",
-        parse_mode="HTML",
-        reply_markup=InlineKeyboardMarkup(keyboard),
-    )
-    return REGISTER_BLOGGER_SUBCATEGORY_SELECT
-
-
-async def register_blogger_subcategory_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка выбора подкатегорий с переключением галочек"""
-    query = update.callback_query
-    await query.answer()
-    data = query.data
-    selected = data.replace("subcat_", "")
-
-    if selected == "done":
-        # Проверяем что выбрана хотя бы одна подкатегория
-        if not context.user_data.get("categories"):
-            await query.answer("Выберите хотя бы одну подкатегорию!", show_alert=True)
-            return REGISTER_BLOGGER_SUBCATEGORY_SELECT
-
-        # Спрашиваем хочет ли добавить еще категории
-        keyboard = [
-            [InlineKeyboardButton("✅ Да, добавить еще", callback_data="more_yes")],
-            [InlineKeyboardButton("➡️ Нет, продолжить дальше", callback_data="more_no")],
-        ]
-
-        categories_text = ", ".join(context.user_data["categories"])
-
-        await query.edit_message_text(
-            f"✅ <b>Выбранные категории:</b>\n{categories_text}\n\n"
-            "Хотите добавить еще категории из других разделов?",
-            parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup(keyboard),
-        )
-        return REGISTER_BLOGGER_ASK_MORE_CATEGORIES
-
-    elif selected == "back":
-        # Кнопка "Назад" - возвращаемся к выбору основной категории
-        keyboard = []
-        city = context.user_data.get("city", "")
-        for cat_id, category_data in BLOGGER_TOPICS.items():
-            keyboard.append([InlineKeyboardButton(
-                category_data["name"],
-                callback_data=f"maincat_{cat_id}"
-            )])
-
-        await query.edit_message_text(
-            f"🏙 Город: {city}\n\n"
-            "📱 <b>Выберите основную тематику контент:</b>",
-            parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup(keyboard),
-        )
-        return REGISTER_BLOGGER_MAIN_CATEGORY
-
-    else:
-        # Парсим cat_id:index из callback_data
-        cat_id, idx_str = selected.split(":")
-        idx = int(idx_str)
-        subcat_name = BLOGGER_TOPICS[cat_id]["subcategories"][idx]
-
-        # Переключаем выбор подкатегории
+        # Инициализируем пустой список категорий
         if "categories" not in context.user_data:
             context.user_data["categories"] = []
 
-        if subcat_name not in context.user_data["categories"]:
-            context.user_data["categories"].append(subcat_name)
-            await query.answer(f"✅ Добавлено: {subcat_name}")
-        else:
-            context.user_data["categories"].remove(subcat_name)
-            await query.answer(f"❌ Убрано: {subcat_name}")
-
-        # Обновляем кнопки с галочками
-        main_category = context.user_data["current_main_category"]
-        subcategories = BLOGGER_TOPICS[cat_id]["subcategories"]
-        category_name = BLOGGER_TOPICS[cat_id]["name"]
-
+        # Показываем все категории с галочками (2 в ряд)
         keyboard = []
         row = []
-        for idx2, subcat in enumerate(subcategories):
-            is_selected = subcat in context.user_data["categories"]
-            button_text = f"☑️ {subcat}" if is_selected else subcat
+        for idx, category in enumerate(BLOGGER_CATEGORIES):
+            is_selected = category in context.user_data.get("categories", [])
+            button_text = f"☑️ {category}" if is_selected else category
 
-            row.append(InlineKeyboardButton(button_text, callback_data=f"subcat_{cat_id}:{idx2}"))
+            row.append(InlineKeyboardButton(button_text, callback_data=f"cat_{idx}"))
             if len(row) == 2:
                 keyboard.append(row)
                 row = []
         if row:
             keyboard.append(row)
 
-        keyboard.append([InlineKeyboardButton("✅ Завершить выбор категорий", callback_data="subcat_done")])
-
-        city = context.user_data.get("city", "")
-        emoji = BLOGGER_TOPICS[cat_id]["emoji"]
+        keyboard.append([InlineKeyboardButton("✅ Завершить выбор", callback_data="cat_done")])
 
         await query.edit_message_text(
-            f"🏙 Город: {city}\n"
-            f"{emoji} <b>Категория:</b> {category_name}\n\n"
-            "📱 <b>Выберите подкатегории:</b>\n\n"
+            f"🏙 Города: {cities_text}\n\n"
+            "📱 <b>Шаг 4/7:</b> Выберите категории контента:\n\n"
             "Нажимайте подходящие кнопки (можно несколько).\n"
-            "Когда закончите — нажмите «✅ Завершить выбор категорий».",
+            "Когда закончите — нажмите «✅ Завершить выбор».",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
+        return REGISTER_BLOGGER_CATEGORIES_SELECT
 
-        return REGISTER_BLOGGER_SUBCATEGORY_SELECT
 
-
-async def register_blogger_ask_more_categories(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Спрашиваем хочет ли блогер добавить еще категории"""
+async def register_blogger_categories_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка выбора категорий с переключением галочек"""
     query = update.callback_query
-    await query.answer()
+    data = query.data
+    selected = data.replace("cat_", "")
 
-    choice = query.data.replace("more_", "")
+    if selected == "done":
+        # Проверяем что выбрана хотя бы одна категория
+        if not context.user_data.get("categories"):
+            await query.answer("Выберите хотя бы одну категорию!", show_alert=True)
+            return REGISTER_BLOGGER_CATEGORIES_SELECT
 
-    if choice == "yes":
-        # Возвращаемся к выбору основной категории
-        keyboard = []
-        for cat_id, category_data in BLOGGER_TOPICS.items():
-            keyboard.append([InlineKeyboardButton(
-                category_data["name"],
-                callback_data=f"maincat_{cat_id}"
-            )])
+        await query.answer()
 
-        city = context.user_data.get("city", "")
-        categories_text = ", ".join(context.user_data["categories"])
-
-        await query.edit_message_text(
-            f"🏙 Город: {city}\n\n"
-            f"✅ <b>Уже выбрано:</b> {categories_text}\n\n"
-            "📱 <b>Выберите основную тематику для добавления:</b>",
-            parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup(keyboard),
-        )
-        return REGISTER_BLOGGER_MAIN_CATEGORY
-
-    else:
         # Переходим к выбору уровня опыта
         keyboard = [
             [InlineKeyboardButton("🌱 Начинающий блогер", callback_data="exp_Начинающий блогер")],
@@ -1078,20 +796,56 @@ async def register_blogger_ask_more_categories(update: Update, context: ContextT
 
         await query.edit_message_text(
             f"✅ <b>Выбранные категории:</b>\n{categories_text}\n\n"
-            "<b>Выберите ваш текущий уровень опыта</b>\n\n"
-            "Это важно для подбора заказов и ожиданий клиентов.\n"
-            "Пожалуйста, оценивайте себя честно — это выгодно в первую очередь вам.\n\n"
-            "🔹 Если взять уровень выше своих навыков —\n"
-            "можно получить сложные кампании, низкие оценки и потерять рейтинг.\n\n"
-            "🔹 Если начать с более низкого уровня —\n"
-            "вы быстрее наберёте хорошие отзывы и сможете повысить уровень позже.\n\n"
-            "Уровень можно изменить в настройках в любой момент,\n"
-            "когда почувствуете, что выросли.\n\n"
-            "Лучше начать честно — и расти, чем начать выше и откатываться назад.",
+            "<b>Шаг 5/7:</b> Выберите ваш уровень опыта:",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
         return REGISTER_BLOGGER_EXPERIENCE
+
+    else:
+        # Переключаем выбор категории
+        idx = int(selected)
+        category = BLOGGER_CATEGORIES[idx]
+
+        if "categories" not in context.user_data:
+            context.user_data["categories"] = []
+
+        if category not in context.user_data["categories"]:
+            context.user_data["categories"].append(category)
+            await query.answer(f"✅ Добавлено")
+        else:
+            context.user_data["categories"].remove(category)
+            await query.answer(f"❌ Убрано")
+
+        # Обновляем кнопки с галочками
+        cities = context.user_data.get("cities", [])
+        cities_text = ", ".join(cities)
+
+        keyboard = []
+        row = []
+        for idx2, cat in enumerate(BLOGGER_CATEGORIES):
+            is_selected = cat in context.user_data["categories"]
+            button_text = f"☑️ {cat}" if is_selected else cat
+
+            row.append(InlineKeyboardButton(button_text, callback_data=f"cat_{idx2}"))
+            if len(row) == 2:
+                keyboard.append(row)
+                row = []
+        if row:
+            keyboard.append(row)
+
+        keyboard.append([InlineKeyboardButton("✅ Завершить выбор", callback_data="cat_done")])
+
+        await query.edit_message_text(
+            f"🏙 Города: {cities_text}\n\n"
+            "📱 <b>Шаг 4/7:</b> Выберите категории контента:\n\n"
+            "Нажимайте подходящие кнопки (можно несколько).\n"
+            "Когда закончите — нажмите «✅ Завершить выбор».",
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
+
+        return REGISTER_BLOGGER_CATEGORIES_SELECT
 
 
 async def register_blogger_experience(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -4334,200 +4088,59 @@ async def edit_categories_start(update: Update, context: ContextTypes.DEFAULT_TY
 
     worker_profile = db.get_worker_profile(user_id)
     profile_dict = dict(worker_profile)
-    current_categories = profile_dict.get("categories") or "—"
+    current_categories_str = profile_dict.get("categories") or ""
 
-    context.user_data["edit_categories"] = []
+    # Парсим текущие категории
+    if current_categories_str:
+        current_categories = [cat.strip() for cat in current_categories_str.split(",")]
+    else:
+        current_categories = []
 
-    # Показываем 7 основных категорий
-    keyboard = []
-    for cat_id, category_data in BLOGGER_TOPICS.items():
-            keyboard.append([InlineKeyboardButton(
-                category_data["name"],
-                callback_data=f"editmaincat_{cat_id}"
-            )])
-    keyboard.append([InlineKeyboardButton("❌ Отмена", callback_data="worker_profile")])
+    context.user_data["edit_categories"] = current_categories.copy()
 
-    await query.edit_message_text(
-        f"📱 <b>Изменение видов контент</b>\n\n"
-        f"Текущие категории:\n<b>{current_categories}</b>\n\n"
-        f"Выберите основную тематику контент:",
-        reply_markup=InlineKeyboardMarkup(keyboard),
-        parse_mode="HTML",
-    )
-    return EDIT_MAIN_CATEGORY
-
-
-async def edit_main_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка выбора основной категории при редактировании"""
-    query = update.callback_query
-    await query.answer()
-
-    cat_id = query.data.replace("editmaincat_", "")
-    category_name = BLOGGER_TOPICS[cat_id]["name"]
-    context.user_data["edit_current_main_category"] = cat_id
-
-    # Получаем подкатегории для выбранной категории
-    subcategories = BLOGGER_TOPICS[cat_id]["subcategories"]
-
-    # Создаем кнопки подкатегорий (2 в ряд) с галочками
+    # Показываем все категории с галочками (2 в ряд)
     keyboard = []
     row = []
-    for idx, subcat in enumerate(subcategories):
-        # Проверяем выбрана ли уже эта подкатегория
-        is_selected = subcat in context.user_data.get("edit_categories", [])
-        button_text = f"☑️ {subcat}" if is_selected else subcat
+    for idx, category in enumerate(BLOGGER_CATEGORIES):
+        is_selected = category in context.user_data["edit_categories"]
+        button_text = f"☑️ {category}" if is_selected else category
 
-        row.append(InlineKeyboardButton(button_text, callback_data=f"editsubcat_{cat_id}:{idx}"))
+        row.append(InlineKeyboardButton(button_text, callback_data=f"editcat_{idx}"))
         if len(row) == 2:
             keyboard.append(row)
             row = []
     if row:
         keyboard.append(row)
 
-    # Добавляем кнопки навигации
-    keyboard.append([InlineKeyboardButton("✅ Завершить выбор категорий", callback_data="editsubcat_done")])
-    keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="editsubcat_back")])
+    keyboard.append([InlineKeyboardButton("✅ Сохранить изменения", callback_data="editcat_done")])
     keyboard.append([InlineKeyboardButton("❌ Отмена", callback_data="worker_profile")])
 
-    emoji = BLOGGER_TOPICS[cat_id]["emoji"]
+    current_text = ", ".join(current_categories) if current_categories else "не выбраны"
 
     await query.edit_message_text(
-        f"{emoji} <b>Категория:</b> {category_name}\n\n"
-        "📱 <b>Выберите подкатегории:</b>\n\n"
-        "Нажимайте подходящие кнопки (можно несколько).\n"
-        "Когда закончите — нажмите «✅ Завершить выбор категорий».",
-        parse_mode="HTML",
+        f"📱 <b>Изменение категорий контента</b>\n\n"
+        f"Текущие категории: <b>{current_text}</b>\n\n"
+        "Выберите категории (можно несколько):",
         reply_markup=InlineKeyboardMarkup(keyboard),
+        parse_mode="HTML",
     )
-    return EDIT_SUBCATEGORY_SELECT
+    return EDIT_CATEGORIES_SELECT
 
 
-async def edit_subcategory_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка выбора подкатегорий при редактировании"""
+async def edit_categories_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка выбора категорий при редактировании"""
     query = update.callback_query
-    await query.answer()
     data = query.data
-    selected = data.replace("editsubcat_", "")
+    selected = data.replace("editcat_", "")
 
     if selected == "done":
-        # Проверяем что выбрана хотя бы одна подкатегория
+        # Проверяем что выбрана хотя бы одна категория
         if not context.user_data.get("edit_categories"):
-            await query.answer("Выберите хотя бы одну подкатегорию!", show_alert=True)
-            return EDIT_SUBCATEGORY_SELECT
+            await query.answer("Выберите хотя бы одну категорию!", show_alert=True)
+            return EDIT_CATEGORIES_SELECT
 
-        # Спрашиваем хочет ли добавить еще категории
-        keyboard = [
-            [InlineKeyboardButton("✅ Да, добавить еще", callback_data="editmore_yes")],
-            [InlineKeyboardButton("💾 Нет, сохранить изменения", callback_data="editmore_no")],
-        ]
+        await query.answer()
 
-        categories_text = ", ".join(context.user_data["edit_categories"])
-
-        await query.edit_message_text(
-            f"✅ <b>Выбранные категории:</b>\n{categories_text}\n\n"
-            "Хотите добавить еще категории из других разделов?",
-            parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup(keyboard),
-        )
-        return EDIT_ASK_MORE_CATEGORIES
-
-    elif selected == "back":
-        # Кнопка "Назад" - возвращаемся к выбору основной категории
-        keyboard = []
-        for cat_id, category_data in BLOGGER_TOPICS.items():
-            keyboard.append([InlineKeyboardButton(
-                category_data["name"],
-                callback_data=f"editmaincat_{cat_id}"
-            )])
-        keyboard.append([InlineKeyboardButton("❌ Отмена", callback_data="worker_profile")])
-
-        await query.edit_message_text(
-            "📱 <b>Выберите основную тематику контент:</b>",
-            parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup(keyboard),
-        )
-        return EDIT_MAIN_CATEGORY
-
-    else:
-        # Парсим cat_id:index из callback_data
-        cat_id, idx_str = selected.split(":")
-        idx = int(idx_str)
-        subcat_name = BLOGGER_TOPICS[cat_id]["subcategories"][idx]
-
-        # Переключаем выбор подкатегории
-        if "edit_categories" not in context.user_data:
-            context.user_data["edit_categories"] = []
-
-        if subcat_name not in context.user_data["edit_categories"]:
-            context.user_data["edit_categories"].append(subcat_name)
-            await query.answer(f"✅ Добавлено: {subcat_name}")
-        else:
-            context.user_data["edit_categories"].remove(subcat_name)
-            await query.answer(f"❌ Убрано: {subcat_name}")
-
-        # Обновляем кнопки с галочками
-        main_category = context.user_data["edit_current_main_category"]
-        subcategories = BLOGGER_TOPICS[cat_id]["subcategories"]
-        category_name = BLOGGER_TOPICS[cat_id]["name"]
-
-        keyboard = []
-        row = []
-        for idx2, subcat in enumerate(subcategories):
-            is_selected = subcat in context.user_data["edit_categories"]
-            button_text = f"☑️ {subcat}" if is_selected else subcat
-
-            row.append(InlineKeyboardButton(button_text, callback_data=f"editsubcat_{cat_id}:{idx2}"))
-            if len(row) == 2:
-                keyboard.append(row)
-                row = []
-        if row:
-            keyboard.append(row)
-
-        keyboard.append([InlineKeyboardButton("✅ Завершить выбор категорий", callback_data="editsubcat_done")])
-        keyboard.append([InlineKeyboardButton("❌ Отмена", callback_data="worker_profile")])
-
-        emoji = BLOGGER_TOPICS[cat_id]["emoji"]
-
-        await query.edit_message_text(
-            f"{emoji} <b>Категория:</b> {category_name}\n\n"
-            "📱 <b>Выберите подкатегории:</b>\n\n"
-            "Нажимайте подходящие кнопки (можно несколько).\n"
-            "Когда закончите — нажмите «✅ Завершить выбор категорий».",
-            parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup(keyboard),
-        )
-
-        return EDIT_SUBCATEGORY_SELECT
-
-
-async def edit_ask_more_categories(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Спрашиваем хочет ли добавить еще категории при редактировании"""
-    query = update.callback_query
-    await query.answer()
-
-    choice = query.data.replace("editmore_", "")
-
-    if choice == "yes":
-        # Возвращаемся к выбору основной категории
-        keyboard = []
-        for cat_id, category_data in BLOGGER_TOPICS.items():
-            keyboard.append([InlineKeyboardButton(
-                category_data["name"],
-                callback_data=f"editmaincat_{cat_id}"
-            )])
-        keyboard.append([InlineKeyboardButton("❌ Отмена", callback_data="worker_profile")])
-
-        categories_text = ", ".join(context.user_data["edit_categories"])
-
-        await query.edit_message_text(
-            f"✅ <b>Уже выбрано:</b> {categories_text}\n\n"
-            "📱 <b>Выберите основную тематику для добавления:</b>",
-            parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup(keyboard),
-        )
-        return EDIT_MAIN_CATEGORY
-
-    else:
         # Сохраняем изменения
         telegram_id = query.from_user.id
         user = db.get_user(telegram_id)
@@ -4537,16 +4150,59 @@ async def edit_ask_more_categories(update: Update, context: ContextTypes.DEFAULT
         new_categories = ", ".join(context.user_data["edit_categories"])
         db.update_worker_field(user_id, "categories", new_categories)
 
-        context.user_data.clear()
+        await query.edit_message_text(
+            f"✅ Категории успешно обновлены!\n\n"
+            f"Новые категории: <b>{new_categories}</b>",
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("⬅️ Назад к профилю", callback_data="worker_profile")
+            ]])
+        )
+        return ConversationHandler.END
 
-        keyboard = [[InlineKeyboardButton("👤 Вернуться к профилю", callback_data="worker_profile")]]
+    else:
+        # Переключаем выбор категории
+        idx = int(selected)
+        category = BLOGGER_CATEGORIES[idx]
+
+        if "edit_categories" not in context.user_data:
+            context.user_data["edit_categories"] = []
+
+        if category not in context.user_data["edit_categories"]:
+            context.user_data["edit_categories"].append(category)
+            await query.answer(f"✅ Добавлено")
+        else:
+            context.user_data["edit_categories"].remove(category)
+            await query.answer(f"❌ Убрано")
+
+        # Обновляем кнопки с галочками
+        keyboard = []
+        row = []
+        for idx2, cat in enumerate(BLOGGER_CATEGORIES):
+            is_selected = cat in context.user_data["edit_categories"]
+            button_text = f"☑️ {cat}" if is_selected else cat
+
+            row.append(InlineKeyboardButton(button_text, callback_data=f"editcat_{idx2}"))
+            if len(row) == 2:
+                keyboard.append(row)
+                row = []
+        if row:
+            keyboard.append(row)
+
+        keyboard.append([InlineKeyboardButton("✅ Сохранить изменения", callback_data="editcat_done")])
+        keyboard.append([InlineKeyboardButton("❌ Отмена", callback_data="worker_profile")])
+
+        current_text = ", ".join(context.user_data["edit_categories"]) if context.user_data["edit_categories"] else "не выбраны"
 
         await query.edit_message_text(
-            f"✅ Виды контент успешно изменены на:\n<b>{new_categories}</b>",
+            f"📱 <b>Изменение категорий контента</b>\n\n"
+            f"Выбрано: <b>{current_text}</b>\n\n"
+            "Выберите категории (можно несколько):",
             reply_markup=InlineKeyboardMarkup(keyboard),
             parse_mode="HTML",
         )
-        return ConversationHandler.END
+
+        return EDIT_CATEGORIES_SELECT
 
 
 async def edit_experience_start(update: Update, context: ContextTypes.DEFAULT_TYPE):

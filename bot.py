@@ -184,23 +184,11 @@ def main():
                     pattern="^(add_more_cities|finish_cities)$",
                 )
             ],
-            # Новые состояния для выбора категорий (7 основных категорий)
-            handlers.REGISTER_BLOGGER_MAIN_CATEGORY: [
+            # Упрощенный выбор категорий (12 категорий, без подкатегорий)
+            handlers.REGISTER_BLOGGER_CATEGORIES_SELECT: [
                 CallbackQueryHandler(
-                    handlers.register_blogger_main_category,
-                    pattern="^maincat_",
-                )
-            ],
-            handlers.REGISTER_BLOGGER_SUBCATEGORY_SELECT: [
-                CallbackQueryHandler(
-                    handlers.register_blogger_subcategory_select,
-                    pattern="^subcat_",
-                )
-            ],
-            handlers.REGISTER_BLOGGER_ASK_MORE_CATEGORIES: [
-                CallbackQueryHandler(
-                    handlers.register_blogger_ask_more_categories,
-                    pattern="^more_",
+                    handlers.register_blogger_categories_select,
+                    pattern="^cat_",
                 )
             ],
             # ОБНОВЛЕНО: Теперь опыт выбирается кнопками
@@ -355,14 +343,8 @@ def main():
                 CallbackQueryHandler(handlers.edit_city_select, pattern="^editcity_"),
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.edit_city_save),
             ],
-            handlers.EDIT_MAIN_CATEGORY: [
-                CallbackQueryHandler(handlers.edit_main_category, pattern="^editmaincat_"),
-            ],
-            handlers.EDIT_SUBCATEGORY_SELECT: [
-                CallbackQueryHandler(handlers.edit_subcategory_select, pattern="^editsubcat_"),
-            ],
-            handlers.EDIT_ASK_MORE_CATEGORIES: [
-                CallbackQueryHandler(handlers.edit_ask_more_categories, pattern="^editmore_"),
+            handlers.EDIT_CATEGORIES_SELECT: [
+                CallbackQueryHandler(handlers.edit_categories_select, pattern="^editcat_"),
             ],
             handlers.EDIT_EXPERIENCE: [
                 CallbackQueryHandler(handlers.edit_experience_save, pattern="^editexp_"),
