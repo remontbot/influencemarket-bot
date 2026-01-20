@@ -374,12 +374,12 @@ def is_profile_complete(user_id: int, role: str) -> bool:
         categories = profile_dict.get("categories", "").strip()
         description = profile_dict.get("description", "").strip()
 
-        # Проверяем социальные сети
-        instagram = profile_dict.get("instagram_link", "").strip()
-        youtube = profile_dict.get("youtube_link", "").strip()
-        tiktok = profile_dict.get("tiktok_link", "").strip()
-        telegram = profile_dict.get("telegram_link", "").strip()
-        threads = profile_dict.get("threads_link", "").strip()
+        # Проверяем социальные сети (обрабатываем None)
+        instagram = (profile_dict.get("instagram_link") or "").strip()
+        youtube = (profile_dict.get("youtube_link") or "").strip()
+        tiktok = (profile_dict.get("tiktok_link") or "").strip()
+        telegram = (profile_dict.get("telegram_link") or "").strip()
+        threads = (profile_dict.get("threads_link") or "").strip()
 
         # Проверяем обязательные поля
         has_location = bool(city or regions)
