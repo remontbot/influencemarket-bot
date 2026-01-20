@@ -1132,7 +1132,7 @@ def get_reviews_for_user(user_id, role):
             LEFT JOIN bloggers w ON r.from_user_id = w.user_id AND r.role_from = 'blogger'
             LEFT JOIN advertisers c ON r.from_user_id = c.user_id AND r.role_from = 'advertiser'
             WHERE r.to_user_id = ? AND r.role_to = ?
-            CAMPAIGN BY r.created_at DESC
+            ORDER BY r.created_at DESC
         """, (user_id, role))
 
         return cursor.fetchall()
@@ -1234,7 +1234,7 @@ def get_suspicious_activity_report(days=7, min_orders=3):
             AND b.blogger_id IS NOT NULL
             GROUP BY o.advertiser_user_id, b.blogger_id
             HAVING COUNT(*) >= ?
-            CAMPAIGN BY campaign_count DESC
+            ORDER BY campaign_count DESC
         """, (cutoff_date, min_orders))
 
         repeated_orders = cursor.fetchall()
@@ -1254,7 +1254,7 @@ def get_suspicious_activity_report(days=7, min_orders=3):
             AND o.completed_at >= ?
             AND o.accepted_at IS NOT NULL
             AND (julianday(o.completed_at) - julianday(o.accepted_at)) * 24 < 1
-            CAMPAIGN BY hours_diff ASC
+            ORDER BY hours_diff ASC
         """, (cutoff_date,))
 
         quick_completions = cursor.fetchall()
@@ -1272,7 +1272,7 @@ def get_suspicious_activity_report(days=7, min_orders=3):
             GROUP BY r.to_user_id, r.role_to
             HAVING COUNT(*) >= 3
             AND (CAST(SUM(CASE WHEN r.rating = 5 THEN 1 ELSE 0 END) AS REAL) / COUNT(*) * 100) = 100
-            CAMPAIGN BY total_reviews DESC
+            ORDER BY total_reviews DESC
         """, (cutoff_date,))
 
         perfect_ratings = cursor.fetchall()
@@ -1446,7 +1446,7 @@ def get_completed_work_photos(campaign_id):
         cursor.execute("""
             SELECT * FROM completed_work_photos
             WHERE campaign_id = ?
-            CAMPAIGN BY created_at DESC
+            ORDER BY created_at DESC
         """, (campaign_id,))
         return cursor.fetchall()
 
@@ -1493,7 +1493,7 @@ def get_worker_verified_photos(blogger_id, limit=20):
             JOIN campaigns o ON cwp.campaign_id = o.id
             LEFT JOIN reviews r ON o.id = r.campaign_id AND r.role_to = 'blogger'
             WHERE cwp.blogger_id = ? AND cwp.verified = TRUE
-            CAMPAIGN BY cwp.created_at DESC
+            ORDER BY cwp.created_at DESC
             LIMIT ?
         """, (blogger_id, limit))
         return cursor.fetchall()
@@ -1522,7 +1522,7 @@ def get_unverified_photos_for_client(user_id):
             JOIN advertisers c ON o.advertiser_id = c.id
             JOIN bloggers w ON cwp.blogger_id = w.id
             WHERE c.user_id = ? AND cwp.verified = FALSE
-            CAMPAIGN BY cwp.created_at DESC
+            ORDER BY cwp.created_at DESC
         """, (user_id,))
         return cursor.fetchall()
 
@@ -1574,7 +1574,7 @@ def get_all_worker_completed_photos(blogger_id):
             FROM completed_work_photos cwp
             JOIN campaigns o ON cwp.campaign_id = o.id
             WHERE cwp.blogger_id = ?
-            CAMPAIGN BY cwp.created_at DESC
+            ORDER BY cwp.created_at DESC
         """, (blogger_id,))
         return cursor.fetchall()
 
@@ -1926,7 +1926,7 @@ def get_all_workers(city=None, category=None):
             params.append(category)
             params.append(f"%{category}%")
 
-        query += " CAMPAIGN BY w.rating DESC, w.rating_count DESC"
+        query += " ORDER BY w.rating DESC, w.rating_count DESC"
 
         logger.info(f"🔍 Поиск мастеров: город={city}, категория={category}")
         cursor.execute(query, params)
@@ -1994,7 +1994,7 @@ def get_worker_categories(blogger_id):
         cursor.execute("""
             SELECT category FROM blogger_categories
             WHERE blogger_id = ?
-            CAMPAIGN BY category
+            ORDER BY category
         """, (blogger_id,))
 
         return [row[0] for row in cursor.fetchall()]
@@ -2061,7 +2061,7 @@ def get_order_categories(campaign_id):
         cursor.execute("""
             SELECT category FROM campaign_categories
             WHERE campaign_id = ?
-            CAMPAIGN BY category
+            ORDER BY category
         """, (campaign_id,))
 
         return [row[0] for row in cursor.fetchall()]
@@ -3064,7 +3064,7 @@ def get_user_chats(user_id):
             FROM chats c
             JOIN campaigns o ON c.campaign_id = o.id
             WHERE c.advertiser_user_id = ? OR c.blogger_user_id = ?
-            CAMPAIGN BY c.last_message_at DESC
+            ORDER BY c.last_message_at DESC
         """, (user_id, user_id))
         return cursor.fetchall()
 
@@ -3100,7 +3100,7 @@ def get_chat_messages(chat_id, limit=50):
         cursor.execute("""
             SELECT * FROM messages
             WHERE chat_id = ?
-            CAMPAIGN BY created_at DESC
+            ORDER BY created_at DESC
             LIMIT ?
         """, (chat_id, limit))
         return cursor.fetchall()
@@ -3280,7 +3280,7 @@ def get_user_transactions(user_id):
         cursor.execute("""
             SELECT * FROM transactions
             WHERE user_id = ?
-            CAMPAIGN BY created_at DESC
+            ORDER BY created_at DESC
         """, (user_id,))
         return cursor.fetchall()
 
@@ -3600,7 +3600,7 @@ def get_banned_users():
             SELECT telegram_id, ban_reason, banned_at, banned_by
             FROM users
             WHERE is_banned = TRUE
-            CAMPAIGN BY banned_at DESC
+            ORDER BY banned_at DESC
         """)
         return cursor.fetchall()
 
@@ -3621,7 +3621,7 @@ def search_users(query, limit=20):
                 WHERE u.telegram_id::text LIKE %s
                    OR LOWER(u.full_name) LIKE LOWER(%s)
                    OR LOWER(u.username) LIKE LOWER(%s)
-                CAMPAIGN BY u.created_at DESC
+                ORDER BY u.created_at DESC
                 LIMIT %s
             """, (f'%{query}%', f'%{query}%', f'%{query}%', limit))
         else:
@@ -3635,7 +3635,7 @@ def search_users(query, limit=20):
                 WHERE CAST(u.telegram_id AS TEXT) LIKE ?
                    OR LOWER(u.full_name) LIKE LOWER(?)
                    OR LOWER(u.username) LIKE LOWER(?)
-                CAMPAIGN BY u.created_at DESC
+                ORDER BY u.created_at DESC
                 LIMIT ?
             """, (f'%{query}%', f'%{query}%', f'%{query}%', limit))
         return cursor.fetchall()
@@ -3657,7 +3657,7 @@ def get_users_filtered(filter_type='all', page=1, per_page=20):
                 LEFT JOIN bloggers w ON u.id = w.user_id
                 LEFT JOIN advertisers c ON u.id = c.user_id
                 WHERE u.is_banned = TRUE
-                CAMPAIGN BY u.created_at DESC
+                ORDER BY u.created_at DESC
                 LIMIT ? OFFSET ?
             """, (per_page, offset))
         elif filter_type == 'bloggers':
@@ -3667,7 +3667,7 @@ def get_users_filtered(filter_type='all', page=1, per_page=20):
                 INNER JOIN bloggers w ON u.id = w.user_id
                 LEFT JOIN advertisers c ON u.id = c.user_id
                 WHERE u.is_banned = FALSE
-                CAMPAIGN BY u.created_at DESC
+                ORDER BY u.created_at DESC
                 LIMIT ? OFFSET ?
             """, (per_page, offset))
         elif filter_type == 'advertisers':
@@ -3677,7 +3677,7 @@ def get_users_filtered(filter_type='all', page=1, per_page=20):
                 LEFT JOIN bloggers w ON u.id = w.user_id
                 INNER JOIN advertisers c ON u.id = c.user_id
                 WHERE u.is_banned = FALSE
-                CAMPAIGN BY u.created_at DESC
+                ORDER BY u.created_at DESC
                 LIMIT ? OFFSET ?
             """, (per_page, offset))
         elif filter_type == 'dual':
@@ -3687,7 +3687,7 @@ def get_users_filtered(filter_type='all', page=1, per_page=20):
                 INNER JOIN bloggers w ON u.id = w.user_id
                 INNER JOIN advertisers c ON u.id = c.user_id
                 WHERE u.is_banned = FALSE
-                CAMPAIGN BY u.created_at DESC
+                ORDER BY u.created_at DESC
                 LIMIT ? OFFSET ?
             """, (per_page, offset))
         else:  # 'all'
@@ -3696,7 +3696,7 @@ def get_users_filtered(filter_type='all', page=1, per_page=20):
                 FROM users u
                 LEFT JOIN bloggers w ON u.id = w.user_id
                 LEFT JOIN advertisers c ON u.id = c.user_id
-                CAMPAIGN BY u.created_at DESC
+                ORDER BY u.created_at DESC
                 LIMIT ? OFFSET ?
             """, (per_page, offset))
 
@@ -4045,7 +4045,7 @@ def get_orders_by_category(category, page=1, per_page=10):
             JOIN advertisers c ON o.advertiser_id = c.id
             WHERE o.status = 'open'
             AND oc.category = ?
-            CAMPAIGN BY o.created_at DESC
+            ORDER BY o.created_at DESC
             LIMIT ? OFFSET ?
         """, (category, per_page, offset))
 
@@ -4110,7 +4110,7 @@ def get_orders_by_categories(categories_list, per_page=30, blogger_id=None):
             WHERE o.status = 'open'
             AND oc.category IN ({placeholders})
             {city_filter}
-            CAMPAIGN BY o.created_at DESC
+            ORDER BY o.created_at DESC
             LIMIT ?
         """
 
@@ -4154,7 +4154,7 @@ def get_client_orders(advertiser_id, page=1, per_page=10):
         cursor.execute("""
             SELECT * FROM campaigns
             WHERE advertiser_id = ?
-            CAMPAIGN BY created_at DESC
+            ORDER BY created_at DESC
             LIMIT ? OFFSET ?
         """, (advertiser_id, per_page, offset))
 
@@ -4435,7 +4435,7 @@ def get_bids_for_order(campaign_id):
             JOIN users u ON w.user_id = u.id
             WHERE b.campaign_id = ?
             AND b.status = 'active'
-            CAMPAIGN BY b.created_at ASC
+            ORDER BY b.created_at ASC
         """, (campaign_id,))
 
         return cursor.fetchall()
@@ -4561,7 +4561,7 @@ def get_bids_for_worker(blogger_id):
             JOIN advertisers c ON o.advertiser_id = c.id
             JOIN users u ON c.user_id = u.id
             WHERE b.blogger_id = ?
-            CAMPAIGN BY b.created_at DESC
+            ORDER BY b.created_at DESC
         """, (blogger_id,))
 
         return cursor.fetchall()
@@ -5628,7 +5628,7 @@ def get_active_ad(placement, user_id=None, user_categories=None):
             """
             params.extend([user_id, today_start])
 
-        query += " CAMPAIGN BY a.id DESC LIMIT 1"
+        query += " ORDER BY a.id DESC LIMIT 1"
 
         cursor.execute(query, params)
         result = cursor.fetchone()
@@ -5789,7 +5789,7 @@ def get_all_ads(limit=None, offset=0):
     """Получает все рекламы (активные и неактивные) для админ-панели"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
-        query = "SELECT * FROM ads CAMPAIGN BY created_at DESC"
+        query = "SELECT * FROM ads ORDER BY created_at DESC"
         if limit:
             query += f" LIMIT {limit} OFFSET {offset}"
         cursor.execute(query)
@@ -5907,7 +5907,7 @@ def get_all_orders_for_export():
     """Получает все заказы для экспорта"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
-        cursor.execute("SELECT * FROM campaigns CAMPAIGN BY created_at DESC")
+        cursor.execute("SELECT * FROM campaigns ORDER BY created_at DESC")
         return cursor.fetchall()
 
 
@@ -5915,7 +5915,7 @@ def get_all_bids_for_export():
     """Получает все отклики для экспорта"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
-        cursor.execute("SELECT * FROM offers CAMPAIGN BY created_at DESC")
+        cursor.execute("SELECT * FROM offers ORDER BY created_at DESC")
         return cursor.fetchall()
 
 
@@ -5923,7 +5923,7 @@ def get_all_reviews_for_export():
     """Получает все отзывы для экспорта"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
-        cursor.execute("SELECT * FROM reviews CAMPAIGN BY created_at DESC")
+        cursor.execute("SELECT * FROM reviews ORDER BY created_at DESC")
         return cursor.fetchall()
 
 
@@ -5941,7 +5941,7 @@ def get_category_reports():
             SELECT category, COUNT(*) as count
             FROM campaigns
             GROUP BY category
-            CAMPAIGN BY count DESC
+            ORDER BY count DESC
             LIMIT 10
         """)
         reports['top_categories'] = cursor.fetchall()
@@ -5952,7 +5952,7 @@ def get_category_reports():
             FROM campaigns
             WHERE city IS NOT NULL AND city != ''
             GROUP BY city
-            CAMPAIGN BY count DESC
+            ORDER BY count DESC
             LIMIT 10
         """)
         reports['top_cities_orders'] = cursor.fetchall()
@@ -5963,7 +5963,7 @@ def get_category_reports():
             FROM bloggers
             WHERE categories IS NOT NULL AND categories != ''
             GROUP BY categories
-            CAMPAIGN BY count DESC
+            ORDER BY count DESC
             LIMIT 10
         """)
         reports['top_specializations'] = cursor.fetchall()
@@ -5978,7 +5978,7 @@ def get_category_reports():
                 COUNT(*) as total_count
             FROM campaigns
             GROUP BY category
-            CAMPAIGN BY total_count DESC
+            ORDER BY total_count DESC
             LIMIT 15
         """)
         reports['category_statuses'] = cursor.fetchall()
@@ -5991,7 +5991,7 @@ def get_category_reports():
             FROM campaigns
             WHERE city IS NOT NULL AND city != ''
             GROUP BY city
-            CAMPAIGN BY campaign_count DESC
+            ORDER BY campaign_count DESC
             LIMIT 10
         """)
         city_orders = {dict(row)['city']: dict(row)['campaign_count'] for row in cursor.fetchall()}
@@ -6003,7 +6003,7 @@ def get_category_reports():
                 COUNT(DISTINCT wc.blogger_id) as blogger_count
             FROM blogger_cities wc
             GROUP BY wc.city
-            CAMPAIGN BY blogger_count DESC
+            ORDER BY blogger_count DESC
             LIMIT 15
         """)
         city_workers = {dict(row)['city']: dict(row)['blogger_count'] for row in cursor.fetchall()}
@@ -6036,7 +6036,7 @@ def get_category_reports():
               AND b.currency = 'BYN'
             GROUP BY o.category
             HAVING COUNT(b.id) >= 3
-            CAMPAIGN BY avg_price DESC
+            ORDER BY avg_price DESC
             LIMIT 10
         """)
         reports['avg_prices_by_category'] = cursor.fetchall()
@@ -6081,7 +6081,7 @@ def get_worker_cities(blogger_id):
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         cursor.execute("""
-            SELECT city FROM blogger_cities WHERE blogger_id = ? CAMPAIGN BY id
+            SELECT city FROM blogger_cities WHERE blogger_id = ? ORDER BY id
         """, (blogger_id,))
         rows = cursor.fetchall()
 
@@ -6236,7 +6236,7 @@ def has_active_notification(user_id, notification_type):
         cursor.execute("""
             SELECT id FROM sent_notifications
             WHERE user_id = ? AND notification_type = ? AND cleared_at IS NULL
-            CAMPAIGN BY sent_at DESC
+            ORDER BY sent_at DESC
             LIMIT 1
         """, (user_id, notification_type))
 
@@ -6306,7 +6306,7 @@ def get_active_notification_message_id(user_id, notification_type):
         cursor.execute("""
             SELECT message_id FROM sent_notifications
             WHERE user_id = ? AND notification_type = ? AND cleared_at IS NULL
-            CAMPAIGN BY sent_at DESC
+            ORDER BY sent_at DESC
             LIMIT 1
         """, (user_id, notification_type))
 
@@ -6409,7 +6409,7 @@ def get_all_suggestions(status=None):
                     FROM suggestions s
                     JOIN users u ON s.user_id = u.id
                     WHERE s.status = %s
-                    CAMPAIGN BY s.created_at DESC
+                    ORDER BY s.created_at DESC
                 """, (status,))
             else:
                 cursor.execute("""
@@ -6417,14 +6417,14 @@ def get_all_suggestions(status=None):
                     FROM suggestions s
                     JOIN users u ON s.user_id = u.id
                     WHERE s.status = ?
-                    CAMPAIGN BY s.created_at DESC
+                    ORDER BY s.created_at DESC
                 """, (status,))
         else:
             cursor.execute("""
                 SELECT s.*, u.telegram_id
                 FROM suggestions s
                 JOIN users u ON s.user_id = u.id
-                CAMPAIGN BY s.created_at DESC
+                ORDER BY s.created_at DESC
             """)
         
         return cursor.fetchall()
