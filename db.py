@@ -6607,46 +6607,102 @@ def migrate_add_blogger_platform_fields():
     Добавляет поля для платформ блогеров и верификации.
     Новые поля:
     - platform_instagram, platform_tiktok, platform_youtube
-    - instagram_link, tiktok_link, youtube_link
+    - instagram_link, tiktok_link, youtube_link, telegram_link, threads_link
     - format_stories, format_reels, format_posts, format_integration
     - price_stories, price_reels, price_posts
     - verified_ownership, verification_code, trust_score
     """
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
-        
+
         try:
-            # Платформы
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS platform_instagram BOOLEAN DEFAULT FALSE")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS platform_tiktok BOOLEAN DEFAULT FALSE")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS platform_youtube BOOLEAN DEFAULT FALSE")
-            
-            # Ссылки на профили
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS instagram_link VARCHAR(200)")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS tiktok_link VARCHAR(200)")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS youtube_link VARCHAR(200)")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS telegram_link VARCHAR(200)")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS threads_link VARCHAR(200)")
-            
-            # Форматы контента
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS format_stories BOOLEAN DEFAULT FALSE")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS format_reels BOOLEAN DEFAULT FALSE")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS format_posts BOOLEAN DEFAULT FALSE")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS format_integration BOOLEAN DEFAULT FALSE")
-            
-            # Прайс
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS price_stories INTEGER")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS price_reels INTEGER")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS price_posts INTEGER")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS currency VARCHAR(3) DEFAULT 'BYN'")
-            
-            # Верификация и Trust Score
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS verified_ownership BOOLEAN DEFAULT FALSE")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS verification_code VARCHAR(20)")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS trust_score INTEGER DEFAULT 0")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS content_language VARCHAR(50) DEFAULT 'Русский'")
-            
-            conn.commit()
+            if USE_POSTGRES:
+                logger.info("📝 Добавление полей социальных сетей для PostgreSQL...")
+
+                # Список всех полей для добавления
+                fields = [
+                    ("platform_instagram", "BOOLEAN DEFAULT FALSE"),
+                    ("platform_tiktok", "BOOLEAN DEFAULT FALSE"),
+                    ("platform_youtube", "BOOLEAN DEFAULT FALSE"),
+                    ("instagram_link", "VARCHAR(200)"),
+                    ("tiktok_link", "VARCHAR(200)"),
+                    ("youtube_link", "VARCHAR(200)"),
+                    ("telegram_link", "VARCHAR(200)"),
+                    ("threads_link", "VARCHAR(200)"),
+                    ("format_stories", "BOOLEAN DEFAULT FALSE"),
+                    ("format_reels", "BOOLEAN DEFAULT FALSE"),
+                    ("format_posts", "BOOLEAN DEFAULT FALSE"),
+                    ("format_integration", "BOOLEAN DEFAULT FALSE"),
+                    ("price_stories", "INTEGER"),
+                    ("price_reels", "INTEGER"),
+                    ("price_posts", "INTEGER"),
+                    ("currency", "VARCHAR(3) DEFAULT 'BYN'"),
+                    ("verified_ownership", "BOOLEAN DEFAULT FALSE"),
+                    ("verification_code", "VARCHAR(20)"),
+                    ("trust_score", "INTEGER DEFAULT 0"),
+                    ("content_language", "VARCHAR(50) DEFAULT 'Русский'"),
+                ]
+
+                for field_name, field_type in fields:
+                    cursor.execute(f"""
+                        DO $$
+                        BEGIN
+                            IF NOT EXISTS (
+                                SELECT 1 FROM information_schema.columns
+                                WHERE table_name = 'bloggers' AND column_name = '{field_name}'
+                            ) THEN
+                                ALTER TABLE bloggers ADD COLUMN {field_name} {field_type};
+                            END IF;
+                        END $$;
+                    """)
+
+                conn.commit()
+                logger.info("✅ Поля социальных сетей успешно добавлены!")
+
+            else:
+                # Для SQLite проверяем существование колонок
+                cursor.execute("PRAGMA table_info(bloggers)")
+                existing_columns = [column[1] for column in cursor.fetchall()]
+
+                logger.info(f"📝 Проверка полей социальных сетей для SQLite... Существующие колонки: {len(existing_columns)}")
+
+                # Список всех полей для добавления (SQLite синтаксис)
+                fields = [
+                    ("platform_instagram", "INTEGER DEFAULT 0"),
+                    ("platform_tiktok", "INTEGER DEFAULT 0"),
+                    ("platform_youtube", "INTEGER DEFAULT 0"),
+                    ("instagram_link", "TEXT"),
+                    ("tiktok_link", "TEXT"),
+                    ("youtube_link", "TEXT"),
+                    ("telegram_link", "TEXT"),
+                    ("threads_link", "TEXT"),
+                    ("format_stories", "INTEGER DEFAULT 0"),
+                    ("format_reels", "INTEGER DEFAULT 0"),
+                    ("format_posts", "INTEGER DEFAULT 0"),
+                    ("format_integration", "INTEGER DEFAULT 0"),
+                    ("price_stories", "INTEGER"),
+                    ("price_reels", "INTEGER"),
+                    ("price_posts", "INTEGER"),
+                    ("currency", "TEXT DEFAULT 'BYN'"),
+                    ("verified_ownership", "INTEGER DEFAULT 0"),
+                    ("verification_code", "TEXT"),
+                    ("trust_score", "INTEGER DEFAULT 0"),
+                    ("content_language", "TEXT DEFAULT 'Русский'"),
+                ]
+
+                added_count = 0
+                for field_name, field_type in fields:
+                    if field_name not in existing_columns:
+                        logger.info(f"  📝 Добавление поля {field_name}...")
+                        cursor.execute(f"ALTER TABLE bloggers ADD COLUMN {field_name} {field_type}")
+                        added_count += 1
+
+                conn.commit()
+                logger.info(f"✅ Добавлено {added_count} новых полей для социальных сетей!")
+
+        except Exception as e:
+            logger.error(f"⚠️ Error in migrate_add_blogger_platform_fields: {e}")
+            conn.rollback()
             logger.info("✅ Migration completed: blogger platform fields added!")
             
         except Exception as e:

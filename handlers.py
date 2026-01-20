@@ -3682,7 +3682,6 @@ async def show_edit_profile_menu(update: Update, context: ContextTypes.DEFAULT_T
         [InlineKeyboardButton("📱 Изменить виды контент", callback_data="edit_categories")],
         [InlineKeyboardButton("🌐 Социальные сети", callback_data="edit_social_media")],
         [InlineKeyboardButton("📝 Изменить описание", callback_data="edit_description")],
-        [InlineKeyboardButton("🗑 Управление фото контент", callback_data="manage_portfolio_photos")],
         [InlineKeyboardButton("⬅️ Назад к профилю", callback_data="worker_profile")],
     ]
 
