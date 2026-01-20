@@ -92,7 +92,7 @@ BLOGGER_CATEGORIES = [
     "🍕 Еда и рестораны",
     "✈️ Путешествия",
     "📱 Технологии и гаджеты",
-    "📚 Образование и инфо",
+    "📚 Образование",
     "💼 Бизнес и финансы",
     "🎬 Развлечения и медиа",
     "👨‍👩‍👧 Семья и дети",
@@ -357,6 +357,7 @@ def is_profile_complete(user_id: int, role: str) -> bool:
     - Город (city или regions)
     - Тематика (categories)
     - Описание (description)
+    - Хотя бы одна социальная сеть (Instagram, YouTube, TikTok, Telegram, Threads)
 
     Для рекламодателя обязательны:
     - Город (city)
@@ -373,12 +374,20 @@ def is_profile_complete(user_id: int, role: str) -> bool:
         categories = profile_dict.get("categories", "").strip()
         description = profile_dict.get("description", "").strip()
 
+        # Проверяем социальные сети
+        instagram = profile_dict.get("instagram_link", "").strip()
+        youtube = profile_dict.get("youtube_link", "").strip()
+        tiktok = profile_dict.get("tiktok_link", "").strip()
+        telegram = profile_dict.get("telegram_link", "").strip()
+        threads = profile_dict.get("threads_link", "").strip()
+
         # Проверяем обязательные поля
         has_location = bool(city or regions)
         has_categories = bool(categories)
         has_description = bool(description)
+        has_social_media = bool(instagram or youtube or tiktok or telegram or threads)
 
-        return has_location and has_categories and has_description
+        return has_location and has_categories and has_description and has_social_media
 
     elif role == "advertiser":
         profile = db.get_client_profile(user_id)
@@ -1862,7 +1871,8 @@ async def blogger_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE
             "Для просмотра доступных кампаний необходимо заполнить профиль:\n"
             "• Город\n"
             "• Тематика контента\n"
-            "• Описание\n\n"
+            "• Описание\n"
+            "• Хотя бы одна социальная сеть\n\n"
             "Перейдите в профиль и заполните обязательные поля.",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([[
@@ -2558,7 +2568,7 @@ async def show_blogger_profile(update: Update, context: ContextTypes.DEFAULT_TYP
             status_banner = "🚫 <b>Ваш профиль заблокирован</b>\n\n"
         elif not profile_complete:
             status_banner = "⚠️ <b>Профиль недоступен для продвижения</b>\n" \
-                           "Заполните обязательные поля, чтобы получать предложения от рекламодателей.\n\n"
+                           "Заполните обязательные поля: Город, Тематика, Описание, Социальные сети.\n\n"
         else:
             status_banner = "✅ <b>Ваш профиль активен</b>\n\n"
 
