@@ -1766,7 +1766,12 @@ def update_worker_field(user_id, field_name, new_value):
         "experience": "experience",
         "description": "description",
         "portfolio_photos": "portfolio_photos",
-        "profile_photo": "profile_photo"  # Фото профиля мастера
+        "profile_photo": "profile_photo",  # Фото профиля мастера
+        "instagram_link": "instagram_link",
+        "youtube_link": "youtube_link",
+        "tiktok_link": "tiktok_link",
+        "telegram_link": "telegram_link",
+        "threads_link": "threads_link"
     }
 
     if field_name not in allowed_fields:
