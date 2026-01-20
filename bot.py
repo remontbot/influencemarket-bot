@@ -157,19 +157,19 @@ def main():
             handlers.REGISTER_BLOGGER_REGION_SELECT: [
                 CallbackQueryHandler(
                     handlers.register_blogger_region_select,
-                    pattern="^bloggerregion_",
+                    pattern="^masterregion_",
                 )
             ],
             handlers.REGISTER_BLOGGER_CITY: [
                 CallbackQueryHandler(
                     handlers.register_blogger_city_select,
-                    pattern="^bloggercity_",
+                    pattern="^mastercity_",
                 )
             ],
             handlers.REGISTER_BLOGGER_CITY_SELECT: [
                 CallbackQueryHandler(
                     handlers.register_blogger_city_select,
-                    pattern="^bloggercity_",
+                    pattern="^mastercity_",
                 )
             ],
             handlers.REGISTER_BLOGGER_CITY_OTHER: [
