@@ -877,7 +877,7 @@ async def register_blogger_cities_confirm(update: Update, context: ContextTypes.
         cities_text = ", ".join(cities)
 
         keyboard = []
-        for cat_id, category_data in WORK_CATEGORIES.items():
+        for cat_id, category_data in BLOGGER_TOPICS.items():
             keyboard.append([InlineKeyboardButton(
                 category_data["name"],
                 callback_data=f"maincat_{cat_id}"
@@ -898,11 +898,11 @@ async def register_blogger_main_category(update: Update, context: ContextTypes.D
     await query.answer()
 
     cat_id = query.data.replace("maincat_", "")
-    category_name = WORK_CATEGORIES[cat_id]["name"]
+    category_name = BLOGGER_TOPICS[cat_id]["name"]
     context.user_data["current_main_category"] = cat_id
 
     # Получаем подкатегории для выбранной категории
-    subcategories = WORK_CATEGORIES[cat_id]["subcategories"]
+    subcategories = BLOGGER_TOPICS[cat_id]["subcategories"]
 
     # Создаем кнопки подкатегорий (2 в ряд) с галочками
     keyboard = []
@@ -924,7 +924,7 @@ async def register_blogger_main_category(update: Update, context: ContextTypes.D
     keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="subcat_back")])
 
     city = context.user_data.get("city", "")
-    emoji = WORK_CATEGORIES[cat_id]["emoji"]
+    emoji = BLOGGER_TOPICS[cat_id]["emoji"]
 
     await query.edit_message_text(
         f"🏙 Город: {city}\n"
@@ -971,7 +971,7 @@ async def register_blogger_subcategory_select(update: Update, context: ContextTy
         # Кнопка "Назад" - возвращаемся к выбору основной категории
         keyboard = []
         city = context.user_data.get("city", "")
-        for cat_id, category_data in WORK_CATEGORIES.items():
+        for cat_id, category_data in BLOGGER_TOPICS.items():
             keyboard.append([InlineKeyboardButton(
                 category_data["name"],
                 callback_data=f"maincat_{cat_id}"
@@ -989,7 +989,7 @@ async def register_blogger_subcategory_select(update: Update, context: ContextTy
         # Парсим cat_id:index из callback_data
         cat_id, idx_str = selected.split(":")
         idx = int(idx_str)
-        subcat_name = WORK_CATEGORIES[cat_id]["subcategories"][idx]
+        subcat_name = BLOGGER_TOPICS[cat_id]["subcategories"][idx]
 
         # Переключаем выбор подкатегории
         if "categories" not in context.user_data:
@@ -1004,8 +1004,8 @@ async def register_blogger_subcategory_select(update: Update, context: ContextTy
 
         # Обновляем кнопки с галочками
         main_category = context.user_data["current_main_category"]
-        subcategories = WORK_CATEGORIES[cat_id]["subcategories"]
-        category_name = WORK_CATEGORIES[cat_id]["name"]
+        subcategories = BLOGGER_TOPICS[cat_id]["subcategories"]
+        category_name = BLOGGER_TOPICS[cat_id]["name"]
 
         keyboard = []
         row = []
@@ -1023,7 +1023,7 @@ async def register_blogger_subcategory_select(update: Update, context: ContextTy
         keyboard.append([InlineKeyboardButton("✅ Завершить выбор категорий", callback_data="subcat_done")])
 
         city = context.user_data.get("city", "")
-        emoji = WORK_CATEGORIES[cat_id]["emoji"]
+        emoji = BLOGGER_TOPICS[cat_id]["emoji"]
 
         await query.edit_message_text(
             f"🏙 Город: {city}\n"
@@ -1048,7 +1048,7 @@ async def register_blogger_ask_more_categories(update: Update, context: ContextT
     if choice == "yes":
         # Возвращаемся к выбору основной категории
         keyboard = []
-        for cat_id, category_data in WORK_CATEGORIES.items():
+        for cat_id, category_data in BLOGGER_TOPICS.items():
             keyboard.append([InlineKeyboardButton(
                 category_data["name"],
                 callback_data=f"maincat_{cat_id}"
@@ -4340,7 +4340,7 @@ async def edit_categories_start(update: Update, context: ContextTypes.DEFAULT_TY
 
     # Показываем 7 основных категорий
     keyboard = []
-    for cat_id, category_data in WORK_CATEGORIES.items():
+    for cat_id, category_data in BLOGGER_TOPICS.items():
             keyboard.append([InlineKeyboardButton(
                 category_data["name"],
                 callback_data=f"editmaincat_{cat_id}"
@@ -4363,11 +4363,11 @@ async def edit_main_category(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await query.answer()
 
     cat_id = query.data.replace("editmaincat_", "")
-    category_name = WORK_CATEGORIES[cat_id]["name"]
+    category_name = BLOGGER_TOPICS[cat_id]["name"]
     context.user_data["edit_current_main_category"] = cat_id
 
     # Получаем подкатегории для выбранной категории
-    subcategories = WORK_CATEGORIES[cat_id]["subcategories"]
+    subcategories = BLOGGER_TOPICS[cat_id]["subcategories"]
 
     # Создаем кнопки подкатегорий (2 в ряд) с галочками
     keyboard = []
@@ -4389,7 +4389,7 @@ async def edit_main_category(update: Update, context: ContextTypes.DEFAULT_TYPE)
     keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="editsubcat_back")])
     keyboard.append([InlineKeyboardButton("❌ Отмена", callback_data="worker_profile")])
 
-    emoji = WORK_CATEGORIES[cat_id]["emoji"]
+    emoji = BLOGGER_TOPICS[cat_id]["emoji"]
 
     await query.edit_message_text(
         f"{emoji} <b>Категория:</b> {category_name}\n\n"
@@ -4434,7 +4434,7 @@ async def edit_subcategory_select(update: Update, context: ContextTypes.DEFAULT_
     elif selected == "back":
         # Кнопка "Назад" - возвращаемся к выбору основной категории
         keyboard = []
-        for cat_id, category_data in WORK_CATEGORIES.items():
+        for cat_id, category_data in BLOGGER_TOPICS.items():
             keyboard.append([InlineKeyboardButton(
                 category_data["name"],
                 callback_data=f"editmaincat_{cat_id}"
@@ -4452,7 +4452,7 @@ async def edit_subcategory_select(update: Update, context: ContextTypes.DEFAULT_
         # Парсим cat_id:index из callback_data
         cat_id, idx_str = selected.split(":")
         idx = int(idx_str)
-        subcat_name = WORK_CATEGORIES[cat_id]["subcategories"][idx]
+        subcat_name = BLOGGER_TOPICS[cat_id]["subcategories"][idx]
 
         # Переключаем выбор подкатегории
         if "edit_categories" not in context.user_data:
@@ -4467,8 +4467,8 @@ async def edit_subcategory_select(update: Update, context: ContextTypes.DEFAULT_
 
         # Обновляем кнопки с галочками
         main_category = context.user_data["edit_current_main_category"]
-        subcategories = WORK_CATEGORIES[cat_id]["subcategories"]
-        category_name = WORK_CATEGORIES[cat_id]["name"]
+        subcategories = BLOGGER_TOPICS[cat_id]["subcategories"]
+        category_name = BLOGGER_TOPICS[cat_id]["name"]
 
         keyboard = []
         row = []
@@ -4486,7 +4486,7 @@ async def edit_subcategory_select(update: Update, context: ContextTypes.DEFAULT_
         keyboard.append([InlineKeyboardButton("✅ Завершить выбор категорий", callback_data="editsubcat_done")])
         keyboard.append([InlineKeyboardButton("❌ Отмена", callback_data="worker_profile")])
 
-        emoji = WORK_CATEGORIES[cat_id]["emoji"]
+        emoji = BLOGGER_TOPICS[cat_id]["emoji"]
 
         await query.edit_message_text(
             f"{emoji} <b>Категория:</b> {category_name}\n\n"
@@ -4510,7 +4510,7 @@ async def edit_ask_more_categories(update: Update, context: ContextTypes.DEFAULT
     if choice == "yes":
         # Возвращаемся к выбору основной категории
         keyboard = []
-        for cat_id, category_data in WORK_CATEGORIES.items():
+        for cat_id, category_data in BLOGGER_TOPICS.items():
             keyboard.append([InlineKeyboardButton(
                 category_data["name"],
                 callback_data=f"editmaincat_{cat_id}"
@@ -8777,7 +8777,7 @@ async def create_campaign_region_select(update: Update, context: ContextTypes.DE
 
         # Переходим к выбору категорий
         keyboard = []
-        for cat_id, category_data in WORK_CATEGORIES.items():
+        for cat_id, category_data in BLOGGER_TOPICS.items():
             keyboard.append([InlineKeyboardButton(
                 category_data["name"],
                 callback_data=f"order_maincat_{cat_id}"
@@ -8846,7 +8846,7 @@ async def create_campaign_city_select(update: Update, context: ContextTypes.DEFA
 
         # Переходим к выбору основной категории
         keyboard = []
-        for cat_id, category_data in WORK_CATEGORIES.items():
+        for cat_id, category_data in BLOGGER_TOPICS.items():
             keyboard.append([InlineKeyboardButton(
                 category_data["name"],
                 callback_data=f"order_maincat_{cat_id}"
@@ -8870,11 +8870,11 @@ async def create_campaign_main_category(update: Update, context: ContextTypes.DE
     await query.answer()
 
     cat_id = query.data.replace("order_maincat_", "")
-    category_name = WORK_CATEGORIES[cat_id]["name"]
+    category_name = BLOGGER_TOPICS[cat_id]["name"]
     context.user_data["order_main_category"] = cat_id
 
     # Получаем подкатегории для выбранной категории
-    subcategories = WORK_CATEGORIES[cat_id]["subcategories"]
+    subcategories = BLOGGER_TOPICS[cat_id]["subcategories"]
 
     # Создаем кнопки подкатегорий (2 в ряд)
     keyboard = []
@@ -8891,7 +8891,7 @@ async def create_campaign_main_category(update: Update, context: ContextTypes.DE
     keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_order_back_to_maincat")])
 
     city = context.user_data.get("order_city", "")
-    emoji = WORK_CATEGORIES[cat_id]["emoji"]
+    emoji = BLOGGER_TOPICS[cat_id]["emoji"]
 
     await query.edit_message_text(
         f"🏙 Город: {city}\n"
@@ -8913,12 +8913,12 @@ async def create_campaign_subcategory_select(update: Update, context: ContextTyp
     selected = query.data.replace("order_subcat_", "")
     cat_id, idx_str = selected.split(":")
     idx = int(idx_str)
-    subcategory = WORK_CATEGORIES[cat_id]["subcategories"][idx]
+    subcategory = BLOGGER_TOPICS[cat_id]["subcategories"][idx]
 
     context.user_data["order_category"] = subcategory
 
     # Переходим к описанию
-    main_category_name = WORK_CATEGORIES[cat_id]["name"]
+    main_category_name = BLOGGER_TOPICS[cat_id]["name"]
     await query.edit_message_text(
         f"Город: <b>{context.user_data['order_city']}</b>\n"
         f"Категория: <b>{main_category_name} → {subcategory}</b>\n\n"
@@ -9167,7 +9167,7 @@ async def create_campaign_back_to_maincat(update: Update, context: ContextTypes.
     city = context.user_data.get("order_city", "")
 
     keyboard = []
-    for cat_id, category_data in WORK_CATEGORIES.items():
+    for cat_id, category_data in BLOGGER_TOPICS.items():
         keyboard.append([InlineKeyboardButton(
             category_data["name"],
             callback_data=f"order_maincat_{cat_id}"
@@ -9205,7 +9205,7 @@ async def create_campaign_city_other(update: Update, context: ContextTypes.DEFAU
 
         # Переходим к выбору категорий
         keyboard = []
-        for cat_id, category_data in WORK_CATEGORIES.items():
+        for cat_id, category_data in BLOGGER_TOPICS.items():
             keyboard.append([InlineKeyboardButton(
                 category_data["name"],
                 callback_data=f"order_maincat_{cat_id}"
