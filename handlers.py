@@ -8621,7 +8621,7 @@ async def advertiser_create_campaign(update: Update, context: ContextTypes.DEFAU
     for region_name, region_data in BELARUS_REGIONS.items():
         keyboard.append([InlineKeyboardButton(
             region_data["display"],
-            callback_data=f"orderregion_{region_name}"
+            callback_data=f"campaignregion_{region_name}"
         )])
 
     await query.edit_message_text(
@@ -8638,7 +8638,7 @@ async def create_campaign_region_select(update: Update, context: ContextTypes.DE
     query = update.callback_query
     await query.answer()
 
-    region = query.data.replace("orderregion_", "")
+    region = query.data.replace("campaignregion_", "")
     region_data = BELARUS_REGIONS.get(region)
 
     if not region_data:
@@ -8663,7 +8663,7 @@ async def create_campaign_region_select(update: Update, context: ContextTypes.DE
             keyboard.append(row)
 
         # Добавляем кнопку "Назад"
-        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_order_back_to_region")])
+        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_campaign_back_to_region")])
 
         await query.edit_message_text(
             f"🏙 Город: {region_data['display']}\n\n"
@@ -8679,7 +8679,7 @@ async def create_campaign_region_select(update: Update, context: ContextTypes.DE
         keyboard = []
         row = []
         for city in cities:
-            row.append(InlineKeyboardButton(city, callback_data=f"ordercity_{city}"))
+            row.append(InlineKeyboardButton(city, callback_data=f"campaigncity_{city}"))
             if len(row) == 2:
                 keyboard.append(row)
                 row = []
@@ -8693,11 +8693,11 @@ async def create_campaign_region_select(update: Update, context: ContextTypes.DE
         # - Это полезно для небольших городов и посёлков
         keyboard.append([InlineKeyboardButton(
             f"📍 Другой город в области",
-            callback_data="ordercity_other"
+            callback_data="campaigncity_other"
         )])
 
         # Добавляем кнопку "Назад"
-        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_order_back_to_region")])
+        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_campaign_back_to_region")])
 
         await query.edit_message_text(
             f"📍 Область: {region_data['display']}\n\n"
@@ -8713,7 +8713,7 @@ async def create_campaign_city_select(update: Update, context: ContextTypes.DEFA
     query = update.callback_query
     await query.answer()
 
-    city = query.data.replace("ordercity_", "")
+    city = query.data.replace("campaigncity_", "")
 
     if city == "other":
         await query.edit_message_text(
@@ -8735,7 +8735,7 @@ async def create_campaign_city_select(update: Update, context: ContextTypes.DEFA
             keyboard.append(row)
 
         # Добавляем кнопку "Назад"
-        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_order_back_to_city")])
+        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_campaign_back_to_city")])
 
         await query.edit_message_text(
             f"🏙 Город: <b>{city}</b>\n\n"
@@ -8762,7 +8762,7 @@ async def create_campaign_main_category(update: Update, context: ContextTypes.DE
     keyboard = [
         [InlineKeyboardButton("💰 Предложить цену", callback_data="payment_type_paid")],
         [InlineKeyboardButton("🤝 Бартер", callback_data="payment_type_barter")],
-        [InlineKeyboardButton("⬅️ Назад", callback_data="create_order_back_to_maincat")],
+        [InlineKeyboardButton("⬅️ Назад", callback_data="create_campaign_back_to_maincat")],
     ]
 
     await query.edit_message_text(
@@ -8982,7 +8982,7 @@ async def create_campaign_back_to_region(update: Update, context: ContextTypes.D
     for region_name, region_data in BELARUS_REGIONS.items():
         keyboard.append([InlineKeyboardButton(
             region_data["display"],
-            callback_data=f"orderregion_{region_name}"
+            callback_data=f"campaignregion_{region_name}"
         )])
 
     await query.edit_message_text(
@@ -9002,22 +9002,22 @@ async def create_campaign_back_to_city(update: Update, context: ContextTypes.DEF
     region = context.user_data.get("order_region")
     if not region:
         # Если региона нет, возвращаемся к выбору региона
-        return await create_order_back_to_region(update, context)
+        return await create_campaign_back_to_region(update, context)
 
     region_data = BELARUS_REGIONS.get(region)
     if not region_data:
-        return await create_order_back_to_region(update, context)
+        return await create_campaign_back_to_region(update, context)
 
     # Если это был Минск или Вся Беларусь - возвращаемся к выбору региона
     if region_data["type"] in ["city", "country"]:
-        return await create_order_back_to_region(update, context)
+        return await create_campaign_back_to_region(update, context)
 
     # Показываем города области
     cities = region_data.get("cities", [])
     keyboard = []
     row = []
     for city in cities:
-        row.append(InlineKeyboardButton(city, callback_data=f"ordercity_{city}"))
+        row.append(InlineKeyboardButton(city, callback_data=f"campaigncity_{city}"))
         if len(row) == 2:
             keyboard.append(row)
             row = []
@@ -9026,9 +9026,9 @@ async def create_campaign_back_to_city(update: Update, context: ContextTypes.DEF
 
     keyboard.append([InlineKeyboardButton(
         f"📍 Другой город в области",
-        callback_data="ordercity_other"
+        callback_data="campaigncity_other"
     )])
-    keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_order_back_to_region")])
+    keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_campaign_back_to_region")])
 
     await query.edit_message_text(
         f"📍 Область: {region_data['display']}\n\n"
