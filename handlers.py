@@ -6833,7 +6833,7 @@ async def process_offer_selection(update: Update, context: ContextTypes.DEFAULT_
         )
 
     except Exception as e:
-        logger.error(f"Ошибка в process_bid_selection: {e}", exc_info=True)
+        logger.error(f"Ошибка в process_offer_selection: {e}", exc_info=True)
         await safe_edit_message(
             query,
             "❌ Произошла ошибка. Попробуйте ещё раз.",
@@ -6855,7 +6855,7 @@ async def thank_platform(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         offer_id = int(query.data.replace("thank_platform_", ""))
         # ИСПРАВЛЕНО: Вызываем общую функцию напрямую с offer_id
-        await process_bid_selection(update, context, offer_id)
+        await process_offer_selection(update, context, offer_id)
 
     except Exception as e:
         logger.error(f"Ошибка в thank_platform: {e}", exc_info=True)
@@ -6880,8 +6880,8 @@ async def test_payment_success(update: Update, context: ContextTypes.DEFAULT_TYP
 
     try:
         offer_id = int(query.data.replace("test_payment_success_", ""))
-        # ИСПРАВЛЕНО: Вызываем общую функцию process_bid_selection
-        await process_bid_selection(update, context, offer_id)
+        # ИСПРАВЛЕНО: Вызываем общую функцию process_offer_selection
+        await process_offer_selection(update, context, offer_id)
 
         # Очищаем контекст просмотра откликов
         if 'viewing_bids' in context.user_data:
