@@ -6826,20 +6826,71 @@ def migrate_add_campaign_fields():
         cursor = get_cursor(conn)
 
         try:
-            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS product_description TEXT")
-            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS platform VARCHAR(20)")
-            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS required_topics TEXT")  # JSON array
-            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS required_format VARCHAR(20)")
-            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS budget_type VARCHAR(20)")
-            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS budget_amount INTEGER")
-            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS requirements TEXT")
-            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS deadline DATE")
-            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS min_trust_score INTEGER DEFAULT 0")
-            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS only_verified BOOLEAN DEFAULT FALSE")
-            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS payment_type VARCHAR(20) DEFAULT 'paid'")  # 'paid' или 'barter'
+            if USE_POSTGRES:
+                logger.info("📝 Добавление полей для кампаний (PostgreSQL)...")
 
-            conn.commit()
-            logger.info("✅ Migration completed: campaign fields added!")
+                # Список всех полей для добавления
+                fields = [
+                    ("product_description", "TEXT"),
+                    ("platform", "VARCHAR(20)"),
+                    ("required_topics", "TEXT"),  # JSON array
+                    ("required_format", "VARCHAR(20)"),
+                    ("budget_type", "VARCHAR(20)"),
+                    ("budget_amount", "INTEGER"),
+                    ("requirements", "TEXT"),
+                    ("deadline", "DATE"),
+                    ("min_trust_score", "INTEGER DEFAULT 0"),
+                    ("only_verified", "BOOLEAN DEFAULT FALSE"),
+                    ("payment_type", "VARCHAR(20) DEFAULT 'paid'"),  # 'paid' или 'barter'
+                ]
+
+                for field_name, field_type in fields:
+                    cursor.execute(f"""
+                        DO $$
+                        BEGIN
+                            IF NOT EXISTS (
+                                SELECT 1 FROM information_schema.columns
+                                WHERE table_name = 'campaigns' AND column_name = '{field_name}'
+                            ) THEN
+                                ALTER TABLE campaigns ADD COLUMN {field_name} {field_type};
+                            END IF;
+                        END $$;
+                    """)
+
+                conn.commit()
+                logger.info("✅ Поля для кампаний успешно добавлены!")
+
+            else:
+                # Для SQLite проверяем существование колонок
+                cursor.execute("PRAGMA table_info(campaigns)")
+                existing_columns = [column[1] for column in cursor.fetchall()]
+
+                logger.info(f"📝 Проверка полей кампаний для SQLite... Существующие колонки: {len(existing_columns)}")
+
+                # Список всех полей для добавления (SQLite синтаксис)
+                fields = [
+                    ("product_description", "TEXT"),
+                    ("platform", "TEXT"),
+                    ("required_topics", "TEXT"),
+                    ("required_format", "TEXT"),
+                    ("budget_type", "TEXT"),
+                    ("budget_amount", "INTEGER"),
+                    ("requirements", "TEXT"),
+                    ("deadline", "TEXT"),
+                    ("min_trust_score", "INTEGER DEFAULT 0"),
+                    ("only_verified", "INTEGER DEFAULT 0"),
+                    ("payment_type", "TEXT DEFAULT 'paid'"),
+                ]
+
+                added_count = 0
+                for field_name, field_type in fields:
+                    if field_name not in existing_columns:
+                        logger.info(f"  📝 Добавление поля {field_name}...")
+                        cursor.execute(f"ALTER TABLE campaigns ADD COLUMN {field_name} {field_type}")
+                        added_count += 1
+
+                conn.commit()
+                logger.info(f"✅ Добавлено {added_count} новых полей для кампаний!")
 
         except Exception as e:
             logger.error(f"⚠️ Error in migrate_add_campaign_fields: {e}")
