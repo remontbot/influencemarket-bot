@@ -1883,16 +1883,99 @@ async def blogger_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE
         )
         return
 
-    # TODO: Здесь будет логика показа доступных кампаний
-    await query.edit_message_text(
-        "📋 <b>Доступные кампании</b>\n\n"
-        "Эта функция в разработке.\n"
-        "Скоро здесь будут отображаться кампании от рекламодателей.",
-        parse_mode="HTML",
-        reply_markup=InlineKeyboardMarkup([[
-            InlineKeyboardButton("⬅️ Назад", callback_data="show_worker_menu")
-        ]])
-    )
+    try:
+        # Обнуляем счётчик непрочитанных кампаний
+        db.save_worker_notification(user_dict['id'], None, None, 0)
+
+        # Получаем профиль блогера
+        worker_profile = db.get_worker_profile(user_dict["id"])
+        if not worker_profile:
+            await query.edit_message_text("❌ Ошибка: профиль блогера не найден.")
+            return
+
+        worker_dict = dict(worker_profile)
+        worker_id = worker_dict['id']
+        categories = worker_dict.get("categories", "").split(", ")
+
+        # Получаем кампании по категориям блогера
+        all_orders = db.get_orders_by_categories(categories, per_page=30, worker_id=worker_id)
+        all_orders = [dict(campaign) for campaign in all_orders]
+
+        # Фильтруем кампании - не показываем те, на которые блогер уже откликнулся или отказался
+        all_orders = [campaign for campaign in all_orders
+                     if not db.check_worker_bid_exists(campaign['id'], worker_id)
+                     and not db.check_order_declined(user_dict["id"], campaign['id'])]
+
+        if not all_orders:
+            keyboard = [
+                [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_worker_menu")],
+            ]
+
+            await query.edit_message_text(
+                "📋 <b>Рекламные предложения</b>\n\n"
+                f"📱 Ваши категории: <i>{worker_dict.get('categories', 'Не указаны')}</i>\n\n"
+                "Пока нет открытых кампаний по вашим категориям.\n\n"
+                "Как только появятся новые рекламные предложения, вы их увидите здесь!",
+                parse_mode="HTML",
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+            return
+
+        # Показываем список кампаний
+        orders_text = "📋 <b>Рекламные предложения</b>\n\n"
+        orders_text += f"📱 Ваши категории: <i>{worker_dict.get('categories', 'Не указаны')}</i>\n\n"
+        orders_text += f"Найдено предложений: <b>{len(all_orders)}</b>\n\n"
+
+        # Показываем первые 5 кампаний
+        keyboard = []
+        for i, campaign in enumerate(all_orders[:5], 1):
+            orders_text += f"🟢 <b>Кампания #{campaign['id']}</b>\n"
+            orders_text += f"📍 Город: {campaign.get('city', 'Не указан')}\n"
+            orders_text += f"📱 Категория: {campaign.get('category', 'Не указана')}\n"
+
+            # Описание (сокращённое)
+            description = campaign.get('description', '')
+            if len(description) > 80:
+                description = description[:80] + "..."
+            orders_text += f"📝 {description}\n"
+
+            # Фото
+            photos = campaign.get('photos', '')
+            photos_count = len([p for p in photos.split(',') if p]) if photos else 0
+            if photos_count > 0:
+                orders_text += f"📸 {photos_count} фото\n"
+
+            orders_text += f"📅 {campaign.get('created_at', '')}\n"
+            orders_text += "\n"
+
+            # Добавляем кнопку для просмотра деталей
+            keyboard.append([InlineKeyboardButton(
+                f"👁 Кампания #{campaign['id']} - Подробнее",
+                callback_data=f"view_order_{campaign['id']}"
+            )])
+
+        if len(all_orders) > 5:
+            orders_text += f"<i>... и ещё {len(all_orders) - 5} предложений</i>\n\n"
+
+        keyboard.append([InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_worker_menu")])
+
+        await safe_edit_message(
+            query,
+            orders_text,
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+
+    except Exception as e:
+        logger.error(f"Ошибка при просмотре кампаний: {e}", exc_info=True)
+        await safe_edit_message(
+            query,
+            "❌ Произошла ошибка при загрузке кампаний.\n\n"
+            "Попробуйте позже.",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_worker_menu")]
+            ])
+        )
 
 
 async def toggle_notifications(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -6750,7 +6833,7 @@ async def process_offer_selection(update: Update, context: ContextTypes.DEFAULT_
         )
 
     except Exception as e:
-        logger.error(f"Ошибка в process_bid_selection: {e}", exc_info=True)
+        logger.error(f"Ошибка в process_offer_selection: {e}", exc_info=True)
         await safe_edit_message(
             query,
             "❌ Произошла ошибка. Попробуйте ещё раз.",
@@ -6772,7 +6855,7 @@ async def thank_platform(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         offer_id = int(query.data.replace("thank_platform_", ""))
         # ИСПРАВЛЕНО: Вызываем общую функцию напрямую с offer_id
-        await process_bid_selection(update, context, offer_id)
+        await process_offer_selection(update, context, offer_id)
 
     except Exception as e:
         logger.error(f"Ошибка в thank_platform: {e}", exc_info=True)
@@ -6797,8 +6880,8 @@ async def test_payment_success(update: Update, context: ContextTypes.DEFAULT_TYP
 
     try:
         offer_id = int(query.data.replace("test_payment_success_", ""))
-        # ИСПРАВЛЕНО: Вызываем общую функцию process_bid_selection
-        await process_bid_selection(update, context, offer_id)
+        # ИСПРАВЛЕНО: Вызываем общую функцию process_offer_selection
+        await process_offer_selection(update, context, offer_id)
 
         # Очищаем контекст просмотра откликов
         if 'viewing_bids' in context.user_data:
@@ -8568,20 +8651,23 @@ async def create_campaign_region_select(update: Update, context: ContextTypes.DE
     if region_data["type"] in ["city", "country"]:
         context.user_data["order_city"] = region
 
-        # Переходим к выбору категорий
+        # Переходим к выбору категорий (упрощенные, без подкатегорий)
         keyboard = []
-        for cat_id, category_data in BLOGGER_TOPICS.items():
-            keyboard.append([InlineKeyboardButton(
-                category_data["name"],
-                callback_data=f"order_maincat_{cat_id}"
-            )])
+        row = []
+        for idx, category in enumerate(BLOGGER_CATEGORIES):
+            row.append(InlineKeyboardButton(category, callback_data=f"order_cat_{idx}"))
+            if len(row) == 2:
+                keyboard.append(row)
+                row = []
+        if row:
+            keyboard.append(row)
 
         # Добавляем кнопку "Назад"
         keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_order_back_to_region")])
 
         await query.edit_message_text(
             f"🏙 Город: {region_data['display']}\n\n"
-            "📱 <b>Шаг 2:</b> Выберите основную тематику контент:",
+            "📱 <b>Шаг 2:</b> Выберите тематику контента:",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
@@ -8637,20 +8723,23 @@ async def create_campaign_city_select(update: Update, context: ContextTypes.DEFA
     else:
         context.user_data["order_city"] = city
 
-        # Переходим к выбору основной категории
+        # Переходим к выбору категорий (упрощенные, без подкатегорий)
         keyboard = []
-        for cat_id, category_data in BLOGGER_TOPICS.items():
-            keyboard.append([InlineKeyboardButton(
-                category_data["name"],
-                callback_data=f"order_maincat_{cat_id}"
-            )])
+        row = []
+        for idx, category in enumerate(BLOGGER_CATEGORIES):
+            row.append(InlineKeyboardButton(category, callback_data=f"order_cat_{idx}"))
+            if len(row) == 2:
+                keyboard.append(row)
+                row = []
+        if row:
+            keyboard.append(row)
 
         # Добавляем кнопку "Назад"
         keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_order_back_to_city")])
 
         await query.edit_message_text(
             f"🏙 Город: <b>{city}</b>\n\n"
-            "📱 <b>Шаг 2:</b> Выберите основную тематику контент:",
+            "📱 <b>Шаг 2:</b> Выберите тематику контента:",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
@@ -8658,65 +8747,63 @@ async def create_campaign_city_select(update: Update, context: ContextTypes.DEFA
 
 
 async def create_campaign_main_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка выбора основной категории для кампания"""
+    """Обработка выбора категории для кампании (упрощенная версия без подкатегорий)"""
     query = update.callback_query
     await query.answer()
 
-    cat_id = query.data.replace("order_maincat_", "")
-    category_name = BLOGGER_TOPICS[cat_id]["name"]
-    context.user_data["order_main_category"] = cat_id
-
-    # Получаем подкатегории для выбранной категории
-    subcategories = BLOGGER_TOPICS[cat_id]["subcategories"]
-
-    # Создаем кнопки подкатегорий (2 в ряд)
-    keyboard = []
-    row = []
-    for idx, subcat in enumerate(subcategories):
-        row.append(InlineKeyboardButton(subcat, callback_data=f"order_subcat_{cat_id}:{idx}"))
-        if len(row) == 2:
-            keyboard.append(row)
-            row = []
-    if row:
-        keyboard.append(row)
-
-    # Добавляем кнопку "Назад"
-    keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_order_back_to_maincat")])
+    # Получаем индекс категории
+    cat_idx = int(query.data.replace("order_cat_", ""))
+    category = BLOGGER_CATEGORIES[cat_idx]
+    context.user_data["order_category"] = category
 
     city = context.user_data.get("order_city", "")
-    emoji = BLOGGER_TOPICS[cat_id]["emoji"]
+
+    # Переходим к выбору типа оплаты (бартер или цена)
+    keyboard = [
+        [InlineKeyboardButton("💰 Предложить цену", callback_data="payment_type_paid")],
+        [InlineKeyboardButton("🤝 Бартер", callback_data="payment_type_barter")],
+        [InlineKeyboardButton("⬅️ Назад", callback_data="create_order_back_to_maincat")],
+    ]
 
     await query.edit_message_text(
         f"🏙 Город: {city}\n"
-        f"{emoji} Категория: {category_name}\n\n"
-        "📱 <b>Шаг 3:</b> Выберите подкатегорию контент:\n\n"
-        "Выберите одну подкатегорию, которая наиболее точно описывает ваш кампани.",
+        f"📱 Категория: {category}\n\n"
+        "💳 <b>Шаг 3:</b> Как вы готовы оплатить публикацию?\n\n"
+        "💰 <b>Предложить цену</b> - укажите бюджет, блогеры предложат свою цену\n"
+        "🤝 <b>Бартер</b> - предложение взаимовыгодного сотрудничества",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
-    return CREATE_CAMPAIGN_SUBCATEGORY_SELECT
+    return CREATE_CAMPAIGN_SUBCATEGORY_SELECT  # Переиспользуем состояние для payment_type
 
 
 async def create_campaign_subcategory_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка выбора подкатегории для кампания"""
+    """Обработка выбора типа оплаты (бартер или цена)"""
     query = update.callback_query
     await query.answer()
 
-    # Парсим cat_id:index из callback_data
-    selected = query.data.replace("order_subcat_", "")
-    cat_id, idx_str = selected.split(":")
-    idx = int(idx_str)
-    subcategory = BLOGGER_TOPICS[cat_id]["subcategories"][idx]
-
-    context.user_data["order_category"] = subcategory
+    # Обрабатываем выбор payment_type
+    if query.data == "payment_type_paid":
+        context.user_data["payment_type"] = "paid"
+        payment_text = "💰 Предложить цену"
+    elif query.data == "payment_type_barter":
+        context.user_data["payment_type"] = "barter"
+        payment_text = "🤝 Бартер"
+    else:
+        # Обратная совместимость со старым форматом (не должно происходить)
+        context.user_data["payment_type"] = "paid"
+        payment_text = "💰 Предложить цену"
 
     # Переходим к описанию
-    main_category_name = BLOGGER_TOPICS[cat_id]["name"]
+    city = context.user_data.get('order_city', '')
+    category = context.user_data.get('order_category', '')
+
     await query.edit_message_text(
-        f"Город: <b>{context.user_data['order_city']}</b>\n"
-        f"Категория: <b>{main_category_name} → {subcategory}</b>\n\n"
+        f"🏙 Город: <b>{city}</b>\n"
+        f"📱 Категория: <b>{category}</b>\n"
+        f"💳 Оплата: <b>{payment_text}</b>\n\n"
         "📝 <b>Шаг 4:</b> Опишите что нужно сделать\n\n"
-        "💡 <b>Важно!</b> Блогера будут предлагать свою цену за услуги, поэтому укажите:\n"
+        "💡 <b>Важно!</b> Блогеры будут предлагать свою цену за услуги, поэтому укажите:\n"
         "✓ Объём контент (сколько розеток, метраж, количество)\n"
         "✓ Размеры и особенности (толщина стен, высота потолков)\n"
         "✓ Материалы (есть свои или нужна закупка)\n"
@@ -8959,14 +9046,18 @@ async def create_campaign_back_to_maincat(update: Update, context: ContextTypes.
 
     city = context.user_data.get("order_city", "")
 
+    # Переходим к выбору категорий (упрощенные, без подкатегорий)
     keyboard = []
-    for cat_id, category_data in BLOGGER_TOPICS.items():
-        keyboard.append([InlineKeyboardButton(
-            category_data["name"],
-            callback_data=f"order_maincat_{cat_id}"
-        )])
+    row = []
+    for idx, category in enumerate(BLOGGER_CATEGORIES):
+        row.append(InlineKeyboardButton(category, callback_data=f"order_cat_{idx}"))
+        if len(row) == 2:
+            keyboard.append(row)
+            row = []
+    if row:
+        keyboard.append(row)
 
-    keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_order_back_to_city")])
+    keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_campaign_back_to_city")])
 
     await query.edit_message_text(
         f"🏙 Город: <b>{city}</b>\n\n"
@@ -8996,15 +9087,18 @@ async def create_campaign_city_other(update: Update, context: ContextTypes.DEFAU
         city = update.message.text.strip()
         context.user_data["order_city"] = city
 
-        # Переходим к выбору категорий
+        # Переходим к выбору категорий (упрощенные, без подкатегорий)
         keyboard = []
-        for cat_id, category_data in BLOGGER_TOPICS.items():
-            keyboard.append([InlineKeyboardButton(
-                category_data["name"],
-                callback_data=f"order_maincat_{cat_id}"
-            )])
+        row = []
+        for idx, category in enumerate(BLOGGER_CATEGORIES):
+            row.append(InlineKeyboardButton(category, callback_data=f"order_cat_{idx}"))
+            if len(row) == 2:
+                keyboard.append(row)
+                row = []
+        if row:
+            keyboard.append(row)
 
-        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_order_back_to_city")])
+        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_campaign_back_to_city")])
 
         await update.message.reply_text(
             f"🏙 Город: <b>{city}</b>\n\n"
@@ -9070,12 +9164,13 @@ async def create_campaign_publish(update: Update, context: ContextTypes.DEFAULT_
         # Создаём кампани в БД (может вызвать ValueError при rate limiting)
         try:
             campaign_id = db.create_order(
-                client_id=context.user_data["order_client_id"],
+                advertiser_id=context.user_data["order_client_id"],
                 city=context.user_data["order_city"],
                 categories=context.user_data["order_category"],
                 description=context.user_data["order_description"],
                 photos=valid_order_photos,
-                videos=valid_order_videos
+                videos=valid_order_videos,
+                payment_type=context.user_data.get("payment_type", "paid")
             )
         except ValueError as e:
             # Rate limiting error
