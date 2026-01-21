@@ -945,7 +945,7 @@ async def register_blogger_photos(update: Update, context: ContextTypes.DEFAULT_
         return REGISTER_BLOGGER_PHOTOS
     else:
         # Пропускаем фото, завершаем регистрацию
-        return await finalize_master_registration(update, context)
+        return await finalize_blogger_registration(update, context)
 
 
 async def handle_blogger_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1011,7 +1011,7 @@ async def handle_blogger_photos(update: Update, context: ContextTypes.DEFAULT_TY
         # Проверяем различные варианты команды
         if text in ['/done_photos', 'done_photos', '/donephotos', 'donephotos', 'готово']:
             logger.info("Команда завершения фото распознана, вызываем finalize")
-            return await finalize_master_registration(update, context)
+            return await finalize_blogger_registration(update, context)
 
     # Обработка фото
     if update.message.photo or (update.message.document and update.message.document.mime_type and update.message.document.mime_type.startswith('image/')):
@@ -1096,7 +1096,8 @@ async def finalize_blogger_registration(update, context):
     telegram_id = update.effective_user.id if update.message else update.callback_query.from_user.id
 
     # КРИТИЧНО: Проверяем наличие всех обязательных полей
-    required_fields = ["name", "phone", "city", "regions", "categories", "experience", "description"]
+    # ОБНОВЛЕНО: Убраны phone и experience для блогерского маркетплейса
+    required_fields = ["name", "city", "regions", "categories", "description"]
     ok, missing = validate_required_fields(context, required_fields)
 
     if not ok:
@@ -1147,11 +1148,11 @@ async def finalize_blogger_registration(update, context):
         db.create_worker_profile(
             user_id=user_id,
             name=context.user_data["name"],
-            phone=context.user_data["phone"],
+            phone=context.user_data.get("phone", ""),  # ОБНОВЛЕНО: опционально для блогеров
             city=context.user_data["city"],
             regions=context.user_data["regions"],  # Теперь это просто город
             categories=", ".join(context.user_data["categories"]),
-            experience=context.user_data["experience"],
+            experience=context.user_data.get("experience", ""),  # ОБНОВЛЕНО: опционально для блогеров
             description=context.user_data["description"],
             portfolio_photos=photos_json,
             profile_photo=profile_photo,  # Устанавливаем первое фото как фото профиля
