@@ -297,7 +297,8 @@ def main():
                 CallbackQueryHandler(handlers.create_campaign_back_to_region, pattern="^create_campaign_back_to_region$"),
             ],
             handlers.CREATE_CAMPAIGN_MAIN_CATEGORY: [
-                CallbackQueryHandler(handlers.create_campaign_main_category, pattern="^campaign_maincat_"),
+                CallbackQueryHandler(handlers.create_campaign_main_category, pattern="^order_cat_"),
+                CallbackQueryHandler(handlers.create_campaign_main_category, pattern="^order_categories_done$"),
                 CallbackQueryHandler(handlers.create_campaign_back_to_region, pattern="^create_campaign_back_to_region$"),
                 CallbackQueryHandler(handlers.create_campaign_back_to_city, pattern="^create_campaign_back_to_city$"),
             ],
