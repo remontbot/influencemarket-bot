@@ -8835,7 +8835,7 @@ async def create_campaign_description(update: Update, context: ContextTypes.DEFA
     context.user_data["order_description"] = description
 
     # Предлагаем загрузить фото и видео
-    keyboard = [[InlineKeyboardButton("⏭ Пропустить", callback_data="order_skip_photos")]]
+    keyboard = [[InlineKeyboardButton("⏭ Пропустить", callback_data="campaign_skip_photos")]]
 
     await update.message.reply_text(
         "📸 <b>Шаг 4:</b> Загрузите фото или видео объекта\n\n"
@@ -8956,7 +8956,7 @@ async def create_campaign_photo_upload(update: Update, context: ContextTypes.DEF
 
 async def create_campaign_done_uploading(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Завершение загрузки фото и видео по команде /done"""
-    return await create_order_publish(update, context)
+    return await create_campaign_publish(update, context)
 
 
 async def create_campaign_skip_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -8967,7 +8967,7 @@ async def create_campaign_skip_photos(update: Update, context: ContextTypes.DEFA
     context.user_data["order_photos"] = []
     context.user_data["order_videos"] = []
 
-    return await create_order_publish(update, context)
+    return await create_campaign_publish(update, context)
 
 
 
