@@ -3948,11 +3948,12 @@ def create_indexes():
         except Exception as e:
             print(f"⚠️  Предупреждение при создании индексов: {e}")
 
-def create_order(advertiser_id, city, categories, description, photos, videos=None, budget_type="none", budget_value=0):
+def create_order(advertiser_id, city, categories, description, photos, videos=None, budget_type="none", budget_value=0, payment_type="paid"):
     """
     Создаёт новый заказ.
     ИСПРАВЛЕНО: Валидация file_id для фотографий.
     ОБНОВЛЕНО: Добавлена поддержка видео.
+    ОБНОВЛЕНО: Добавлена поддержка типа оплаты (paid/barter).
     """
     # Rate limiting: проверяем лимит заказов
     allowed, remaining_seconds = _rate_limiter.is_allowed(advertiser_id, "create_order", RATE_LIMIT_ORDERS_PER_HOUR)
@@ -3992,10 +3993,10 @@ def create_order(advertiser_id, city, categories, description, photos, videos=No
         cursor.execute("""
             INSERT INTO campaigns (
                 advertiser_id, city, category, description, photos, videos,
-                budget_type, budget_value, status, created_at
+                budget_type, budget_value, payment_type, status, created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)
-        """, (advertiser_id, city, categories_str, description, photos_str, videos_str, budget_type, budget_value, now))
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)
+        """, (advertiser_id, city, categories_str, description, photos_str, videos_str, budget_type, budget_value, payment_type, now))
 
         campaign_id = cursor.lastrowid
         conn.commit()  # КРИТИЧНО: Фиксируем транзакцию создания заказа
@@ -6819,10 +6820,11 @@ def migrate_add_campaign_fields():
     - product_description, platform, required_topics
     - budget_type, budget_amount, requirements, deadline
     - min_trust_score, only_verified
+    - payment_type (paid/barter)
     """
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
-        
+
         try:
             cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS product_description TEXT")
             cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS platform VARCHAR(20)")
@@ -6834,10 +6836,11 @@ def migrate_add_campaign_fields():
             cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS deadline DATE")
             cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS min_trust_score INTEGER DEFAULT 0")
             cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS only_verified BOOLEAN DEFAULT FALSE")
-            
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS payment_type VARCHAR(20) DEFAULT 'paid'")  # 'paid' или 'barter'
+
             conn.commit()
             logger.info("✅ Migration completed: campaign fields added!")
-            
+
         except Exception as e:
             logger.error(f"⚠️ Error in migrate_add_campaign_fields: {e}")
             conn.rollback()
