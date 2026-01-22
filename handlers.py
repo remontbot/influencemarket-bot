@@ -9238,7 +9238,7 @@ async def create_campaign_back_to_maincat(update: Update, context: ContextTypes.
 
     await query.edit_message_text(
         f"🏙 Город: <b>{city}</b>\n\n"
-        "📱 <b>Шаг 2:</b> Выберите основную тематику контент:",
+        "📱 <b>Шаг 2:</b> Выберите основную тематику контента:",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
@@ -9279,7 +9279,7 @@ async def create_campaign_city_other(update: Update, context: ContextTypes.DEFAU
 
         await update.message.reply_text(
             f"🏙 Город: <b>{city}</b>\n\n"
-            "📱 <b>Шаг 2:</b> Выберите основную тематику контент:",
+            "📱 <b>Шаг 2:</b> Выберите основную тематику контента:",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
@@ -9426,13 +9426,13 @@ async def create_campaign_publish(update: Update, context: ContextTypes.DEFAULT_
             media_info += f"🎥 Видео: {videos_count}\n"
 
         await message.reply_text(
-            "🎉 <b>Кампани опубликован!</b>\n\n"
+            "🎉 <b>Рекламная кампания опубликована!</b>\n\n"
             f"📍 Город: {context.user_data['order_city']}\n"
             f"📱 Категории: {categories_text}\n"
             f"{media_info}"
             f"📝 Описание: {context.user_data['order_description'][:50]}...\n\n"
-            "Блогера получили уведомления о вашем кампание и скоро начнут откликаться!\n"
-            "Вы сможете выбрать лучшего!",
+            "Блогеры получили уведомление о вашей кампании и скоро начнут откликаться!\n"
+            "Вы сможете выбрать лучших и начать общение для обсуждения деталей.",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
