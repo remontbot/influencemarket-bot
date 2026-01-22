@@ -16,9 +16,9 @@ import db
 import handlers
 
 # Версия бота
-BOT_VERSION = "2.0.0 - INFLUENCEMARKET MVP"  # Адаптация для маркетплейса блогеров
-BOT_NAME = "InfluenceMarket"
-BOT_USERNAME = "@influencemarketplace_bot"
+BOT_VERSION = "2.0.0 - GDE.REKLAMA MVP"  # Адаптация для маркетплейса блогеров
+BOT_NAME = "gde.reklama"
+BOT_USERNAME = "@gdereklama_bot"
 
 # --- НАЧАЛО ИСПРАВЛЕННОГО БЛОКА ДЛЯ ИМПОРТА CONFIG.PY И ЗАГРУЗКИ ENV ---
 # Попытка импортировать config, если он есть рядом (локально)
