@@ -599,7 +599,7 @@ async def register_blogger_region_select(update: Update, context: ContextTypes.D
         # Добавляем кнопку "Другой город в области"
         # ЛОГИКА "ДРУГОЙ ГОРОД":
         # - Блогер может указать любой город, не входящий в основной список
-        # - Кампаниы из этого города также будут видны блогеру
+        # - Кампании из этого города также будут видны блогеру
         # - Это полезно для небольших городов и посёлков
         keyboard.append([InlineKeyboardButton(
             f"📍 Другой город в области",
@@ -2142,7 +2142,7 @@ async def blogger_my_offers(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def blogger_my_campaigns(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Показывает выбор категории заказов блогера (в контенте/завершённые)"""
+    """Показывает выбор категории заказов блогера (в работе/завершённые)"""
     query = update.callback_query
     await query.answer()
 
@@ -2204,12 +2204,12 @@ async def blogger_my_campaigns(update: Update, context: ContextTypes.DEFAULT_TYP
         # Показываем меню выбора категории
         text = "📦 <b>Мои кампании</b>\n\n"
         text += f"Всего заказов: {active_count + completed_count}\n"
-        text += f"📱 В контенте: {active_count}\n"
+        text += f"📱 В работе: {active_count}\n"
         text += f"✅ Завершённые: {completed_count}\n\n"
         text += "Выберите категорию:"
 
         keyboard = [
-            [InlineKeyboardButton(f"📱 Кампаниы в контенте ({active_count})", callback_data="worker_active_orders")],
+            [InlineKeyboardButton(f"📱 Кампании в работе ({active_count})", callback_data="worker_active_orders")],
             [InlineKeyboardButton(f"✅ Завершённые кампании ({completed_count})", callback_data="worker_completed_orders")],
             [InlineKeyboardButton("⬅️ Назад", callback_data="show_worker_menu")]
         ]
@@ -2234,7 +2234,7 @@ async def blogger_my_campaigns(update: Update, context: ContextTypes.DEFAULT_TYP
 
 
 async def blogger_active_campaigns(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Показывает активные кампании блогера (в контенте)"""
+    """Показывает активные кампании блогера (в работе)"""
     query = update.callback_query
     await query.answer()
 
@@ -2273,14 +2273,14 @@ async def blogger_active_campaigns(update: Update, context: ContextTypes.DEFAULT
             keyboard = [[InlineKeyboardButton("⬅️ Назад к заказам", callback_data="worker_my_orders")]]
             await safe_edit_message(
                 query,
-                "📱 <b>Кампаниы в контенте</b>\n\nУ вас нет активных заказов.",
+                "📱 <b>Кампании в работе</b>\n\nУ вас нет активных заказов.",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
             return
 
         # Формируем текст и кнопки
-        text = f"📱 <b>Кампаниы в контенте</b> ({len(active_orders)})\n\n"
+        text = f"📱 <b>Кампании в работе</b> ({len(active_orders)})\n\n"
         keyboard = []
 
         for i, campaign in enumerate(active_orders[:10], 1):
@@ -4593,9 +4593,9 @@ async def advertiser_my_campaigns(update: Update, context: ContextTypes.DEFAULT_
             return
         
         # Подсчитываем кампании по трем категориям
-        # 1. В ожидании блогера (кампани открыт, но блогер еще не выбран)
+        # 1. В ожидании блогеров (кампани открыт, но блогер еще не выбран)
         waiting_statuses = ['open']
-        # 2. В контенте (блогер выбран и работает)
+        # 2. В работе (блогер выбран и работает)
         in_progress_statuses = ['master_selected', 'contact_shared', 'waiting_master_confirmation', 'master_confirmed', 'in_progress']
         # 3. Завершенные
         completed_statuses = ['done', 'completed', 'canceled', 'cancelled']
@@ -4610,21 +4610,21 @@ async def advertiser_my_campaigns(update: Update, context: ContextTypes.DEFAULT_
         in_progress_count = sum(1 for o in all_orders if dict(o).get('status', 'open') in in_progress_statuses)
         completed_count = sum(1 for o in all_orders if dict(o).get('status', 'open') in completed_statuses)
 
-        logger.info(f"🔍 DEBUG: Подсчет - Ожидание: {waiting_count}, В контенте: {in_progress_count}, Завершено: {completed_count}")
+        logger.info(f"🔍 DEBUG: Подсчет - Ожидание: {waiting_count}, В работе: {in_progress_count}, Завершено: {completed_count}")
 
         # Показываем меню выбора категории
         text = "📂 <b>Мои кампании</b>\n\n"
         text += f"Всего заказов: {total_count}\n"
-        text += f"🔍 В ожидании блогера: {waiting_count}\n"
-        text += f"📱 В контенте: {in_progress_count}\n"
+        text += f"🔍 В ожидании блогеров: {waiting_count}\n"
+        text += f"📱 В работе: {in_progress_count}\n"
         text += f"✅ Завершённые: {completed_count}\n\n"
         text += "Выберите категорию:"
 
         keyboard = [
-            [InlineKeyboardButton(f"🔍 В ожидании блогера ({waiting_count})", callback_data="client_waiting_orders")],
-            [InlineKeyboardButton(f"📱 В контенте ({in_progress_count})", callback_data="client_in_progress_orders")],
+            [InlineKeyboardButton(f"🔍 В ожидании блогеров ({waiting_count})", callback_data="client_waiting_orders")],
+            [InlineKeyboardButton(f"📱 В работе ({in_progress_count})", callback_data="client_in_progress_orders")],
             [InlineKeyboardButton(f"✅ Завершённые ({completed_count})", callback_data="client_completed_orders")],
-            [InlineKeyboardButton("📝 Создать новый кампани", callback_data="client_create_order")],
+            [InlineKeyboardButton("📝 Создать новую кампанию", callback_data="client_create_order")],
             [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_client_menu")]
         ]
 
@@ -4648,7 +4648,7 @@ async def advertiser_my_campaigns(update: Update, context: ContextTypes.DEFAULT_
 
 
 async def advertiser_waiting_campaigns(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Показывает кампании в ожидании блогера (без выбранного блогера)"""
+    """Показывает кампании в ожидании блогеров (без выбранного блогера)"""
     query = update.callback_query
     await query.answer()
 
@@ -4670,19 +4670,19 @@ async def advertiser_waiting_campaigns(update: Update, context: ContextTypes.DEF
 
         if not orders:
             keyboard = [
-                [InlineKeyboardButton("📝 Создать новый кампани", callback_data="client_create_order")],
+                [InlineKeyboardButton("📝 Создать новую кампанию", callback_data="client_create_order")],
                 [InlineKeyboardButton("⬅️ Назад к заказам", callback_data="client_my_orders")]
             ]
             await safe_edit_message(
                 query,
-                "🔍 <b>В ожидании блогера</b>\n\nУ вас нет заказов в ожидании.",
+                "🔍 <b>В ожидании блогеров</b>\n\nУ вас нет заказов в ожидании.",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
             return
 
         # Формируем список заказов
-        text = f"🔍 <b>В ожидании блогера</b> ({len(orders)})\n\n"
+        text = f"🔍 <b>В ожидании блогеров</b> ({len(orders)})\n\n"
         keyboard = []
 
         for campaign in orders[:10]:
@@ -4713,7 +4713,7 @@ async def advertiser_waiting_campaigns(update: Update, context: ContextTypes.DEF
 
             text += "\n"
 
-        keyboard.append([InlineKeyboardButton("📝 Создать новый кампани", callback_data="client_create_order")])
+        keyboard.append([InlineKeyboardButton("📝 Создать новую кампанию", callback_data="client_create_order")])
         keyboard.append([InlineKeyboardButton("⬅️ Назад к заказам", callback_data="client_my_orders")])
 
         await safe_edit_message(query, text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(keyboard))
@@ -4724,7 +4724,7 @@ async def advertiser_waiting_campaigns(update: Update, context: ContextTypes.DEF
 
 
 async def advertiser_in_progress_campaigns(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Показывает кампании в контенте (блогер выбран и работает)"""
+    """Показывает кампании в работе (блогер выбран и работает)"""
     query = update.callback_query
     await query.answer()
 
@@ -4739,7 +4739,7 @@ async def advertiser_in_progress_campaigns(update: Update, context: ContextTypes
             await safe_edit_message(query, "❌ Профиль клиента не найден.")
             return
 
-        # Получаем кампании в контенте (блогер выбран)
+        # Получаем кампании в работе (блогер выбран)
         all_orders, _, _ = db.get_client_orders(client_profile["id"], page=1, per_page=1000)
         in_progress_statuses = ['master_selected', 'contact_shared', 'waiting_master_confirmation', 'master_confirmed', 'in_progress']
 
@@ -4750,23 +4750,23 @@ async def advertiser_in_progress_campaigns(update: Update, context: ContextTypes
             logger.info(f"🔍 DEBUG: Кампани #{campaign_dict.get('id')} - статус: '{campaign_dict.get('status')}' (тип: {type(o).__name__})")
 
         orders = [o for o in all_orders if dict(o).get('status', 'open') in in_progress_statuses]
-        logger.info(f"🔍 DEBUG: Отфильтровано заказов 'в контенте': {len(orders)}")
+        logger.info(f"🔍 DEBUG: Отфильтровано заказов 'в работе': {len(orders)}")
 
         if not orders:
             keyboard = [
-                [InlineKeyboardButton("📝 Создать новый кампани", callback_data="client_create_order")],
+                [InlineKeyboardButton("📝 Создать новую кампанию", callback_data="client_create_order")],
                 [InlineKeyboardButton("⬅️ Назад к заказам", callback_data="client_my_orders")]
             ]
             await safe_edit_message(
                 query,
-                "📱 <b>В контенте</b>\n\nУ вас нет заказов в контенте.",
+                "📱 <b>В работе</b>\n\nУ вас нет заказов в работе.",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
             return
 
         # Формируем список заказов
-        text = f"📱 <b>В контенте</b> ({len(orders)})\n\n"
+        text = f"📱 <b>В работе</b> ({len(orders)})\n\n"
         keyboard = []
 
         for campaign in orders[:10]:
@@ -4786,11 +4786,11 @@ async def advertiser_in_progress_campaigns(update: Update, context: ContextTypes
                 "contact_shared": "Контакт передан",
                 "waiting_master_confirmation": "Ожидает подтверждения",
                 "master_confirmed": "Подтверждено",
-                "in_progress": "В контенте"
+                "in_progress": "В работе"
             }
 
             emoji = status_emoji.get(order_status, "⚪")
-            status = status_text.get(order_status, "В контенте")
+            status = status_text.get(order_status, "В работе")
 
             text += f"{emoji} <b>Кампани #{campaign_id}</b> - {status}\n"
             text += f"📱 {campaign_dict.get('category', 'Не указана')}\n"
@@ -9016,7 +9016,7 @@ async def create_campaign_description(update: Update, context: ContextTypes.DEFA
         "📸 <b>Шаг 4:</b> Загрузите фото или видео объекта\n\n"
         "📷 Фото: до 10 штук\n"
         "🎥 Видео: до 3 штук (макс. 50 МБ каждое)\n\n"
-        "Фото и видео помогут блогеру точнее оценить контенту и сделать правильное предложение.\n\n"
+        "Фото и видео помогут блогеру точнее оценить контент и сделать правильное предложение.\n\n"
         "Когда закончите загрузку, отправьте команду /done или нажмите кнопку ниже.",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard)
@@ -10478,7 +10478,7 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"• Мастеров: {stats['total_workers']}\n"
         f"• Клиентов: {stats['total_clients']}\n"
         f"• Забанено: {stats['banned_users']}\n\n"
-        f"📋 <b>Кампаниы:</b>\n"
+        f"📋 <b>Кампании:</b>\n"
         f"• Всего: {stats['total_orders']}\n"
         f"• Активных: {stats['active_orders']}\n"
         f"• Завершённых: {stats['completed_orders']}\n\n"
@@ -12281,11 +12281,11 @@ async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text += f"• С двумя профилями: {stats['dual_profile_users']}\n"
     text += f"• Забанено: {stats['banned_users']}\n\n"
 
-    # Кампаниы
+    # Кампании
     text += "📦 <b>ЗАКАЗЫ:</b>\n"
     text += f"• Всего создано: {stats['total_orders']}\n"
     text += f"• Открытые: {stats['open_orders']}\n"
-    text += f"• В контенте: {stats['active_orders']}\n"
+    text += f"• В работе: {stats['active_orders']}\n"
     text += f"• Завершённые: {stats['completed_orders']}\n"
     text += f"• Отменённые: {stats['canceled_orders']}\n\n"
 
@@ -12700,7 +12700,7 @@ async def admin_category_statuses(update: Update, context: ContextTypes.DEFAULT_
 
                 text += f"<b>{category}</b> (всего: {total_count})\n"
                 text += f"  🟢 Открытые: {open_count}\n"
-                text += f"  🔵 В контенте: {active_count}\n"
+                text += f"  🔵 В работе: {active_count}\n"
                 text += f"  ✅ Завершённые: {completed_count}\n\n"
         else:
             text += "Нет данных\n"
