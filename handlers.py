@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 # - Используется для:
 #   1. Регистрация блогера: блогер работает в указанном городе
 #   2. Регистрация клиента: город проживания клиента (для статистики)
-#   3. Создание кампания: кампани создаётся в указанном городе
+#   3. Создание кампании: кампани создаётся в указанном городе
 # - Блогеры получают уведомления о кампаниях из своих городов
 # - Если город блогера совпадает с городом кампания - блогер видит кампани
 # - Полезно для небольших городов, посёлков и агрогородков
@@ -8625,8 +8625,8 @@ async def advertiser_create_campaign(update: Update, context: ContextTypes.DEFAU
         )])
 
     await query.edit_message_text(
-        "📝 <b>Создание кампания</b>\n\n"
-        "🏙 <b>Шаг 1:</b> Где нужна контента? Выберите регион или город:",
+        "📝 <b>Создание кампании</b>\n\n"
+        "🏙 <b>Шаг 1:</b> Где нужен контент? Выберите регион или город:",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
@@ -8787,13 +8787,17 @@ async def create_campaign_main_category(update: Update, context: ContextTypes.DE
         if "payment_types" not in context.user_data:
             context.user_data["payment_types"] = []
 
-        # Переходим к выбору типа оплаты (бартер и/или цена) - множественный выбор
+        # Переходим к выбору типа оплаты (3 варианта) - множественный выбор
         selected_payments = context.user_data["payment_types"]
 
         keyboard = []
-        # Чекбокс для оплаты
-        checkbox_paid = "✅" if "paid" in selected_payments else "⬜"
-        keyboard.append([InlineKeyboardButton(f"{checkbox_paid} 💰 Предложить цену", callback_data="payment_type_paid")])
+        # Чекбокс для фиксированного бюджета
+        checkbox_fixed = "✅" if "fixed_budget" in selected_payments else "⬜"
+        keyboard.append([InlineKeyboardButton(f"{checkbox_fixed} 💰 Указать бюджет", callback_data="payment_type_fixed_budget")])
+
+        # Чекбокс для открытого ценообразования
+        checkbox_blogger = "✅" if "blogger_offer" in selected_payments else "⬜"
+        keyboard.append([InlineKeyboardButton(f"{checkbox_blogger} 💬 Блогеры предложат цену", callback_data="payment_type_blogger_offer")])
 
         # Чекбокс для бартера
         checkbox_barter = "✅" if "barter" in selected_payments else "⬜"
@@ -8809,8 +8813,10 @@ async def create_campaign_main_category(update: Update, context: ContextTypes.DE
         selected_text = ""
         if selected_payments:
             payment_names = []
-            if "paid" in selected_payments:
-                payment_names.append("Предложить цену")
+            if "fixed_budget" in selected_payments:
+                payment_names.append("Указать бюджет")
+            if "blogger_offer" in selected_payments:
+                payment_names.append("Блогеры предложат цену")
             if "barter" in selected_payments:
                 payment_names.append("Бартер")
             selected_text = f"\n\n<b>Выбрано:</b> {', '.join(payment_names)}"
@@ -8821,8 +8827,9 @@ async def create_campaign_main_category(update: Update, context: ContextTypes.DE
             f"🏙 Город: {city}\n"
             f"📱 Категории: {categories_text}\n\n"
             f"💳 <b>Шаг 3:</b> Как вы готовы оплатить публикацию? (можно выбрать несколько){selected_text}\n\n"
-            "💰 <b>Предложить цену</b> - укажите бюджет, блогеры предложат свою цену\n"
-            "🤝 <b>Бартер</b> - предложение взаимовыгодного сотрудничества",
+            "💰 <b>Указать бюджет</b> - вы указываете фиксированную сумму, блогеры либо соглашаются, либо нет\n"
+            "💬 <b>Блогеры предложат цену</b> - блогеры сами предложат свою стоимость в откликах\n"
+            "🤝 <b>Бартер</b> - предложение взаимовыгодного сотрудничества без денежной оплаты",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
@@ -8888,14 +8895,16 @@ async def create_campaign_subcategory_select(update: Update, context: ContextTyp
 
         selected_payments = context.user_data.get('payment_types', [])
         payment_names = []
-        if "paid" in selected_payments:
-            payment_names.append("Предложить цену")
+        if "fixed_budget" in selected_payments:
+            payment_names.append("Указать бюджет")
+        if "blogger_offer" in selected_payments:
+            payment_names.append("Блогеры предложат цену")
         if "barter" in selected_payments:
             payment_names.append("Бартер")
         payment_text = ", ".join(payment_names)
 
         # Сохраняем для совместимости с БД (основной тип)
-        context.user_data["payment_type"] = selected_payments[0] if selected_payments else "paid"
+        context.user_data["payment_type"] = selected_payments[0] if selected_payments else "fixed_budget"
 
         await query.edit_message_text(
             f"🏙 Город: <b>{city}</b>\n"
@@ -8921,12 +8930,14 @@ async def create_campaign_subcategory_select(update: Update, context: ContextTyp
             context.user_data["payment_types"] = []
 
         # Toggle: добавить или убрать из списка
-        if query.data == "payment_type_paid":
-            payment_type = "paid"
+        if query.data == "payment_type_fixed_budget":
+            payment_type = "fixed_budget"
+        elif query.data == "payment_type_blogger_offer":
+            payment_type = "blogger_offer"
         elif query.data == "payment_type_barter":
             payment_type = "barter"
         else:
-            payment_type = "paid"
+            payment_type = "fixed_budget"
 
         if payment_type in context.user_data["payment_types"]:
             context.user_data["payment_types"].remove(payment_type)
@@ -8939,9 +8950,13 @@ async def create_campaign_subcategory_select(update: Update, context: ContextTyp
         selected_payments = context.user_data["payment_types"]
 
         keyboard = []
-        # Чекбокс для оплаты
-        checkbox_paid = "✅" if "paid" in selected_payments else "⬜"
-        keyboard.append([InlineKeyboardButton(f"{checkbox_paid} 💰 Предложить цену", callback_data="payment_type_paid")])
+        # Чекбокс для фиксированного бюджета
+        checkbox_fixed = "✅" if "fixed_budget" in selected_payments else "⬜"
+        keyboard.append([InlineKeyboardButton(f"{checkbox_fixed} 💰 Указать бюджет", callback_data="payment_type_fixed_budget")])
+
+        # Чекбокс для открытого ценообразования
+        checkbox_blogger = "✅" if "blogger_offer" in selected_payments else "⬜"
+        keyboard.append([InlineKeyboardButton(f"{checkbox_blogger} 💬 Блогеры предложат цену", callback_data="payment_type_blogger_offer")])
 
         # Чекбокс для бартера
         checkbox_barter = "✅" if "barter" in selected_payments else "⬜"
@@ -8957,8 +8972,10 @@ async def create_campaign_subcategory_select(update: Update, context: ContextTyp
         selected_text = ""
         if selected_payments:
             payment_names = []
-            if "paid" in selected_payments:
-                payment_names.append("Предложить цену")
+            if "fixed_budget" in selected_payments:
+                payment_names.append("Указать бюджет")
+            if "blogger_offer" in selected_payments:
+                payment_names.append("Блогеры предложат цену")
             if "barter" in selected_payments:
                 payment_names.append("Бартер")
             selected_text = f"\n\n<b>Выбрано:</b> {', '.join(payment_names)}"
@@ -8969,8 +8986,9 @@ async def create_campaign_subcategory_select(update: Update, context: ContextTyp
             f"🏙 Город: {city}\n"
             f"📱 Категории: {categories_text}\n\n"
             f"💳 <b>Шаг 3:</b> Как вы готовы оплатить публикацию? (можно выбрать несколько){selected_text}\n\n"
-            "💰 <b>Предложить цену</b> - укажите бюджет, блогеры предложат свою цену\n"
-            "🤝 <b>Бартер</b> - предложение взаимовыгодного сотрудничества",
+            "💰 <b>Указать бюджет</b> - вы указываете фиксированную сумму, блогеры либо соглашаются, либо нет\n"
+            "💬 <b>Блогеры предложат цену</b> - блогеры сами предложат свою стоимость в откликах\n"
+            "🤝 <b>Бартер</b> - предложение взаимовыгодного сотрудничества без денежной оплаты",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
@@ -9145,8 +9163,8 @@ async def create_campaign_back_to_region(update: Update, context: ContextTypes.D
         )])
 
     await query.edit_message_text(
-        "📝 <b>Создание кампания</b>\n\n"
-        "🏙 <b>Шаг 1:</b> Где нужна контента? Выберите регион или город:",
+        "📝 <b>Создание кампании</b>\n\n"
+        "🏙 <b>Шаг 1:</b> Где нужен контент? Выберите регион или город:",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
