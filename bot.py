@@ -280,6 +280,7 @@ def main():
             ],
             handlers.CREATE_CAMPAIGN_SUBCATEGORY_SELECT: [
                 CallbackQueryHandler(handlers.create_campaign_subcategory_select, pattern="^payment_type_"),
+                CallbackQueryHandler(handlers.create_campaign_subcategory_select, pattern="^payment_types_done$"),
                 CallbackQueryHandler(handlers.create_campaign_back_to_maincat, pattern="^create_campaign_back_to_maincat$"),
             ],
             handlers.CREATE_CAMPAIGN_DESCRIPTION: [

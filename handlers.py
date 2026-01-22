@@ -8783,18 +8783,44 @@ async def create_campaign_main_category(update: Update, context: ContextTypes.DE
         categories = context.user_data.get("order_categories", [])
         city = context.user_data.get("order_city", "")
 
-        # Переходим к выбору типа оплаты (бартер или цена)
-        keyboard = [
-            [InlineKeyboardButton("💰 Предложить цену", callback_data="payment_type_paid")],
-            [InlineKeyboardButton("🤝 Бартер", callback_data="payment_type_barter")],
-            [InlineKeyboardButton("⬅️ Назад", callback_data="create_campaign_back_to_maincat")],
-        ]
+        # Инициализируем список выбранных типов оплаты
+        if "payment_types" not in context.user_data:
+            context.user_data["payment_types"] = []
+
+        # Переходим к выбору типа оплаты (бартер и/или цена) - множественный выбор
+        selected_payments = context.user_data["payment_types"]
+
+        keyboard = []
+        # Чекбокс для оплаты
+        checkbox_paid = "✅" if "paid" in selected_payments else "⬜"
+        keyboard.append([InlineKeyboardButton(f"{checkbox_paid} 💰 Предложить цену", callback_data="payment_type_paid")])
+
+        # Чекбокс для бартера
+        checkbox_barter = "✅" if "barter" in selected_payments else "⬜"
+        keyboard.append([InlineKeyboardButton(f"{checkbox_barter} 🤝 Бартер", callback_data="payment_type_barter")])
+
+        # Кнопка "Готово" (активна только если выбран хотя бы один вариант)
+        if selected_payments:
+            keyboard.append([InlineKeyboardButton("✅ Готово", callback_data="payment_types_done")])
+
+        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_campaign_back_to_maincat")])
 
         categories_text = ", ".join(categories)
+        selected_text = ""
+        if selected_payments:
+            payment_names = []
+            if "paid" in selected_payments:
+                payment_names.append("Предложить цену")
+            if "barter" in selected_payments:
+                payment_names.append("Бартер")
+            selected_text = f"\n\n<b>Выбрано:</b> {', '.join(payment_names)}"
+        else:
+            selected_text = "\n\n<i>Выберите хотя бы один вариант оплаты</i>"
+
         await query.edit_message_text(
             f"🏙 Город: {city}\n"
             f"📱 Категории: {categories_text}\n\n"
-            "💳 <b>Шаг 3:</b> Как вы готовы оплатить публикацию?\n\n"
+            f"💳 <b>Шаг 3:</b> Как вы готовы оплатить публикацию? (можно выбрать несколько){selected_text}\n\n"
             "💰 <b>Предложить цену</b> - укажите бюджет, блогеры предложат свою цену\n"
             "🤝 <b>Бартер</b> - предложение взаимовыгодного сотрудничества",
             parse_mode="HTML",
@@ -8849,45 +8875,106 @@ async def create_campaign_main_category(update: Update, context: ContextTypes.DE
 
 
 async def create_campaign_subcategory_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка выбора типа оплаты (бартер или цена)"""
+    """Обработка выбора типов оплаты (бартер и/или цена) - множественный выбор"""
     query = update.callback_query
     await query.answer()
 
-    # Обрабатываем выбор payment_type
-    if query.data == "payment_type_paid":
-        context.user_data["payment_type"] = "paid"
-        payment_text = "💰 Предложить цену"
-    elif query.data == "payment_type_barter":
-        context.user_data["payment_type"] = "barter"
-        payment_text = "🤝 Бартер"
+    # Проверяем, это нажатие на "Готово" или toggle типа оплаты
+    if query.data == "payment_types_done":
+        # Переходим к описанию
+        city = context.user_data.get('order_city', '')
+        categories = context.user_data.get('order_categories', [])
+        categories_text = ", ".join(categories)
+
+        selected_payments = context.user_data.get('payment_types', [])
+        payment_names = []
+        if "paid" in selected_payments:
+            payment_names.append("Предложить цену")
+        if "barter" in selected_payments:
+            payment_names.append("Бартер")
+        payment_text = ", ".join(payment_names)
+
+        # Сохраняем для совместимости с БД (основной тип)
+        context.user_data["payment_type"] = selected_payments[0] if selected_payments else "paid"
+
+        await query.edit_message_text(
+            f"🏙 Город: <b>{city}</b>\n"
+            f"📱 Категории: <b>{categories_text}</b>\n"
+            f"💳 Оплата: <b>{payment_text}</b>\n\n"
+            "📝 <b>Шаг 4:</b> Опишите что нужно сделать\n\n"
+            "💡 <b>Важно!</b> Блогеры будут предлагать свою цену за услуги, поэтому укажите:\n"
+            "✓ Объём контента (сколько постов, Stories, Reels)\n"
+            "✓ Размеры и особенности (формат видео, длительность)\n"
+            "✓ Материалы (есть свои фото/видео или нужна съёмка)\n"
+            "✓ Требования (упоминание бренда, ссылки, хештеги)\n\n"
+            "Пример:\n"
+            "• Разместить 3 Stories + 1 пост в ленте о нашем кафе (фото предоставим)\n"
+            "• Снять Reels 30-60 сек с обзором нашего товара (товар вышлем)\n"
+            "• Опубликовать отзыв о семейном отеле с фото (приглашаем на выходные)\n\n"
+            "Чем точнее описание - тем точнее цена и меньше недопониманий!",
+            parse_mode="HTML"
+        )
+        return CREATE_CAMPAIGN_DESCRIPTION
     else:
-        # Обратная совместимость со старым форматом (не должно происходить)
-        context.user_data["payment_type"] = "paid"
-        payment_text = "💰 Предложить цену"
+        # Это toggle типа оплаты
+        if "payment_types" not in context.user_data:
+            context.user_data["payment_types"] = []
 
-    # Переходим к описанию
-    city = context.user_data.get('order_city', '')
-    categories = context.user_data.get('order_categories', [])
-    categories_text = ", ".join(categories)
+        # Toggle: добавить или убрать из списка
+        if query.data == "payment_type_paid":
+            payment_type = "paid"
+        elif query.data == "payment_type_barter":
+            payment_type = "barter"
+        else:
+            payment_type = "paid"
 
-    await query.edit_message_text(
-        f"🏙 Город: <b>{city}</b>\n"
-        f"📱 Категории: <b>{categories_text}</b>\n"
-        f"💳 Оплата: <b>{payment_text}</b>\n\n"
-        "📝 <b>Шаг 4:</b> Опишите что нужно сделать\n\n"
-        "💡 <b>Важно!</b> Блогеры будут предлагать свою цену за услуги, поэтому укажите:\n"
-        "✓ Объём контента (сколько постов, Stories, Reels)\n"
-        "✓ Размеры и особенности (формат видео, длительность)\n"
-        "✓ Материалы (есть свои фото/видео или нужна съёмка)\n"
-        "✓ Требования (упоминание бренда, ссылки, хештеги)\n\n"
-        "Пример:\n"
-        "• Разместить 3 Stories + 1 пост в ленте о нашем кафе (фото предоставим)\n"
-        "• Снять Reels 30-60 сек с обзором нашего товара (товар вышлем)\n"
-        "• Опубликовать отзыв о семейном отеле с фото (приглашаем на выходные)\n\n"
-        "Чем точнее описание - тем точнее цена и меньше недопониманий!",
-        parse_mode="HTML"
-    )
-    return CREATE_CAMPAIGN_DESCRIPTION
+        if payment_type in context.user_data["payment_types"]:
+            context.user_data["payment_types"].remove(payment_type)
+        else:
+            context.user_data["payment_types"].append(payment_type)
+
+        # Перерисовываем клавиатуру с обновленными чекбоксами
+        categories = context.user_data.get("order_categories", [])
+        city = context.user_data.get("order_city", "")
+        selected_payments = context.user_data["payment_types"]
+
+        keyboard = []
+        # Чекбокс для оплаты
+        checkbox_paid = "✅" if "paid" in selected_payments else "⬜"
+        keyboard.append([InlineKeyboardButton(f"{checkbox_paid} 💰 Предложить цену", callback_data="payment_type_paid")])
+
+        # Чекбокс для бартера
+        checkbox_barter = "✅" if "barter" in selected_payments else "⬜"
+        keyboard.append([InlineKeyboardButton(f"{checkbox_barter} 🤝 Бартер", callback_data="payment_type_barter")])
+
+        # Кнопка "Готово" (активна только если выбран хотя бы один вариант)
+        if selected_payments:
+            keyboard.append([InlineKeyboardButton("✅ Готово", callback_data="payment_types_done")])
+
+        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="create_campaign_back_to_maincat")])
+
+        categories_text = ", ".join(categories)
+        selected_text = ""
+        if selected_payments:
+            payment_names = []
+            if "paid" in selected_payments:
+                payment_names.append("Предложить цену")
+            if "barter" in selected_payments:
+                payment_names.append("Бартер")
+            selected_text = f"\n\n<b>Выбрано:</b> {', '.join(payment_names)}"
+        else:
+            selected_text = "\n\n<i>Выберите хотя бы один вариант оплаты</i>"
+
+        await query.edit_message_text(
+            f"🏙 Город: {city}\n"
+            f"📱 Категории: {categories_text}\n\n"
+            f"💳 <b>Шаг 3:</b> Как вы готовы оплатить публикацию? (можно выбрать несколько){selected_text}\n\n"
+            "💰 <b>Предложить цену</b> - укажите бюджет, блогеры предложат свою цену\n"
+            "🤝 <b>Бартер</b> - предложение взаимовыгодного сотрудничества",
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
+        return CREATE_CAMPAIGN_SUBCATEGORY_SELECT
 
 
 
@@ -8947,7 +9034,7 @@ async def create_campaign_photo_upload(update: Update, context: ContextTypes.DEF
         # КРИТИЧНО: Валидация file_id
         if not validate_file_id(file_id):
             logger.error(f"❌ Невалидный file_id при загрузке фото кампания: {file_id}")
-            keyboard = [[InlineKeyboardButton("✅ Завершить и опубликовать", callback_data="order_publish")]]
+            keyboard = [[InlineKeyboardButton("✅ Завершить и опубликовать", callback_data="campaign_publish")]]
             await update.message.reply_text(
                 "❌ Ошибка при обработке фото.\n\n"
                 "Попробуйте отправить фото еще раз или используйте другое изображение.\n\n"
@@ -8959,7 +9046,7 @@ async def create_campaign_photo_upload(update: Update, context: ContextTypes.DEF
         # Сохраняем file_id
         photos.append(file_id)
 
-        keyboard = [[InlineKeyboardButton("✅ Завершить и опубликовать", callback_data="order_publish")]]
+        keyboard = [[InlineKeyboardButton("✅ Завершить и опубликовать", callback_data="campaign_publish")]]
 
         await update.message.reply_text(
             f"✅ Фото {len(photos)}/10 добавлено!\n\n"
@@ -8997,7 +9084,7 @@ async def create_campaign_photo_upload(update: Update, context: ContextTypes.DEF
         # КРИТИЧНО: Валидация file_id
         if not validate_file_id(file_id):
             logger.error(f"❌ Невалидный file_id при загрузке видео кампания: {file_id}")
-            keyboard = [[InlineKeyboardButton("✅ Завершить и опубликовать", callback_data="order_publish")]]
+            keyboard = [[InlineKeyboardButton("✅ Завершить и опубликовать", callback_data="campaign_publish")]]
             await update.message.reply_text(
                 "❌ Ошибка при обработке видео.\n\n"
                 "Попробуйте отправить видео еще раз или используйте другой файл.\n\n"
@@ -9009,7 +9096,7 @@ async def create_campaign_photo_upload(update: Update, context: ContextTypes.DEF
         # Сохраняем file_id
         videos.append(file_id)
 
-        keyboard = [[InlineKeyboardButton("✅ Завершить и опубликовать", callback_data="order_publish")]]
+        keyboard = [[InlineKeyboardButton("✅ Завершить и опубликовать", callback_data="campaign_publish")]]
 
         await update.message.reply_text(
             f"✅ Видео {len(videos)}/3 добавлено!\n\n"
