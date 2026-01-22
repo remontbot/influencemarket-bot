@@ -238,9 +238,10 @@ if DATABASE_URL:
             except Exception as e:
                 logger.error(f"❌ Ошибка при закрытии connection pool: {e}", exc_info=True)
 else:
-    # Используем SQLite для локальной разработки
+    # Используем SQLite для локальной разработки и тестирования
+    # ВАЖНО: База данных в /tmp очищается при каждом деплое на Railway
     import sqlite3
-    DATABASE_NAME = "repair_platform.db"
+    DATABASE_NAME = "/tmp/influencemarket_test.db"
     USE_POSTGRES = False
 
     def init_connection_pool():
@@ -1131,7 +1132,7 @@ def get_reviews_for_user(user_id, role):
             LEFT JOIN bloggers w ON r.from_user_id = w.user_id AND r.role_from = 'blogger'
             LEFT JOIN advertisers c ON r.from_user_id = c.user_id AND r.role_from = 'advertiser'
             WHERE r.to_user_id = ? AND r.role_to = ?
-            CAMPAIGN BY r.created_at DESC
+            ORDER BY r.created_at DESC
         """, (user_id, role))
 
         return cursor.fetchall()
@@ -1233,7 +1234,7 @@ def get_suspicious_activity_report(days=7, min_orders=3):
             AND b.blogger_id IS NOT NULL
             GROUP BY o.advertiser_user_id, b.blogger_id
             HAVING COUNT(*) >= ?
-            CAMPAIGN BY campaign_count DESC
+            ORDER BY campaign_count DESC
         """, (cutoff_date, min_orders))
 
         repeated_orders = cursor.fetchall()
@@ -1253,7 +1254,7 @@ def get_suspicious_activity_report(days=7, min_orders=3):
             AND o.completed_at >= ?
             AND o.accepted_at IS NOT NULL
             AND (julianday(o.completed_at) - julianday(o.accepted_at)) * 24 < 1
-            CAMPAIGN BY hours_diff ASC
+            ORDER BY hours_diff ASC
         """, (cutoff_date,))
 
         quick_completions = cursor.fetchall()
@@ -1271,7 +1272,7 @@ def get_suspicious_activity_report(days=7, min_orders=3):
             GROUP BY r.to_user_id, r.role_to
             HAVING COUNT(*) >= 3
             AND (CAST(SUM(CASE WHEN r.rating = 5 THEN 1 ELSE 0 END) AS REAL) / COUNT(*) * 100) = 100
-            CAMPAIGN BY total_reviews DESC
+            ORDER BY total_reviews DESC
         """, (cutoff_date,))
 
         perfect_ratings = cursor.fetchall()
@@ -1445,7 +1446,7 @@ def get_completed_work_photos(campaign_id):
         cursor.execute("""
             SELECT * FROM completed_work_photos
             WHERE campaign_id = ?
-            CAMPAIGN BY created_at DESC
+            ORDER BY created_at DESC
         """, (campaign_id,))
         return cursor.fetchall()
 
@@ -1492,7 +1493,7 @@ def get_worker_verified_photos(blogger_id, limit=20):
             JOIN campaigns o ON cwp.campaign_id = o.id
             LEFT JOIN reviews r ON o.id = r.campaign_id AND r.role_to = 'blogger'
             WHERE cwp.blogger_id = ? AND cwp.verified = TRUE
-            CAMPAIGN BY cwp.created_at DESC
+            ORDER BY cwp.created_at DESC
             LIMIT ?
         """, (blogger_id, limit))
         return cursor.fetchall()
@@ -1521,7 +1522,7 @@ def get_unverified_photos_for_client(user_id):
             JOIN advertisers c ON o.advertiser_id = c.id
             JOIN bloggers w ON cwp.blogger_id = w.id
             WHERE c.user_id = ? AND cwp.verified = FALSE
-            CAMPAIGN BY cwp.created_at DESC
+            ORDER BY cwp.created_at DESC
         """, (user_id,))
         return cursor.fetchall()
 
@@ -1573,7 +1574,7 @@ def get_all_worker_completed_photos(blogger_id):
             FROM completed_work_photos cwp
             JOIN campaigns o ON cwp.campaign_id = o.id
             WHERE cwp.blogger_id = ?
-            CAMPAIGN BY cwp.created_at DESC
+            ORDER BY cwp.created_at DESC
         """, (blogger_id,))
         return cursor.fetchall()
 
@@ -1765,7 +1766,12 @@ def update_worker_field(user_id, field_name, new_value):
         "experience": "experience",
         "description": "description",
         "portfolio_photos": "portfolio_photos",
-        "profile_photo": "profile_photo"  # Фото профиля мастера
+        "profile_photo": "profile_photo",  # Фото профиля мастера
+        "instagram_link": "instagram_link",
+        "youtube_link": "youtube_link",
+        "tiktok_link": "tiktok_link",
+        "telegram_link": "telegram_link",
+        "threads_link": "threads_link"
     }
 
     if field_name not in allowed_fields:
@@ -1925,7 +1931,7 @@ def get_all_workers(city=None, category=None):
             params.append(category)
             params.append(f"%{category}%")
 
-        query += " CAMPAIGN BY w.rating DESC, w.rating_count DESC"
+        query += " ORDER BY w.rating DESC, w.rating_count DESC"
 
         logger.info(f"🔍 Поиск мастеров: город={city}, категория={category}")
         cursor.execute(query, params)
@@ -1993,7 +1999,7 @@ def get_worker_categories(blogger_id):
         cursor.execute("""
             SELECT category FROM blogger_categories
             WHERE blogger_id = ?
-            CAMPAIGN BY category
+            ORDER BY category
         """, (blogger_id,))
 
         return [row[0] for row in cursor.fetchall()]
@@ -2060,7 +2066,7 @@ def get_order_categories(campaign_id):
         cursor.execute("""
             SELECT category FROM campaign_categories
             WHERE campaign_id = ?
-            CAMPAIGN BY category
+            ORDER BY category
         """, (campaign_id,))
 
         return [row[0] for row in cursor.fetchall()]
@@ -3063,7 +3069,7 @@ def get_user_chats(user_id):
             FROM chats c
             JOIN campaigns o ON c.campaign_id = o.id
             WHERE c.advertiser_user_id = ? OR c.blogger_user_id = ?
-            CAMPAIGN BY c.last_message_at DESC
+            ORDER BY c.last_message_at DESC
         """, (user_id, user_id))
         return cursor.fetchall()
 
@@ -3099,7 +3105,7 @@ def get_chat_messages(chat_id, limit=50):
         cursor.execute("""
             SELECT * FROM messages
             WHERE chat_id = ?
-            CAMPAIGN BY created_at DESC
+            ORDER BY created_at DESC
             LIMIT ?
         """, (chat_id, limit))
         return cursor.fetchall()
@@ -3279,7 +3285,7 @@ def get_user_transactions(user_id):
         cursor.execute("""
             SELECT * FROM transactions
             WHERE user_id = ?
-            CAMPAIGN BY created_at DESC
+            ORDER BY created_at DESC
         """, (user_id,))
         return cursor.fetchall()
 
@@ -3599,7 +3605,7 @@ def get_banned_users():
             SELECT telegram_id, ban_reason, banned_at, banned_by
             FROM users
             WHERE is_banned = TRUE
-            CAMPAIGN BY banned_at DESC
+            ORDER BY banned_at DESC
         """)
         return cursor.fetchall()
 
@@ -3620,7 +3626,7 @@ def search_users(query, limit=20):
                 WHERE u.telegram_id::text LIKE %s
                    OR LOWER(u.full_name) LIKE LOWER(%s)
                    OR LOWER(u.username) LIKE LOWER(%s)
-                CAMPAIGN BY u.created_at DESC
+                ORDER BY u.created_at DESC
                 LIMIT %s
             """, (f'%{query}%', f'%{query}%', f'%{query}%', limit))
         else:
@@ -3634,7 +3640,7 @@ def search_users(query, limit=20):
                 WHERE CAST(u.telegram_id AS TEXT) LIKE ?
                    OR LOWER(u.full_name) LIKE LOWER(?)
                    OR LOWER(u.username) LIKE LOWER(?)
-                CAMPAIGN BY u.created_at DESC
+                ORDER BY u.created_at DESC
                 LIMIT ?
             """, (f'%{query}%', f'%{query}%', f'%{query}%', limit))
         return cursor.fetchall()
@@ -3656,7 +3662,7 @@ def get_users_filtered(filter_type='all', page=1, per_page=20):
                 LEFT JOIN bloggers w ON u.id = w.user_id
                 LEFT JOIN advertisers c ON u.id = c.user_id
                 WHERE u.is_banned = TRUE
-                CAMPAIGN BY u.created_at DESC
+                ORDER BY u.created_at DESC
                 LIMIT ? OFFSET ?
             """, (per_page, offset))
         elif filter_type == 'bloggers':
@@ -3666,7 +3672,7 @@ def get_users_filtered(filter_type='all', page=1, per_page=20):
                 INNER JOIN bloggers w ON u.id = w.user_id
                 LEFT JOIN advertisers c ON u.id = c.user_id
                 WHERE u.is_banned = FALSE
-                CAMPAIGN BY u.created_at DESC
+                ORDER BY u.created_at DESC
                 LIMIT ? OFFSET ?
             """, (per_page, offset))
         elif filter_type == 'advertisers':
@@ -3676,7 +3682,7 @@ def get_users_filtered(filter_type='all', page=1, per_page=20):
                 LEFT JOIN bloggers w ON u.id = w.user_id
                 INNER JOIN advertisers c ON u.id = c.user_id
                 WHERE u.is_banned = FALSE
-                CAMPAIGN BY u.created_at DESC
+                ORDER BY u.created_at DESC
                 LIMIT ? OFFSET ?
             """, (per_page, offset))
         elif filter_type == 'dual':
@@ -3686,7 +3692,7 @@ def get_users_filtered(filter_type='all', page=1, per_page=20):
                 INNER JOIN bloggers w ON u.id = w.user_id
                 INNER JOIN advertisers c ON u.id = c.user_id
                 WHERE u.is_banned = FALSE
-                CAMPAIGN BY u.created_at DESC
+                ORDER BY u.created_at DESC
                 LIMIT ? OFFSET ?
             """, (per_page, offset))
         else:  # 'all'
@@ -3695,7 +3701,7 @@ def get_users_filtered(filter_type='all', page=1, per_page=20):
                 FROM users u
                 LEFT JOIN bloggers w ON u.id = w.user_id
                 LEFT JOIN advertisers c ON u.id = c.user_id
-                CAMPAIGN BY u.created_at DESC
+                ORDER BY u.created_at DESC
                 LIMIT ? OFFSET ?
             """, (per_page, offset))
 
@@ -3942,11 +3948,12 @@ def create_indexes():
         except Exception as e:
             print(f"⚠️  Предупреждение при создании индексов: {e}")
 
-def create_order(advertiser_id, city, categories, description, photos, videos=None, budget_type="none", budget_value=0):
+def create_order(advertiser_id, city, categories, description, photos, videos=None, budget_type="none", budget_value=0, payment_type="paid"):
     """
     Создаёт новый заказ.
     ИСПРАВЛЕНО: Валидация file_id для фотографий.
     ОБНОВЛЕНО: Добавлена поддержка видео.
+    ОБНОВЛЕНО: Добавлена поддержка типа оплаты (paid/barter).
     """
     # Rate limiting: проверяем лимит заказов
     allowed, remaining_seconds = _rate_limiter.is_allowed(advertiser_id, "create_order", RATE_LIMIT_ORDERS_PER_HOUR)
@@ -3986,10 +3993,10 @@ def create_order(advertiser_id, city, categories, description, photos, videos=No
         cursor.execute("""
             INSERT INTO campaigns (
                 advertiser_id, city, category, description, photos, videos,
-                budget_type, budget_value, status, created_at
+                budget_type, budget_value, payment_type, status, created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)
-        """, (advertiser_id, city, categories_str, description, photos_str, videos_str, budget_type, budget_value, now))
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)
+        """, (advertiser_id, city, categories_str, description, photos_str, videos_str, budget_type, budget_value, payment_type, now))
 
         campaign_id = cursor.lastrowid
         conn.commit()  # КРИТИЧНО: Фиксируем транзакцию создания заказа
@@ -4044,7 +4051,7 @@ def get_orders_by_category(category, page=1, per_page=10):
             JOIN advertisers c ON o.advertiser_id = c.id
             WHERE o.status = 'open'
             AND oc.category = ?
-            CAMPAIGN BY o.created_at DESC
+            ORDER BY o.created_at DESC
             LIMIT ? OFFSET ?
         """, (category, per_page, offset))
 
@@ -4109,7 +4116,7 @@ def get_orders_by_categories(categories_list, per_page=30, blogger_id=None):
             WHERE o.status = 'open'
             AND oc.category IN ({placeholders})
             {city_filter}
-            CAMPAIGN BY o.created_at DESC
+            ORDER BY o.created_at DESC
             LIMIT ?
         """
 
@@ -4153,7 +4160,7 @@ def get_client_orders(advertiser_id, page=1, per_page=10):
         cursor.execute("""
             SELECT * FROM campaigns
             WHERE advertiser_id = ?
-            CAMPAIGN BY created_at DESC
+            ORDER BY created_at DESC
             LIMIT ? OFFSET ?
         """, (advertiser_id, per_page, offset))
 
@@ -4434,7 +4441,7 @@ def get_bids_for_order(campaign_id):
             JOIN users u ON w.user_id = u.id
             WHERE b.campaign_id = ?
             AND b.status = 'active'
-            CAMPAIGN BY b.created_at ASC
+            ORDER BY b.created_at ASC
         """, (campaign_id,))
 
         return cursor.fetchall()
@@ -4560,7 +4567,7 @@ def get_bids_for_worker(blogger_id):
             JOIN advertisers c ON o.advertiser_id = c.id
             JOIN users u ON c.user_id = u.id
             WHERE b.blogger_id = ?
-            CAMPAIGN BY b.created_at DESC
+            ORDER BY b.created_at DESC
         """, (blogger_id,))
 
         return cursor.fetchall()
@@ -5627,7 +5634,7 @@ def get_active_ad(placement, user_id=None, user_categories=None):
             """
             params.extend([user_id, today_start])
 
-        query += " CAMPAIGN BY a.id DESC LIMIT 1"
+        query += " ORDER BY a.id DESC LIMIT 1"
 
         cursor.execute(query, params)
         result = cursor.fetchone()
@@ -5699,7 +5706,7 @@ def get_active_ads(placement, user_id=None, user_categories=None, user_role=None
             """
             params.extend([user_id, today_start])
 
-        query += " CAMPAIGN BY a.id DESC"  # БЕЗ LIMIT - показываем все
+        query += " ORDER BY a.id DESC"  # БЕЗ LIMIT - показываем все
 
         cursor.execute(query, params)
         results = cursor.fetchall()
@@ -5788,7 +5795,7 @@ def get_all_ads(limit=None, offset=0):
     """Получает все рекламы (активные и неактивные) для админ-панели"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
-        query = "SELECT * FROM ads CAMPAIGN BY created_at DESC"
+        query = "SELECT * FROM ads ORDER BY created_at DESC"
         if limit:
             query += f" LIMIT {limit} OFFSET {offset}"
         cursor.execute(query)
@@ -5906,7 +5913,7 @@ def get_all_orders_for_export():
     """Получает все заказы для экспорта"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
-        cursor.execute("SELECT * FROM campaigns CAMPAIGN BY created_at DESC")
+        cursor.execute("SELECT * FROM campaigns ORDER BY created_at DESC")
         return cursor.fetchall()
 
 
@@ -5914,7 +5921,7 @@ def get_all_bids_for_export():
     """Получает все отклики для экспорта"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
-        cursor.execute("SELECT * FROM offers CAMPAIGN BY created_at DESC")
+        cursor.execute("SELECT * FROM offers ORDER BY created_at DESC")
         return cursor.fetchall()
 
 
@@ -5922,7 +5929,7 @@ def get_all_reviews_for_export():
     """Получает все отзывы для экспорта"""
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
-        cursor.execute("SELECT * FROM reviews CAMPAIGN BY created_at DESC")
+        cursor.execute("SELECT * FROM reviews ORDER BY created_at DESC")
         return cursor.fetchall()
 
 
@@ -5940,7 +5947,7 @@ def get_category_reports():
             SELECT category, COUNT(*) as count
             FROM campaigns
             GROUP BY category
-            CAMPAIGN BY count DESC
+            ORDER BY count DESC
             LIMIT 10
         """)
         reports['top_categories'] = cursor.fetchall()
@@ -5951,7 +5958,7 @@ def get_category_reports():
             FROM campaigns
             WHERE city IS NOT NULL AND city != ''
             GROUP BY city
-            CAMPAIGN BY count DESC
+            ORDER BY count DESC
             LIMIT 10
         """)
         reports['top_cities_orders'] = cursor.fetchall()
@@ -5962,7 +5969,7 @@ def get_category_reports():
             FROM bloggers
             WHERE categories IS NOT NULL AND categories != ''
             GROUP BY categories
-            CAMPAIGN BY count DESC
+            ORDER BY count DESC
             LIMIT 10
         """)
         reports['top_specializations'] = cursor.fetchall()
@@ -5977,7 +5984,7 @@ def get_category_reports():
                 COUNT(*) as total_count
             FROM campaigns
             GROUP BY category
-            CAMPAIGN BY total_count DESC
+            ORDER BY total_count DESC
             LIMIT 15
         """)
         reports['category_statuses'] = cursor.fetchall()
@@ -5990,7 +5997,7 @@ def get_category_reports():
             FROM campaigns
             WHERE city IS NOT NULL AND city != ''
             GROUP BY city
-            CAMPAIGN BY campaign_count DESC
+            ORDER BY campaign_count DESC
             LIMIT 10
         """)
         city_orders = {dict(row)['city']: dict(row)['campaign_count'] for row in cursor.fetchall()}
@@ -6002,7 +6009,7 @@ def get_category_reports():
                 COUNT(DISTINCT wc.blogger_id) as blogger_count
             FROM blogger_cities wc
             GROUP BY wc.city
-            CAMPAIGN BY blogger_count DESC
+            ORDER BY blogger_count DESC
             LIMIT 15
         """)
         city_workers = {dict(row)['city']: dict(row)['blogger_count'] for row in cursor.fetchall()}
@@ -6035,7 +6042,7 @@ def get_category_reports():
               AND b.currency = 'BYN'
             GROUP BY o.category
             HAVING COUNT(b.id) >= 3
-            CAMPAIGN BY avg_price DESC
+            ORDER BY avg_price DESC
             LIMIT 10
         """)
         reports['avg_prices_by_category'] = cursor.fetchall()
@@ -6080,7 +6087,7 @@ def get_worker_cities(blogger_id):
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
         cursor.execute("""
-            SELECT city FROM blogger_cities WHERE blogger_id = ? CAMPAIGN BY id
+            SELECT city FROM blogger_cities WHERE blogger_id = ? ORDER BY id
         """, (blogger_id,))
         rows = cursor.fetchall()
 
@@ -6235,7 +6242,7 @@ def has_active_notification(user_id, notification_type):
         cursor.execute("""
             SELECT id FROM sent_notifications
             WHERE user_id = ? AND notification_type = ? AND cleared_at IS NULL
-            CAMPAIGN BY sent_at DESC
+            ORDER BY sent_at DESC
             LIMIT 1
         """, (user_id, notification_type))
 
@@ -6305,7 +6312,7 @@ def get_active_notification_message_id(user_id, notification_type):
         cursor.execute("""
             SELECT message_id FROM sent_notifications
             WHERE user_id = ? AND notification_type = ? AND cleared_at IS NULL
-            CAMPAIGN BY sent_at DESC
+            ORDER BY sent_at DESC
             LIMIT 1
         """, (user_id, notification_type))
 
@@ -6408,7 +6415,7 @@ def get_all_suggestions(status=None):
                     FROM suggestions s
                     JOIN users u ON s.user_id = u.id
                     WHERE s.status = %s
-                    CAMPAIGN BY s.created_at DESC
+                    ORDER BY s.created_at DESC
                 """, (status,))
             else:
                 cursor.execute("""
@@ -6416,14 +6423,14 @@ def get_all_suggestions(status=None):
                     FROM suggestions s
                     JOIN users u ON s.user_id = u.id
                     WHERE s.status = ?
-                    CAMPAIGN BY s.created_at DESC
+                    ORDER BY s.created_at DESC
                 """, (status,))
         else:
             cursor.execute("""
                 SELECT s.*, u.telegram_id
                 FROM suggestions s
                 JOIN users u ON s.user_id = u.id
-                CAMPAIGN BY s.created_at DESC
+                ORDER BY s.created_at DESC
             """)
         
         return cursor.fetchall()
@@ -6601,44 +6608,102 @@ def migrate_add_blogger_platform_fields():
     Добавляет поля для платформ блогеров и верификации.
     Новые поля:
     - platform_instagram, platform_tiktok, platform_youtube
-    - instagram_link, tiktok_link, youtube_link
+    - instagram_link, tiktok_link, youtube_link, telegram_link, threads_link
     - format_stories, format_reels, format_posts, format_integration
     - price_stories, price_reels, price_posts
     - verified_ownership, verification_code, trust_score
     """
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
-        
+
         try:
-            # Платформы
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS platform_instagram BOOLEAN DEFAULT FALSE")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS platform_tiktok BOOLEAN DEFAULT FALSE")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS platform_youtube BOOLEAN DEFAULT FALSE")
-            
-            # Ссылки на профили
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS instagram_link VARCHAR(200)")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS tiktok_link VARCHAR(200)")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS youtube_link VARCHAR(200)")
-            
-            # Форматы контента
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS format_stories BOOLEAN DEFAULT FALSE")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS format_reels BOOLEAN DEFAULT FALSE")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS format_posts BOOLEAN DEFAULT FALSE")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS format_integration BOOLEAN DEFAULT FALSE")
-            
-            # Прайс
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS price_stories INTEGER")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS price_reels INTEGER")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS price_posts INTEGER")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS currency VARCHAR(3) DEFAULT 'BYN'")
-            
-            # Верификация и Trust Score
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS verified_ownership BOOLEAN DEFAULT FALSE")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS verification_code VARCHAR(20)")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS trust_score INTEGER DEFAULT 0")
-            cursor.execute("ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS content_language VARCHAR(50) DEFAULT 'Русский'")
-            
-            conn.commit()
+            if USE_POSTGRES:
+                logger.info("📝 Добавление полей социальных сетей для PostgreSQL...")
+
+                # Список всех полей для добавления
+                fields = [
+                    ("platform_instagram", "BOOLEAN DEFAULT FALSE"),
+                    ("platform_tiktok", "BOOLEAN DEFAULT FALSE"),
+                    ("platform_youtube", "BOOLEAN DEFAULT FALSE"),
+                    ("instagram_link", "VARCHAR(200)"),
+                    ("tiktok_link", "VARCHAR(200)"),
+                    ("youtube_link", "VARCHAR(200)"),
+                    ("telegram_link", "VARCHAR(200)"),
+                    ("threads_link", "VARCHAR(200)"),
+                    ("format_stories", "BOOLEAN DEFAULT FALSE"),
+                    ("format_reels", "BOOLEAN DEFAULT FALSE"),
+                    ("format_posts", "BOOLEAN DEFAULT FALSE"),
+                    ("format_integration", "BOOLEAN DEFAULT FALSE"),
+                    ("price_stories", "INTEGER"),
+                    ("price_reels", "INTEGER"),
+                    ("price_posts", "INTEGER"),
+                    ("currency", "VARCHAR(3) DEFAULT 'BYN'"),
+                    ("verified_ownership", "BOOLEAN DEFAULT FALSE"),
+                    ("verification_code", "VARCHAR(20)"),
+                    ("trust_score", "INTEGER DEFAULT 0"),
+                    ("content_language", "VARCHAR(50) DEFAULT 'Русский'"),
+                ]
+
+                for field_name, field_type in fields:
+                    cursor.execute(f"""
+                        DO $$
+                        BEGIN
+                            IF NOT EXISTS (
+                                SELECT 1 FROM information_schema.columns
+                                WHERE table_name = 'bloggers' AND column_name = '{field_name}'
+                            ) THEN
+                                ALTER TABLE bloggers ADD COLUMN {field_name} {field_type};
+                            END IF;
+                        END $$;
+                    """)
+
+                conn.commit()
+                logger.info("✅ Поля социальных сетей успешно добавлены!")
+
+            else:
+                # Для SQLite проверяем существование колонок
+                cursor.execute("PRAGMA table_info(bloggers)")
+                existing_columns = [column[1] for column in cursor.fetchall()]
+
+                logger.info(f"📝 Проверка полей социальных сетей для SQLite... Существующие колонки: {len(existing_columns)}")
+
+                # Список всех полей для добавления (SQLite синтаксис)
+                fields = [
+                    ("platform_instagram", "INTEGER DEFAULT 0"),
+                    ("platform_tiktok", "INTEGER DEFAULT 0"),
+                    ("platform_youtube", "INTEGER DEFAULT 0"),
+                    ("instagram_link", "TEXT"),
+                    ("tiktok_link", "TEXT"),
+                    ("youtube_link", "TEXT"),
+                    ("telegram_link", "TEXT"),
+                    ("threads_link", "TEXT"),
+                    ("format_stories", "INTEGER DEFAULT 0"),
+                    ("format_reels", "INTEGER DEFAULT 0"),
+                    ("format_posts", "INTEGER DEFAULT 0"),
+                    ("format_integration", "INTEGER DEFAULT 0"),
+                    ("price_stories", "INTEGER"),
+                    ("price_reels", "INTEGER"),
+                    ("price_posts", "INTEGER"),
+                    ("currency", "TEXT DEFAULT 'BYN'"),
+                    ("verified_ownership", "INTEGER DEFAULT 0"),
+                    ("verification_code", "TEXT"),
+                    ("trust_score", "INTEGER DEFAULT 0"),
+                    ("content_language", "TEXT DEFAULT 'Русский'"),
+                ]
+
+                added_count = 0
+                for field_name, field_type in fields:
+                    if field_name not in existing_columns:
+                        logger.info(f"  📝 Добавление поля {field_name}...")
+                        cursor.execute(f"ALTER TABLE bloggers ADD COLUMN {field_name} {field_type}")
+                        added_count += 1
+
+                conn.commit()
+                logger.info(f"✅ Добавлено {added_count} новых полей для социальных сетей!")
+
+        except Exception as e:
+            logger.error(f"⚠️ Error in migrate_add_blogger_platform_fields: {e}")
+            conn.rollback()
             logger.info("✅ Migration completed: blogger platform fields added!")
             
         except Exception as e:
@@ -6755,25 +6820,78 @@ def migrate_add_campaign_fields():
     - product_description, platform, required_topics
     - budget_type, budget_amount, requirements, deadline
     - min_trust_score, only_verified
+    - payment_type (paid/barter)
     """
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
-        
+
         try:
-            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS product_description TEXT")
-            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS platform VARCHAR(20)")
-            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS required_topics TEXT")  # JSON array
-            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS required_format VARCHAR(20)")
-            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS budget_type VARCHAR(20)")
-            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS budget_amount INTEGER")
-            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS requirements TEXT")
-            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS deadline DATE")
-            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS min_trust_score INTEGER DEFAULT 0")
-            cursor.execute("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS only_verified BOOLEAN DEFAULT FALSE")
-            
-            conn.commit()
-            logger.info("✅ Migration completed: campaign fields added!")
-            
+            if USE_POSTGRES:
+                logger.info("📝 Добавление полей для кампаний (PostgreSQL)...")
+
+                # Список всех полей для добавления
+                fields = [
+                    ("product_description", "TEXT"),
+                    ("platform", "VARCHAR(20)"),
+                    ("required_topics", "TEXT"),  # JSON array
+                    ("required_format", "VARCHAR(20)"),
+                    ("budget_type", "VARCHAR(20)"),
+                    ("budget_amount", "INTEGER"),
+                    ("requirements", "TEXT"),
+                    ("deadline", "DATE"),
+                    ("min_trust_score", "INTEGER DEFAULT 0"),
+                    ("only_verified", "BOOLEAN DEFAULT FALSE"),
+                    ("payment_type", "VARCHAR(20) DEFAULT 'paid'"),  # 'paid' или 'barter'
+                ]
+
+                for field_name, field_type in fields:
+                    cursor.execute(f"""
+                        DO $$
+                        BEGIN
+                            IF NOT EXISTS (
+                                SELECT 1 FROM information_schema.columns
+                                WHERE table_name = 'campaigns' AND column_name = '{field_name}'
+                            ) THEN
+                                ALTER TABLE campaigns ADD COLUMN {field_name} {field_type};
+                            END IF;
+                        END $$;
+                    """)
+
+                conn.commit()
+                logger.info("✅ Поля для кампаний успешно добавлены!")
+
+            else:
+                # Для SQLite проверяем существование колонок
+                cursor.execute("PRAGMA table_info(campaigns)")
+                existing_columns = [column[1] for column in cursor.fetchall()]
+
+                logger.info(f"📝 Проверка полей кампаний для SQLite... Существующие колонки: {len(existing_columns)}")
+
+                # Список всех полей для добавления (SQLite синтаксис)
+                fields = [
+                    ("product_description", "TEXT"),
+                    ("platform", "TEXT"),
+                    ("required_topics", "TEXT"),
+                    ("required_format", "TEXT"),
+                    ("budget_type", "TEXT"),
+                    ("budget_amount", "INTEGER"),
+                    ("requirements", "TEXT"),
+                    ("deadline", "TEXT"),
+                    ("min_trust_score", "INTEGER DEFAULT 0"),
+                    ("only_verified", "INTEGER DEFAULT 0"),
+                    ("payment_type", "TEXT DEFAULT 'paid'"),
+                ]
+
+                added_count = 0
+                for field_name, field_type in fields:
+                    if field_name not in existing_columns:
+                        logger.info(f"  📝 Добавление поля {field_name}...")
+                        cursor.execute(f"ALTER TABLE campaigns ADD COLUMN {field_name} {field_type}")
+                        added_count += 1
+
+                conn.commit()
+                logger.info(f"✅ Добавлено {added_count} новых полей для кампаний!")
+
         except Exception as e:
             logger.error(f"⚠️ Error in migrate_add_campaign_fields: {e}")
             conn.rollback()

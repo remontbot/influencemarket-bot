@@ -90,7 +90,7 @@ def main():
     db.migrate_add_transactions()  # Создаём таблицу для истории транзакций
     db.migrate_add_notification_settings()  # Добавляем настройки уведомлений для блогеров
     db.migrate_normalize_categories()  # ИСПРАВЛЕНИЕ: Нормализация категорий блогеров (точный поиск вместо LIKE)
-    db.migrate_normalize_order_categories()  # ИСПРАВЛЕНИЕ: Нормализация категорий заказов (точный поиск вместо LIKE)
+    db.migrate_normalize_order_categories()  # ИСПРАВЛЕНИЕ: Нормализация категорий кампаний (точный поиск вместо LIKE)
     db.migrate_add_ready_in_days_and_notifications()  # Добавляем ready_in_days в offers и blogger_notifications
     db.migrate_add_admin_and_ads()  # Добавляем систему админ-панели, broadcast и рекламы
     db.migrate_add_worker_cities()  # Добавляем таблицу для множественного выбора городов мастером (blogger)
@@ -148,28 +148,22 @@ def main():
                     handlers.register_blogger_name,
                 )
             ],
-            handlers.REGISTER_BLOGGER_PHONE: [
-                MessageHandler(
-                    filters.TEXT & ~filters.COMMAND,
-                    handlers.register_blogger_phone,
-                )
-            ],
             handlers.REGISTER_BLOGGER_REGION_SELECT: [
                 CallbackQueryHandler(
                     handlers.register_blogger_region_select,
-                    pattern="^bloggerregion_",
+                    pattern="^masterregion_",
                 )
             ],
             handlers.REGISTER_BLOGGER_CITY: [
                 CallbackQueryHandler(
                     handlers.register_blogger_city_select,
-                    pattern="^bloggercity_",
+                    pattern="^mastercity_",
                 )
             ],
             handlers.REGISTER_BLOGGER_CITY_SELECT: [
                 CallbackQueryHandler(
                     handlers.register_blogger_city_select,
-                    pattern="^bloggercity_",
+                    pattern="^mastercity_",
                 )
             ],
             handlers.REGISTER_BLOGGER_CITY_OTHER: [
@@ -184,30 +178,11 @@ def main():
                     pattern="^(add_more_cities|finish_cities)$",
                 )
             ],
-            # Новые состояния для выбора категорий (7 основных категорий)
-            handlers.REGISTER_BLOGGER_MAIN_CATEGORY: [
+            # Упрощенный выбор категорий (12 категорий, без подкатегорий)
+            handlers.REGISTER_BLOGGER_CATEGORIES_SELECT: [
                 CallbackQueryHandler(
-                    handlers.register_blogger_main_category,
-                    pattern="^maincat_",
-                )
-            ],
-            handlers.REGISTER_BLOGGER_SUBCATEGORY_SELECT: [
-                CallbackQueryHandler(
-                    handlers.register_blogger_subcategory_select,
-                    pattern="^subcat_",
-                )
-            ],
-            handlers.REGISTER_BLOGGER_ASK_MORE_CATEGORIES: [
-                CallbackQueryHandler(
-                    handlers.register_blogger_ask_more_categories,
-                    pattern="^more_",
-                )
-            ],
-            # ОБНОВЛЕНО: Теперь опыт выбирается кнопками
-            handlers.REGISTER_BLOGGER_EXPERIENCE: [
-                CallbackQueryHandler(
-                    handlers.register_blogger_experience,
-                    pattern="^exp_",
+                    handlers.register_blogger_categories_select,
+                    pattern="^cat_",
                 )
             ],
             handlers.REGISTER_BLOGGER_DESCRIPTION: [
@@ -216,7 +191,7 @@ def main():
                     handlers.register_blogger_description,
                 )
             ],
-            # НОВОЕ: Обработка фото работ
+            # НОВОЕ: Обработка фото контента
             handlers.REGISTER_BLOGGER_PHOTOS: [
                 CallbackQueryHandler(
                     handlers.register_blogger_photos,
@@ -284,7 +259,8 @@ def main():
 
     create_campaign_handler = ConversationHandler(
         entry_points=[
-            CallbackQueryHandler(handlers.advertiser_create_campaign, pattern="^advertiser_create_campaign$")
+            CallbackQueryHandler(handlers.advertiser_create_campaign, pattern="^advertiser_create_campaign$"),
+            CallbackQueryHandler(handlers.advertiser_create_campaign, pattern="^client_create_order$"),  # Алиас
         ],
         states={
             handlers.CREATE_CAMPAIGN_REGION_SELECT: [
@@ -303,7 +279,7 @@ def main():
                 CallbackQueryHandler(handlers.create_campaign_back_to_city, pattern="^create_campaign_back_to_city$"),
             ],
             handlers.CREATE_CAMPAIGN_SUBCATEGORY_SELECT: [
-                CallbackQueryHandler(handlers.create_campaign_subcategory_select, pattern="^campaign_subcat_"),
+                CallbackQueryHandler(handlers.create_campaign_subcategory_select, pattern="^payment_type_"),
                 CallbackQueryHandler(handlers.create_campaign_back_to_maincat, pattern="^create_campaign_back_to_maincat$"),
             ],
             handlers.CREATE_CAMPAIGN_DESCRIPTION: [
@@ -336,17 +312,13 @@ def main():
         states={
             handlers.EDIT_PROFILE_MENU: [
                 CallbackQueryHandler(handlers.edit_name_start, pattern="^edit_name$"),
-                CallbackQueryHandler(handlers.edit_phone_start, pattern="^edit_phone$"),
                 CallbackQueryHandler(handlers.edit_city_start, pattern="^edit_city$"),
                 CallbackQueryHandler(handlers.edit_categories_start, pattern="^edit_categories$"),
-                CallbackQueryHandler(handlers.edit_experience_start, pattern="^edit_experience$"),
+                CallbackQueryHandler(handlers.edit_social_media_start, pattern="^edit_social_media$"),
                 CallbackQueryHandler(handlers.edit_description_start, pattern="^edit_description$"),
             ],
             handlers.EDIT_NAME: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.edit_name_save),
-            ],
-            handlers.EDIT_PHONE: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.edit_phone_save),
             ],
             handlers.EDIT_REGION_SELECT: [
                 CallbackQueryHandler(handlers.edit_region_select, pattern="^editregion_"),
@@ -355,17 +327,14 @@ def main():
                 CallbackQueryHandler(handlers.edit_city_select, pattern="^editcity_"),
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.edit_city_save),
             ],
-            handlers.EDIT_MAIN_CATEGORY: [
-                CallbackQueryHandler(handlers.edit_main_category, pattern="^editmaincat_"),
+            handlers.EDIT_CATEGORIES_SELECT: [
+                CallbackQueryHandler(handlers.edit_categories_select, pattern="^editcat_"),
             ],
-            handlers.EDIT_SUBCATEGORY_SELECT: [
-                CallbackQueryHandler(handlers.edit_subcategory_select, pattern="^editsubcat_"),
+            handlers.EDIT_SOCIAL_MEDIA: [
+                CallbackQueryHandler(handlers.edit_social_media_select, pattern="^edit_sm_"),
             ],
-            handlers.EDIT_ASK_MORE_CATEGORIES: [
-                CallbackQueryHandler(handlers.edit_ask_more_categories, pattern="^editmore_"),
-            ],
-            handlers.EDIT_EXPERIENCE: [
-                CallbackQueryHandler(handlers.edit_experience_save, pattern="^editexp_"),
+            handlers.EDIT_SOCIAL_MEDIA_INPUT: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.edit_social_media_save),
             ],
             handlers.EDIT_DESCRIPTION: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.edit_description_save),
@@ -420,6 +389,14 @@ def main():
         CallbackQueryHandler(
             handlers.advertiser_my_campaigns,
             pattern="^advertiser_my_campaigns$",
+        )
+    )
+
+    # Алиас для обратной совместимости
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.advertiser_my_campaigns,
+            pattern="^client_my_orders$",
         )
     )
 
@@ -491,7 +468,7 @@ def main():
         )
     )
 
-    # НОВОЕ: Обработчики фотографий завершённых работ
+    # НОВОЕ: Обработчики фотографий выполненного контента
     application.add_handler(
         CallbackQueryHandler(
             handlers.blogger_upload_work_photo_start,
@@ -563,11 +540,11 @@ def main():
         )
     )
 
-    # MessageHandler для приёма фото завершённых работ от мастера
+    # MessageHandler для приёма фото завершённых работ от блогера
     application.add_handler(
         MessageHandler(
             filters.PHOTO & ~filters.COMMAND,
-            handlers.worker_upload_work_photo_receive
+            handlers.blogger_upload_work_photo_receive
         )
     )
 
@@ -654,6 +631,14 @@ def main():
         )
     )
 
+    # Алиас для обратной совместимости
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.show_blogger_menu,
+            pattern="^show_worker_menu$",
+        )
+    )
+
     application.add_handler(
         CallbackQueryHandler(
             handlers.toggle_notifications,
@@ -665,6 +650,14 @@ def main():
         CallbackQueryHandler(
             handlers.toggle_advertiser_notifications,
             pattern="^toggle_advertiser_notifications$",
+        )
+    )
+
+    # Алиас для обратной совместимости
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.toggle_advertiser_notifications,
+            pattern="^toggle_client_notifications$",
         )
     )
 
@@ -683,7 +676,7 @@ def main():
         )
     )
 
-    # НОВОЕ: Мои кампании блогера (кампании в работе)
+    # НОВОЕ: Мои кампании блогера (активные кампании)
     application.add_handler(
         CallbackQueryHandler(
             handlers.blogger_my_campaigns,
@@ -691,10 +684,48 @@ def main():
         )
     )
 
+    # Доступные кампании для блогера
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.blogger_view_orders,
+            pattern="^blogger_view_orders$",
+        )
+    )
+
+    # Алиасы для обратной совместимости (worker_* → blogger_*)
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.blogger_view_orders,
+            pattern="^worker_view_orders$",
+        )
+    )
+
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.blogger_my_offers,
+            pattern="^worker_my_bids$",
+        )
+    )
+
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.blogger_my_campaigns,
+            pattern="^worker_my_orders$",
+        )
+    )
+
     application.add_handler(
         CallbackQueryHandler(
             handlers.show_advertiser_menu,
             pattern="^show_advertiser_menu$",
+        )
+    )
+
+    # Алиас для обратной совместимости
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.show_advertiser_menu,
+            pattern="^show_client_menu$",
         )
     )
 
@@ -710,6 +741,14 @@ def main():
         CallbackQueryHandler(
             handlers.show_blogger_profile,
             pattern="^blogger_profile$",
+        )
+    )
+
+    # Алиас для обратной совместимости
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.show_blogger_profile,
+            pattern="^worker_profile$",
         )
     )
 
