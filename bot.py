@@ -283,6 +283,9 @@ def main():
                 CallbackQueryHandler(handlers.create_campaign_subcategory_select, pattern="^payment_types_done$"),
                 CallbackQueryHandler(handlers.create_campaign_back_to_maincat, pattern="^create_campaign_back_to_maincat$"),
             ],
+            handlers.CREATE_CAMPAIGN_BUDGET: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.create_campaign_budget),
+            ],
             handlers.CREATE_CAMPAIGN_DESCRIPTION: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.create_campaign_description),
             ],
