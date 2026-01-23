@@ -1002,6 +1002,11 @@ def main():
         CommandHandler("add_test_bloggers", handlers.add_test_bloggers_command)
     )
 
+    # Команда для добавления тестовых рекламодателей
+    application.add_handler(
+        CommandHandler("add_test_advertisers", handlers.add_test_advertisers_command)
+    )
+
     # Команда для добавления тестовых предложений
     application.add_handler(
         CommandHandler("add_test_offers", handlers.add_test_offers_command)
