@@ -4002,7 +4002,7 @@ async def edit_region_select(update: Update, context: ContextTypes.DEFAULT_TYPE)
             reply_markup=InlineKeyboardMarkup(keyboard),
             parse_mode="HTML",
         )
-        return ConversationHandler.END
+        return EDIT_PROFILE_MENU
 
     # Если выбрана область - показываем города
     else:
