@@ -124,6 +124,12 @@ def main():
     # --- Команда /start (ОТДЕЛЬНО от ConversationHandler) ---
     application.add_handler(CommandHandler("start", handlers.start_command))
 
+    # --- Тестовые команды (ВЫСОКИЙ ПРИОРИТЕТ - до ConversationHandlers) ---
+    application.add_handler(CommandHandler("add_test_campaigns", handlers.add_test_campaigns_command))
+    application.add_handler(CommandHandler("add_test_bloggers", handlers.add_test_bloggers_command))
+    application.add_handler(CommandHandler("add_test_advertisers", handlers.add_test_advertisers_command))
+    application.add_handler(CommandHandler("add_test_offers", handlers.add_test_offers_command))
+
     # --- Глобальный handler для noop (заглушки) ---
     application.add_handler(CallbackQueryHandler(handlers.noop_callback, pattern="^noop$"))
 
@@ -990,26 +996,6 @@ def main():
     # Команда для очистки профиля
     application.add_handler(
         CommandHandler("reset_profile", handlers.reset_profile_command)
-    )
-
-    # Команда для добавления тестовых кампаний
-    application.add_handler(
-        CommandHandler("add_test_campaigns", handlers.add_test_campaigns_command)
-    )
-
-    # Команда для добавления тестовых блогеров
-    application.add_handler(
-        CommandHandler("add_test_bloggers", handlers.add_test_bloggers_command)
-    )
-
-    # Команда для добавления тестовых рекламодателей
-    application.add_handler(
-        CommandHandler("add_test_advertisers", handlers.add_test_advertisers_command)
-    )
-
-    # Команда для добавления тестовых предложений
-    application.add_handler(
-        CommandHandler("add_test_offers", handlers.add_test_offers_command)
     )
 
     # === ADMIN КОМАНДЫ ===
