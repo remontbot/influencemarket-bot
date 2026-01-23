@@ -4961,6 +4961,108 @@ def add_test_workers(telegram_id):
         return (True, message, workers_created)
 
 
+def add_test_advertisers(telegram_id):
+    """
+    Добавляет тестовых рекламодателей (заказчиков).
+    Используется только для пользователя с telegram_id = 641830790.
+
+    Args:
+        telegram_id: Telegram ID пользователя
+
+    Returns:
+        tuple: (success: bool, message: str, advertisers_created: int)
+    """
+    # Проверка, что это разрешенный пользователь
+    if telegram_id != 641830790:
+        return (False, "❌ Эта команда доступна только для администратора.", 0)
+
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+
+        # Данные тестовых рекламодателей
+        test_advertisers = [
+            {
+                "telegram_id": 200000001,
+                "name": "Кафе 'Минский Шик'",
+                "phone": "+375441111111",
+                "city": "Минск",
+                "regions": "Минск",
+                "description": "Уютное кафе в центре Минска. Ищем блогеров для продвижения новых позиций меню."
+            },
+            {
+                "telegram_id": 200000002,
+                "name": "Спортзал 'Атлетик'",
+                "phone": "+375442222222",
+                "city": "Минск",
+                "regions": "Минск",
+                "description": "Современный фитнес-клуб. Предлагаем сотрудничество блогерам в сфере ЗОЖ и спорта."
+            },
+            {
+                "telegram_id": 200000003,
+                "name": "Салон красоты 'Элеганс'",
+                "phone": "+375443333333",
+                "city": "Минск",
+                "regions": "Минск",
+                "description": "Салон красоты премиум-класса. Ищем beauty-блогеров для рекламы наших услуг."
+            },
+            {
+                "telegram_id": 200000004,
+                "name": "Магазин 'Eco Life'",
+                "phone": "+375444444444",
+                "city": "Минск",
+                "regions": "Минск",
+                "description": "Эко-магазин с натуральными продуктами. Сотрудничаем с блогерами о ЗОЖ и экологии."
+            },
+            {
+                "telegram_id": 200000005,
+                "name": "Детский центр 'Умка'",
+                "phone": "+375445555555",
+                "city": "Минск",
+                "regions": "Минск",
+                "description": "Развивающий центр для детей. Ищем мам-блогеров для продвижения наших программ."
+            }
+        ]
+
+        advertisers_created = 0
+
+        # Создаем тестовых рекламодателей
+        for adv_data in test_advertisers:
+            try:
+                # Проверяем, существует ли пользователь
+                cursor.execute("SELECT id FROM users WHERE telegram_id = ?", (adv_data["telegram_id"],))
+                existing_user = cursor.fetchone()
+
+                if not existing_user:
+                    # Создаем пользователя
+                    created_at = datetime.now().isoformat()
+                    cursor.execute(
+                        "INSERT INTO users (telegram_id, role, created_at) VALUES (?, ?, ?)",
+                        (adv_data["telegram_id"], "advertiser", created_at)
+                    )
+                    user_id = cursor.lastrowid
+
+                    # Создаем профиль рекламодателя
+                    cursor.execute("""
+                        INSERT INTO advertisers (user_id, name, phone, city, regions, description)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    """, (
+                        user_id,
+                        adv_data["name"],
+                        adv_data["phone"],
+                        adv_data["city"],
+                        adv_data["regions"],
+                        adv_data["description"]
+                    ))
+
+                    advertisers_created += 1
+
+            except Exception as e:
+                print(f"Ошибка при создании рекламодателя: {e}")
+
+        conn.commit()
+        message = f"✅ Успешно создано {advertisers_created} тестовых рекламодателей"
+        return (True, message, advertisers_created)
+
 
 def migrate_add_ready_in_days_and_notifications():
     """

@@ -1847,6 +1847,8 @@ async def show_blogger_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
         chat_id=query.message.chat_id,
         text="🎬 <b>Меню блогера</b>\n\n"
+             "Добро пожаловать! Здесь вы найдёте рекламные кампании от брендов.\n"
+             "Откликайтесь на интересные предложения и зарабатывайте на своём контенте.\n\n"
              "Выберите действие:",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard),
@@ -7344,6 +7346,16 @@ async def add_test_bloggers_command(update: Update, context: ContextTypes.DEFAUL
 
     # Вызываем функцию из db.py
     success, message, count = db.add_test_workers(telegram_id)
+
+    await update.message.reply_text(message)
+
+
+async def add_test_advertisers_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Команда для добавления тестовых рекламодателей (только для user_id 641830790)"""
+    telegram_id = update.effective_user.id
+
+    # Вызываем функцию из db.py
+    success, message, count = db.add_test_advertisers(telegram_id)
 
     await update.message.reply_text(message)
 
