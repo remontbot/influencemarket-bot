@@ -1804,7 +1804,7 @@ async def show_blogger_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user:
         notification = db.get_worker_notification(user['id'])
         if notification:
-            unread_orders_count = notification.get('available_orders_count', 0)
+            unread_orders_count = dict(notification).get('available_orders_count', 0)
 
     # Формируем текст кнопки с бейджем
     orders_button_text = "📋 Рекламные предложения"
@@ -1901,7 +1901,7 @@ async def blogger_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE
         categories = worker_dict.get("categories", "").split(", ")
 
         # Получаем кампании по категориям блогера
-        all_orders = db.get_orders_by_categories(categories, per_page=30, worker_id=worker_id)
+        all_orders = db.get_orders_by_categories(categories, per_page=30, blogger_id=worker_id)
         all_orders = [dict(campaign) for campaign in all_orders]
 
         # Фильтруем кампании - не показываем те, на которые блогер уже откликнулся или отказался
