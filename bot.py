@@ -16,7 +16,7 @@ import db
 import handlers
 
 # Версия бота
-BOT_VERSION = "2.0.0 - GDE.REKLAMA MVP"  # Адаптация для маркетплейса блогеров
+BOT_VERSION = "2.0.1 - GDE.REKLAMA MVP"  # Исправлены команды и PostgreSQL Row доступ
 BOT_NAME = "gde.reklama"
 BOT_USERNAME = "@gdereklama_bot"
 
@@ -117,6 +117,7 @@ def main():
     logger.info("   - Обработчики admin_ad_placement и admin_ad_confirm в ADMIN_MENU")
     logger.info("   - Прямая маршрутизация для broadcast, suggestions, ads")
     logger.info("   - Автоматическая отметка предложений как 'viewed'")
+    logger.info("   - Исправлены тестовые команды и PostgreSQL Row доступ")
     logger.info("=" * 80)
 
     application = ApplicationBuilder().token(token).build()
