@@ -778,7 +778,7 @@ def main():
     application.add_handler(
         CallbackQueryHandler(
             handlers.blogger_view_campaign_details,
-            pattern="^view_campaign_"
+            pattern="^view_order_"
         )
     )
 
@@ -786,7 +786,7 @@ def main():
     application.add_handler(
         CallbackQueryHandler(
             handlers.blogger_campaign_photo_nav,
-            pattern="^campaign_photo_(prev|next)_"
+            pattern="^order_photo_(prev|next)_"
         )
     )
 
