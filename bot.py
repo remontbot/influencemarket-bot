@@ -123,16 +123,16 @@ def main():
     application = ApplicationBuilder().token(token).build()
 
     # --- Команда /start (ОТДЕЛЬНО от ConversationHandler) ---
-    logger.info("🔧 [STARTUP] Регистрация команды /start")
-    application.add_handler(CommandHandler("start", handlers.start_command))
+    logger.info("🔧 [STARTUP] Регистрация команды /start в group=-1")
+    application.add_handler(CommandHandler("start", handlers.start_command), group=-1)
 
-    # --- Тестовые команды (ВЫСОКИЙ ПРИОРИТЕТ - до ConversationHandlers) ---
-    logger.info("🔧 [STARTUP] Регистрация тестовых команд")
-    application.add_handler(CommandHandler("add_test_campaigns", handlers.add_test_campaigns_command))
-    application.add_handler(CommandHandler("add_test_bloggers", handlers.add_test_bloggers_command))
-    application.add_handler(CommandHandler("add_test_advertisers", handlers.add_test_advertisers_command))
-    application.add_handler(CommandHandler("add_test_offers", handlers.add_test_offers_command))
-    logger.info("✅ [STARTUP] Команды /start и тестовые команды зарегистрированы")
+    # --- Тестовые команды (ВЫСОКИЙ ПРИОРИТЕТ - group=-1, до ВСЕХ handlers) ---
+    logger.info("🔧 [STARTUP] Регистрация тестовых команд в group=-1")
+    application.add_handler(CommandHandler("add_test_campaigns", handlers.add_test_campaigns_command), group=-1)
+    application.add_handler(CommandHandler("add_test_bloggers", handlers.add_test_bloggers_command), group=-1)
+    application.add_handler(CommandHandler("add_test_advertisers", handlers.add_test_advertisers_command), group=-1)
+    application.add_handler(CommandHandler("add_test_offers", handlers.add_test_offers_command), group=-1)
+    logger.info("✅ [STARTUP] Команды /start и тестовые команды зарегистрированы в group=-1")
 
     # --- Глобальный handler для noop (заглушки) ---
     application.add_handler(CallbackQueryHandler(handlers.noop_callback, pattern="^noop$"))
