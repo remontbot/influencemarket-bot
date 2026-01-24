@@ -6412,7 +6412,7 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
         # Кнопка выбора блогера
         keyboard.append([InlineKeyboardButton(
             "✅ Выбрать этого блогера",
-            callback_data=f"select_master_{offer['id']}"
+            callback_data=f"select_blogger_{offer['id']}"
         )])
 
         # Кнопка просмотра всех контент (если есть фото)
@@ -6547,7 +6547,7 @@ async def select_blogger(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         # Извлекаем offer_id из callback_data
-        offer_id = int(query.data.replace("select_master_", ""))
+        offer_id = int(query.data.replace("select_blogger_", ""))
 
         # Получаем информацию об предложение
         bids = context.user_data.get('viewing_bids', {}).get('bids', [])
@@ -6622,7 +6622,7 @@ async def pay_with_stars(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         keyboard = [
             [InlineKeyboardButton("✅ Имитировать успешную оплату (тест)", callback_data=f"test_payment_success_{offer_id}")],
-            [InlineKeyboardButton("⬅️ Назад", callback_data=f"select_master_{offer_id}")],
+            [InlineKeyboardButton("⬅️ Назад", callback_data=f"select_blogger_{offer_id}")],
         ]
 
         await query.edit_message_text(
@@ -6664,7 +6664,7 @@ async def pay_with_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         keyboard = [
             [InlineKeyboardButton("✅ Я оплатил", callback_data=f"confirm_payment_{offer_id}")],
-            [InlineKeyboardButton("⬅️ Назад", callback_data=f"select_master_{offer_id}")],
+            [InlineKeyboardButton("⬅️ Назад", callback_data=f"select_blogger_{offer_id}")],
         ]
 
         await query.edit_message_text(
