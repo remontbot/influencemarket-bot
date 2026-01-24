@@ -4625,9 +4625,9 @@ async def advertiser_my_campaigns(update: Update, context: ContextTypes.DEFAULT_
         text += "Выберите категорию:"
 
         keyboard = [
-            [InlineKeyboardButton(f"🔍 В ожидании блогеров ({waiting_count})", callback_data="client_waiting_orders")],
-            [InlineKeyboardButton(f"📱 В работе ({in_progress_count})", callback_data="client_in_progress_orders")],
-            [InlineKeyboardButton(f"✅ Завершённые ({completed_count})", callback_data="client_completed_orders")],
+            [InlineKeyboardButton(f"🔍 В ожидании блогеров ({waiting_count})", callback_data="advertiser_waiting_campaigns")],
+            [InlineKeyboardButton(f"📱 В работе ({in_progress_count})", callback_data="advertiser_in_progress_campaigns")],
+            [InlineKeyboardButton(f"✅ Завершённые ({completed_count})", callback_data="advertiser_completed_campaigns")],
             [InlineKeyboardButton("📝 Создать новую кампанию", callback_data="client_create_order")],
             [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_client_menu")]
         ]
@@ -8447,7 +8447,7 @@ async def blogger_offer_publish(update: Update, context: ContextTypes.DEFAULT_TY
             blogger_name = worker_profile_dict.get('name', 'Блогер')
 
             # Используем новую функцию уведомления
-            await notify_client_new_bid(
+            await notify_advertiser_new_offer(
                 context,
                 client_user['telegram_id'],
                 client_user['id'],  # advertiser_user_id для системы уведомлений
