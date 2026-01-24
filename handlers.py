@@ -8249,32 +8249,26 @@ async def blogger_offer_enter_price(update: Update, context: ContextTypes.DEFAUL
     context.user_data['bid_price'] = price
     currency = context.user_data.get('bid_currency', 'BYN')
 
-    # Спрашиваем срок готовности
-    keyboard = [
-        [
-            InlineKeyboardButton("Сегодня", callback_data="ready_days_0"),
-            InlineKeyboardButton("Завтра", callback_data="ready_days_1"),
-        ],
-        [
-            InlineKeyboardButton("Через 3 дня", callback_data="ready_days_3"),
-            InlineKeyboardButton("Через неделю", callback_data="ready_days_7"),
-        ],
-        [
-            InlineKeyboardButton("Через 2 недели", callback_data="ready_days_14"),
-            InlineKeyboardButton("Через месяц", callback_data="ready_days_30"),
-        ],
-        [InlineKeyboardButton("❌ Отмена", callback_data="cancel_offer")],
-    ]
+    # Устанавливаем срок по умолчанию (7 дней)
+    context.user_data['bid_ready_days'] = 7
 
+    # Сразу спрашиваем комментарий
     await update.message.reply_text(
         f"💰 Ваша цена: <b>{price} {currency}</b>\n\n"
-        "⏱ <b>Когда сможете приступить к контенте?</b>\n\n"
-        "Выберите срок готовности:",
+        "📝 Хотите добавить комментарий к вашему отклику?\n\n"
+        "💡 <b>Это ваш шанс выделиться!</b> Расскажите о себе:\n"
+        "✓ Ваш опыт в создании подобного контента\n"
+        "✓ Примеры ваших работ или достижения\n"
+        "✓ Почему именно вы подходите для этой кампании\n\n"
+        "Напишите комментарий или нажмите «Пропустить»:",
         parse_mode="HTML",
-        reply_markup=InlineKeyboardMarkup(keyboard)
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton("⏭ Пропустить", callback_data="offer_skip_comment"),
+            InlineKeyboardButton("❌ Отмена", callback_data="cancel_offer")
+        ]])
     )
 
-    return OFFER_SELECT_READY_DAYS
+    return OFFER_ENTER_COMMENT
 
 
 async def blogger_offer_select_currency(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -8379,17 +8373,17 @@ async def blogger_offer_enter_comment(update: Update, context: ContextTypes.DEFA
     comment = update.message.text.strip()
     context.user_data['bid_comment'] = comment
 
-    return await worker_bid_publish(update, context)
+    return await blogger_offer_publish(update, context)
 
 
 async def blogger_offer_skip_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Пропуск комментария"""
     query = update.callback_query
     await query.answer()
-    
+
     context.user_data['bid_comment'] = ""
-    
-    return await worker_bid_publish(update, context)
+
+    return await blogger_offer_publish(update, context)
 
 
 async def blogger_offer_publish(update: Update, context: ContextTypes.DEFAULT_TYPE):
