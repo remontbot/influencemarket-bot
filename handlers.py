@@ -405,6 +405,7 @@ def is_profile_complete(user_id: int, role: str) -> bool:
 # /start
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_telegram_id = update.effective_user.id
+    logger.info(f"[CMD] /start вызван от пользователя {user_telegram_id}")
 
     # Проверяем не забанен ли пользователь
     if db.is_user_banned(user_telegram_id):
@@ -7333,6 +7334,7 @@ async def reset_profile_command(update: Update, context: ContextTypes.DEFAULT_TY
 async def add_test_campaigns_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Команда для добавления тестовых заказов (только для user_id 641830790)"""
     telegram_id = update.effective_user.id
+    logger.info(f"[CMD] /add_test_campaigns вызван от пользователя {telegram_id}")
 
     # Вызываем функцию из db.py
     success, message, count = db.add_test_orders(telegram_id)
@@ -7343,6 +7345,7 @@ async def add_test_campaigns_command(update: Update, context: ContextTypes.DEFAU
 async def add_test_bloggers_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Команда для добавления тестовых мастеров и откликов (только для user_id 641830790)"""
     telegram_id = update.effective_user.id
+    logger.info(f"[CMD] /add_test_bloggers вызван от пользователя {telegram_id}")
 
     # Вызываем функцию из db.py
     success, message, count = db.add_test_workers(telegram_id)
@@ -7353,6 +7356,7 @@ async def add_test_bloggers_command(update: Update, context: ContextTypes.DEFAUL
 async def add_test_advertisers_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Команда для добавления тестовых рекламодателей (только для user_id 641830790)"""
     telegram_id = update.effective_user.id
+    logger.info(f"[CMD] /add_test_advertisers вызван от пользователя {telegram_id}")
 
     # Вызываем функцию из db.py
     success, message, count = db.add_test_advertisers(telegram_id)
