@@ -537,7 +537,7 @@ async def register_blogger_phone(update: Update, context: ContextTypes.DEFAULT_T
     for region_name, region_data in BELARUS_REGIONS.items():
         keyboard.append([InlineKeyboardButton(
             region_data["display"],
-            callback_data=f"masterregion_{region_name}"
+            callback_data=f"bloggerregion_{region_name}"
         )])
 
     await update.message.reply_text(
@@ -554,7 +554,7 @@ async def register_blogger_region_select(update: Update, context: ContextTypes.D
     query = update.callback_query
     await query.answer()
 
-    region = query.data.replace("masterregion_", "")
+    region = query.data.replace("bloggerregion_", "")
     region_data = BELARUS_REGIONS.get(region)
 
     if not region_data:
@@ -591,7 +591,7 @@ async def register_blogger_region_select(update: Update, context: ContextTypes.D
         keyboard = []
         row = []
         for city in cities:
-            row.append(InlineKeyboardButton(city, callback_data=f"mastercity_{city}"))
+            row.append(InlineKeyboardButton(city, callback_data=f"bloggercity_{city}"))
             if len(row) == 2:
                 keyboard.append(row)
                 row = []
@@ -605,11 +605,11 @@ async def register_blogger_region_select(update: Update, context: ContextTypes.D
         # - Это полезно для небольших городов и посёлков
         keyboard.append([InlineKeyboardButton(
             f"📍 Другой город в области",
-            callback_data="mastercity_other"
+            callback_data="bloggercity_other"
         )])
 
         # Добавляем кнопку "Назад" для возврата к выбору региона
-        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="mastercity_back")])
+        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="bloggercity_back")])
 
         await query.edit_message_text(
             f"🏙 Выберите город в регионе <b>{region}</b>:",
@@ -624,7 +624,7 @@ async def register_blogger_city_select(update: Update, context: ContextTypes.DEF
     query = update.callback_query
     await query.answer()
 
-    city = query.data.replace("mastercity_", "")
+    city = query.data.replace("bloggercity_", "")
 
     # Обработка кнопки "Назад" - возврат к выбору региона
     if city == "back":
@@ -633,7 +633,7 @@ async def register_blogger_city_select(update: Update, context: ContextTypes.DEF
         for region_name, region_data in BELARUS_REGIONS.items():
             keyboard.append([InlineKeyboardButton(
                 region_data["display"],
-                callback_data=f"masterregion_{region_name}"
+                callback_data=f"bloggerregion_{region_name}"
             )])
 
         await query.edit_message_text(
@@ -746,7 +746,7 @@ async def register_blogger_cities_confirm(update: Update, context: ContextTypes.
         for region_name, region_data in BELARUS_REGIONS.items():
             keyboard.append([InlineKeyboardButton(
                 region_data["display"],
-                callback_data=f"masterregion_{region_name}"
+                callback_data=f"bloggerregion_{region_name}"
             )])
 
         cities = context.user_data.get("cities", [])
@@ -4994,7 +4994,7 @@ async def cancel_campaign_handler(update: Update, context: ContextTypes.DEFAULT_
         # Сообщаем клиенту об успехе
         await query.edit_message_text(
             f"✅ <b>Кампани #{campaign_id} успешно отменен</b>\n\n"
-            f"📨 Уведомлено мастеров: {notified_count}\n\n"
+            f"📨 Уведомлено блогеров: {notified_count}\n\n"
             f"Кампани больше не будет показываться в поиске.",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([[
@@ -6541,7 +6541,7 @@ async def back_to_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 
 async def select_blogger(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка выбора блогера клиентом"""
+    """Обработка выбора блогера клиентом - сразу открывает чат"""
     query = update.callback_query
     await query.answer()
 
@@ -6549,52 +6549,11 @@ async def select_blogger(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Извлекаем offer_id из callback_data
         offer_id = int(query.data.replace("select_blogger_", ""))
 
-        # Получаем информацию об предложение
-        bids = context.user_data.get('viewing_bids', {}).get('bids', [])
-        selected_bid = None
-        for offer in bids:
-            if offer['id'] == offer_id:
-                selected_bid = offer
-                break
-
-        if not selected_bid:
-            await safe_edit_message(
-                query,
-                "❌ Ошибка: предложени не найден.",
-                parse_mode="HTML"
-            )
-            return
-
-        campaign_id = selected_bid['campaign_id']
-        blogger_name = selected_bid['blogger_name']
-        price = selected_bid['proposed_price']
-        currency = selected_bid['currency']
-
-        # 💝 БЕСПЛАТНАЯ БЛАГОДАРНОСТЬ: Приучаем пользователей к действию "поблагодарить платформу"
-        # Позже (при 10-20k пользователей) эта кнопка превратится в реальную оплату через Stars
-        text = (
-            f"✅ <b>Вы выбрали блогера:</b>\n\n"
-            f"👤 {blogger_name}\n"
-            f"💰 Цена контенты: {price} {currency}\n\n"
-            f"🎉 <b>Получите контакт блогера:</b>\n\n"
-            f"Наша платформа помогает мастерам находить клиентов, а клиентам - надёжных специалистов.\n\n"
-            f"💝 Нажмите кнопку ниже, чтобы продолжить:"
-        )
-
-        keyboard = [
-            [InlineKeyboardButton("💝 Сказать спасибо и получить контакт", callback_data=f"thank_platform_{offer_id}")],
-            [InlineKeyboardButton("⬅️ Назад к откликам", callback_data=f"view_offers_{campaign_id}")],
-        ]
-
-        await safe_edit_message(
-            query,
-            text,
-            parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
+        # Сразу создаем чат и показываем рекомендации
+        await process_offer_selection(update, context, offer_id)
 
     except Exception as e:
-        logger.error(f"Ошибка в select_master: {e}", exc_info=True)
+        logger.error(f"Ошибка в select_blogger: {e}", exc_info=True)
         await safe_edit_message(
             query,
             f"❌ Ошибка при выборе блогера:\n{str(e)}",
@@ -6736,8 +6695,8 @@ async def confirm_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def process_offer_selection(update: Update, context: ContextTypes.DEFAULT_TYPE, offer_id: int):
     """
-    Общая функция для обработки выбора блогера (с оплатой или без).
-    Вызывается из thank_platform и test_payment_success.
+    Общая функция для обработки выбора блогера.
+    Создает чат и отправляет рекомендации по общению.
     """
     query = update.callback_query
 
@@ -6761,7 +6720,7 @@ async def process_offer_selection(update: Update, context: ContextTypes.DEFAULT_
                 return
 
         campaign_id = selected_bid['campaign_id']
-        worker_id = selected_bid['worker_id']
+        blogger_id = selected_bid.get('blogger_id') or selected_bid.get('worker_id')
         blogger_name = selected_bid['blogger_name']
         blogger_telegram_id = selected_bid.get('blogger_telegram_id')
 
@@ -6776,29 +6735,15 @@ async def process_offer_selection(update: Update, context: ContextTypes.DEFAULT_
             await safe_edit_message(query, "❌ Ошибка: профиль клиента не найден.", parse_mode="HTML")
             return
 
-        # 1. Создаём транзакцию (оплата 1 BYN за доступ)
-        transaction_id = db.create_transaction(
-            user_id=user["id"],
-            campaign_id=campaign_id,
-            offer_id=offer_id,
-            transaction_type="chat_access",
-            amount=1.00,
-            currency="BYN",
-            payment_method="test",
-            description=f"Доступ к чату с мастером для кампания #{campaign_id}"
-        )
-
-        logger.info(f"✅ Транзакция #{transaction_id} создана: клиент {user['id']} оплатил доступ к блогеру {worker_id}")
-
-        # 2. Получаем blogger_user_id (из таблицы workers поле user_id)
-        worker_profile = db.get_worker_by_id(worker_id)
-        if not worker_profile:
+        # 1. Получаем blogger_user_id (из таблицы bloggers поле user_id)
+        blogger_profile = db.get_worker_by_id(blogger_id)
+        if not blogger_profile:
             await safe_edit_message(query, "❌ Ошибка: профиль блогера не найден.", parse_mode="HTML")
             return
 
-        blogger_user_id = worker_profile['user_id']
+        blogger_user_id = blogger_profile['user_id']
 
-        # 3. Проверяем существует ли уже чат
+        # 2. Проверяем существует ли уже чат
         existing_chat = db.get_chat_by_order_and_bid(campaign_id, offer_id)
 
         if existing_chat:
@@ -6812,44 +6757,49 @@ async def process_offer_selection(update: Update, context: ContextTypes.DEFAULT_
                 blogger_user_id=blogger_user_id,
                 offer_id=offer_id
             )
-            logger.info(f"✅ Чат #{chat_id} создан между клиентом {user['id']} и мастером {blogger_user_id}")
+            logger.info(f"✅ Чат #{chat_id} создан между рекламодателем {user['id']} и блогером {blogger_user_id}")
 
-        # 4. Отмечаем предложени как выбранный, НО кампани в статусе "waiting_master_confirmation"
+        # 3. Отмечаем предложени как выбранный, НО кампани в статусе "waiting_blogger_confirmation"
         db.update_order_status(campaign_id, "waiting_master_confirmation")
         db.select_bid(offer_id)
 
-        # 5. Уведомляем блогера что его выбрали и открыт чат
+        # 4. Уведомляем блогера что его выбрали и открыт чат
         if blogger_telegram_id:
             try:
-                keyboard_for_worker = [
+                keyboard_for_blogger = [
                     [InlineKeyboardButton("💬 Открыть чат", callback_data=f"open_chat_{chat_id}")],
                 ]
 
                 await context.bot.send_message(
                     chat_id=blogger_telegram_id,
                     text=(
-                        f"🎉 <b>Ваш предложени выбран!</b>\n\n"
-                        f"Клиент выбрал вас для выполнения кампания #{campaign_id}\n\n"
+                        f"🎉 <b>Ваш отклик выбран!</b>\n\n"
+                        f"Рекламодатель выбрал вас для выполнения кампании #{campaign_id}\n\n"
                         f"💬 Открыт чат для обсуждения деталей.\n"
-                        f"⚠️ <b>ВАЖНО:</b> Ответьте клиенту в течение 24 часов, иначе ваш рейтинг снизится!\n\n"
-                        f"Обсудите детали кампания и подтвердите готовность выполнить контенту."
+                        f"⚠️ <b>ВАЖНО:</b> Ответьте рекламодателю в течение 24 часов, иначе ваш рейтинг снизится!\n\n"
+                        f"Обсудите детали кампании и подтвердите готовность выполнить контент."
                     ),
                     parse_mode="HTML",
-                    reply_markup=InlineKeyboardMarkup(keyboard_for_worker)
+                    reply_markup=InlineKeyboardMarkup(keyboard_for_blogger)
                 )
             except Exception as e:
                 logger.error(f"Ошибка при отправке уведомления блогеру: {e}")
 
-        # 6. Показываем клиенту что чат открыт
+        # 5. Показываем рекламодателю рекомендации и контакт блогера
         text = (
-            f"✅ <b>Оплата прошла успешно!</b>\n\n"
+            f"✅ <b>Блогер выбран!</b>\n\n"
             f"👤 <b>Выбран блогер:</b> {blogger_name}\n\n"
-            f"💬 <b>Открыт чат для обсуждения деталей</b>\n\n"
-            f"📋 <b>Следующие шаги:</b>\n"
-            f"1. Обсудите с мастером детали кампания в чате\n"
-            f"2. Дождитесь подтверждения блогера (до 24 часов)\n"
-            f"3. Договоритесь о времени и месте встречи\n\n"
-            f"💡 Если блогер не ответит в течение 24 часов, вы сможете выбрать другого блогера БЕЗ дополнительной оплаты.\n\n"
+            f"💬 <b>Открыт чат для обсуждения</b>\n\n"
+            f"📋 <b>Рекомендации по общению:</b>\n"
+            f"• Четко опишите что именно нужно сделать\n"
+            f"• Согласуйте сроки публикации контента\n"
+            f"• Обсудите формат контента (пост/Stories/Reels)\n"
+            f"• Уточните требования к съемке и монтажу\n\n"
+            f"🎯 <b>Преимущества нашей платформы:</b>\n"
+            f"• Безопасная сделка через чат\n"
+            f"• Рейтинговая система - видите опыт блогера\n"
+            f"• История отзывов помогает выбрать лучших\n\n"
+            f"⚠️ <b>ВАЖНО:</b> После завершения работы обязательно оцените блогера - это поможет другим рекламодателям!\n\n"
             f"Удачного сотрудничества! 🤝"
         )
 
