@@ -122,13 +122,16 @@ def main():
     application = ApplicationBuilder().token(token).build()
 
     # --- Команда /start (ОТДЕЛЬНО от ConversationHandler) ---
+    logger.info("🔧 [STARTUP] Регистрация команды /start")
     application.add_handler(CommandHandler("start", handlers.start_command))
 
     # --- Тестовые команды (ВЫСОКИЙ ПРИОРИТЕТ - до ConversationHandlers) ---
+    logger.info("🔧 [STARTUP] Регистрация тестовых команд")
     application.add_handler(CommandHandler("add_test_campaigns", handlers.add_test_campaigns_command))
     application.add_handler(CommandHandler("add_test_bloggers", handlers.add_test_bloggers_command))
     application.add_handler(CommandHandler("add_test_advertisers", handlers.add_test_advertisers_command))
     application.add_handler(CommandHandler("add_test_offers", handlers.add_test_offers_command))
+    logger.info("✅ [STARTUP] Команды /start и тестовые команды зарегистрированы")
 
     # --- Глобальный handler для noop (заглушки) ---
     application.add_handler(CallbackQueryHandler(handlers.noop_callback, pattern="^noop$"))
