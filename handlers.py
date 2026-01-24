@@ -4693,8 +4693,18 @@ async def advertiser_waiting_campaigns(update: Update, context: ContextTypes.DEF
             campaign_dict = dict(campaign)
             campaign_id = campaign_dict['id']
 
-            text += f"🟢 <b>Кампани #{campaign_id}</b> - Открыт\n"
+            text += f"🟢 <b>Кампания #{campaign_id}</b> - Открыт\n"
             text += f"📱 {campaign_dict.get('category', 'Не указана')}\n"
+
+            # Тип оплаты
+            payment_type = campaign_dict.get('payment_type', 'paid')
+            budget_value = campaign_dict.get('budget_value', 0)
+            if payment_type == "fixed_budget" and budget_value > 0:
+                text += f"💰 Бюджет: {budget_value} BYN\n"
+            elif payment_type == "blogger_offer":
+                text += f"💬 Блогеры предложат цену\n"
+            elif payment_type == "barter":
+                text += f"🤝 Бартер\n"
 
             description = campaign_dict.get('description', '')
             if len(description) > 50:
@@ -4706,13 +4716,13 @@ async def advertiser_waiting_campaigns(update: Update, context: ContextTypes.DEF
             if bids_count > 0:
                 text += f"💼 {bids_count} {_get_bids_word(bids_count)}\n"
                 keyboard.append([InlineKeyboardButton(
-                    f"💼 Откликов на кампани #{campaign_id}: {bids_count}",
-                    callback_data=f"view_bids_{campaign_id}"
+                    f"💼 Отклики на кампанию #{campaign_id}: {bids_count}",
+                    callback_data=f"view_offers_{campaign_id}"
                 )])
 
             keyboard.append([InlineKeyboardButton(
-                f"❌ Отменить кампани #{campaign_id}",
-                callback_data=f"cancel_order_{campaign_id}"
+                f"❌ Отменить кампанию #{campaign_id}",
+                callback_data=f"cancel_campaign_{campaign_id}"
             )])
 
             text += "\n"
@@ -4799,6 +4809,16 @@ async def advertiser_in_progress_campaigns(update: Update, context: ContextTypes
             text += f"{emoji} <b>Кампани #{campaign_id}</b> - {status}\n"
             text += f"📱 {campaign_dict.get('category', 'Не указана')}\n"
 
+            # Тип оплаты
+            payment_type = campaign_dict.get('payment_type', 'paid')
+            budget_value = campaign_dict.get('budget_value', 0)
+            if payment_type == "fixed_budget" and budget_value > 0:
+                text += f"💰 Бюджет: {budget_value} BYN\n"
+            elif payment_type == "blogger_offer":
+                text += f"💬 Блогеры предложат цену\n"
+            elif payment_type == "barter":
+                text += f"🤝 Бартер\n"
+
             description = campaign_dict.get('description', '')
             if len(description) > 50:
                 description = description[:50] + "..."
@@ -4884,6 +4904,16 @@ async def advertiser_completed_campaigns(update: Update, context: ContextTypes.D
 
             text += f"{emoji} <b>Кампани #{campaign_id}</b> - {status}\n"
             text += f"📱 {campaign_dict.get('category', 'Не указана')}\n"
+
+            # Тип оплаты
+            payment_type = campaign_dict.get('payment_type', 'paid')
+            budget_value = campaign_dict.get('budget_value', 0)
+            if payment_type == "fixed_budget" and budget_value > 0:
+                text += f"💰 Бюджет: {budget_value} BYN\n"
+            elif payment_type == "blogger_offer":
+                text += f"💬 Блогеры предложат цену\n"
+            elif payment_type == "barter":
+                text += f"🤝 Бартер\n"
 
             description = campaign_dict.get('description', '')
             if len(description) > 50:
@@ -7616,9 +7646,20 @@ async def blogger_view_campaign_details(update: Update, context: ContextTypes.DE
         text = f"📋 <b>Кампани #{campaign_id}</b>\n\n"
         text += f"📍 <b>Город:</b> {campaign_dict.get('city', 'Не указан')}\n"
         text += f"📱 <b>Категория:</b> {campaign_dict.get('category', 'Не указана')}\n"
+
+        # Тип оплаты
+        payment_type = campaign_dict.get('payment_type', 'paid')
+        budget_value = campaign_dict.get('budget_value', 0)
+        if payment_type == "fixed_budget" and budget_value > 0:
+            text += f"💰 <b>Бюджет:</b> {budget_value} BYN\n"
+        elif payment_type == "blogger_offer":
+            text += f"💬 <b>Оплата:</b> Блогеры предложат цену\n"
+        elif payment_type == "barter":
+            text += f"🤝 <b>Оплата:</b> Бартер\n"
+
         text += f"📅 <b>Создан:</b> {campaign_dict.get('created_at', '')}\n\n"
         text += f"📝 <b>Описание:</b>\n{campaign_dict.get('description', 'Нет описания')}\n\n"
-        
+
         # Информация о клиенте
         text += f"👤 <b>Рекламодател:</b> {campaign_dict.get('advertiser_name', 'Неизвестно')}\n"
         advertiser_rating = campaign_dict.get('advertiser_rating', 0)
@@ -7881,6 +7922,17 @@ async def blogger_campaign_photo_nav(update: Update, context: ContextTypes.DEFAU
         text = f"📋 <b>Кампани #{campaign_id}</b>\n\n"
         text += f"📍 <b>Город:</b> {campaign_dict.get('city', 'Не указан')}\n"
         text += f"📱 <b>Категория:</b> {campaign_dict.get('category', 'Не указана')}\n"
+
+        # Тип оплаты
+        payment_type = campaign_dict.get('payment_type', 'paid')
+        budget_value = campaign_dict.get('budget_value', 0)
+        if payment_type == "fixed_budget" and budget_value > 0:
+            text += f"💰 <b>Бюджет:</b> {budget_value} BYN\n"
+        elif payment_type == "blogger_offer":
+            text += f"💬 <b>Оплата:</b> Блогеры предложат цену\n"
+        elif payment_type == "barter":
+            text += f"🤝 <b>Оплата:</b> Бартер\n"
+
         text += f"📅 <b>Создан:</b> {campaign_dict.get('created_at', '')}\n\n"
         text += f"📝 <b>Описание:</b>\n{campaign_dict.get('description', 'Нет описания')}\n\n"
         text += f"👤 <b>Рекламодател:</b> {campaign_dict.get('advertiser_name', 'Неизвестно')}\n"
@@ -10153,7 +10205,7 @@ async def notify_advertiser_new_offer(context, advertiser_telegram_id, advertise
 
         # Подсчитываем общее количество непрочитанных откликов
         orders_with_bids = db.get_orders_with_unread_bids(advertiser_user_id)
-        total_bids = sum(campaign.get('bid_count', 0) for campaign in orders_with_bids)
+        total_bids = sum(campaign.get('offer_count', 0) for campaign in orders_with_bids)
 
         text = (
             f"🔔 <b>У вас {total_bids} {declension_bids(total_bids)}!</b>\n\n"
