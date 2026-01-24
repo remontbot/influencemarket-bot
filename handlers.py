@@ -9484,7 +9484,7 @@ async def create_campaign_publish(update: Update, context: ContextTypes.DEFAULT_
                     logger.info(f"🔔 Блогер {worker_dict['user_id']}: уведомления {'включены' if notifications_enabled else 'отключены'}")
 
                     if notifications_enabled:
-                        await notify_worker_new_order(
+                        await notify_blogger_new_campaign(
                             context,
                             worker_user['telegram_id'],
                             worker_dict['user_id'],
