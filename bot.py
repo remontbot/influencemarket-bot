@@ -1346,8 +1346,8 @@ def main():
             logger.warning(f"[CATCH-ALL] Необработанный update: {update}")
 
     application.add_handler(
-        MessageHandler(filters.ALL, catch_all_messages),
-        group=10  # Самая низкая приоритетность - ловит только то, что никто не обработал
+        MessageHandler(~filters.COMMAND, catch_all_messages),
+        group=10  # Самая низкая приоритетность - ловит только неизвестные сообщения (не команды)
     )
 
     # --- ГЛОБАЛЬНЫЙ ОБРАБОТЧИК ОШИБОК ---
