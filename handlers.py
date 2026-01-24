@@ -2213,8 +2213,8 @@ async def blogger_my_campaigns(update: Update, context: ContextTypes.DEFAULT_TYP
         text += "Выберите категорию:"
 
         keyboard = [
-            [InlineKeyboardButton(f"📱 Кампании в работе ({active_count})", callback_data="worker_active_orders")],
-            [InlineKeyboardButton(f"✅ Завершённые кампании ({completed_count})", callback_data="worker_completed_orders")],
+            [InlineKeyboardButton(f"📱 Кампании в работе ({active_count})", callback_data="blogger_active_campaigns")],
+            [InlineKeyboardButton(f"✅ Завершённые кампании ({completed_count})", callback_data="blogger_completed_campaigns")],
             [InlineKeyboardButton("⬅️ Назад", callback_data="show_worker_menu")]
         ]
 
@@ -2319,7 +2319,7 @@ async def blogger_active_campaigns(update: Update, context: ContextTypes.DEFAULT
         await safe_edit_message(query, text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(keyboard))
 
     except Exception as e:
-        logger.error(f"Ошибка в worker_active_orders: {e}", exc_info=True)
+        logger.error(f"Ошибка в blogger_active_campaigns: {e}", exc_info=True)
         await safe_edit_message(query, f"❌ Ошибка: {str(e)}")
 
 
@@ -2408,7 +2408,7 @@ async def blogger_completed_campaigns(update: Update, context: ContextTypes.DEFA
         await safe_edit_message(query, text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(keyboard))
 
     except Exception as e:
-        logger.error(f"Ошибка в worker_completed_orders: {e}", exc_info=True)
+        logger.error(f"Ошибка в blogger_completed_campaigns: {e}", exc_info=True)
         await safe_edit_message(query, f"❌ Ошибка: {str(e)}")
 
 
@@ -2762,7 +2762,7 @@ async def blogger_add_photos_start(update: Update, context: ContextTypes.DEFAULT
 
     # Динамический лимит на основе выполненных заказов
     max_photos = db.calculate_photo_limit(user_id)
-    completed_orders = db.get_worker_completed_orders_count(user_id)
+    completed_orders = db.get_blogger_completed_campaigns_count(user_id)
     available_slots = max_photos - current_count
 
     # Сохраняем в context - РЕЖИМ ДОБАВЛЕНИЯ ФОТО АКТИВЕН
@@ -3688,9 +3688,9 @@ async def view_blogger_portfolio(update: Update, context: ContextTypes.DEFAULT_T
     # Навигация если фото больше одного
     if len(photo_ids) > 1:
         nav_buttons = [
-            InlineKeyboardButton("◀️", callback_data="worker_portfolio_view_prev"),
+            InlineKeyboardButton("◀️", callback_data="blogger_portfolio_view_prev"),
             InlineKeyboardButton(f"1/{len(photo_ids)}", callback_data="noop"),
-            InlineKeyboardButton("▶️", callback_data="worker_portfolio_view_next")
+            InlineKeyboardButton("▶️", callback_data="blogger_portfolio_view_next")
         ]
         keyboard.append(nav_buttons)
 
@@ -3723,9 +3723,9 @@ async def blogger_portfolio_view_navigate(update: Update, context: ContextTypes.
         return
 
     # Определяем направление
-    if query.data == "worker_portfolio_view_next":
+    if query.data == "blogger_portfolio_view_next":
         current_index = (current_index + 1) % len(photos)
-    elif query.data == "worker_portfolio_view_prev":
+    elif query.data == "blogger_portfolio_view_prev":
         current_index = (current_index - 1) % len(photos)
 
     context.user_data['viewing_worker_portfolio_index'] = current_index
@@ -3735,9 +3735,9 @@ async def blogger_portfolio_view_navigate(update: Update, context: ContextTypes.
 
     if len(photos) > 1:
         nav_buttons = [
-            InlineKeyboardButton("◀️", callback_data="worker_portfolio_view_prev"),
+            InlineKeyboardButton("◀️", callback_data="blogger_portfolio_view_prev"),
             InlineKeyboardButton(f"{current_index + 1}/{len(photos)}", callback_data="noop"),
-            InlineKeyboardButton("▶️", callback_data="worker_portfolio_view_next")
+            InlineKeyboardButton("▶️", callback_data="blogger_portfolio_view_next")
         ]
         keyboard.append(nav_buttons)
 
@@ -6390,7 +6390,7 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
         if portfolio_photos:
             keyboard.append([InlineKeyboardButton(
                 "📸 Посмотреть контенты блогера",
-                callback_data=f"view_worker_portfolio_{offer['worker_id']}"
+                callback_data=f"view_blogger_portfolio_{offer['worker_id']}"
             )])
 
         keyboard.append([InlineKeyboardButton("⬅️ К моим заказам", callback_data="client_my_orders")])
@@ -7653,7 +7653,7 @@ async def blogger_view_campaign_details(update: Update, context: ContextTypes.DE
             selected_worker_id = campaign_dict.get('selected_worker_id')
 
             if order_status == 'in_progress' and selected_worker_id == worker_profile["id"]:
-                keyboard.append([InlineKeyboardButton("✅ Контента завершена", callback_data=f"worker_complete_order_{campaign_id}")])
+                keyboard.append([InlineKeyboardButton("✅ Контента завершена", callback_data=f"blogger_complete_campaign_{campaign_id}")])
             # Кнопка предложениа (только для открытых заказов)
             elif order_status == 'open':
                 if is_own_order:
@@ -7661,9 +7661,9 @@ async def blogger_view_campaign_details(update: Update, context: ContextTypes.DE
                 elif already_bid:
                     keyboard.append([InlineKeyboardButton("✅ Вы уже откликнулись", callback_data="noop")])
                 else:
-                    keyboard.append([InlineKeyboardButton("💰 Откликнуться", callback_data=f"bid_on_order_{campaign_id}")])
+                    keyboard.append([InlineKeyboardButton("💰 Откликнуться", callback_data=f"offer_on_campaign_{campaign_id}")])
                     # НОВОЕ: Кнопка "Отказаться от кампания" (не показывать этот кампани больше)
-                    keyboard.append([InlineKeyboardButton("🚫 Отказаться от кампания", callback_data=f"decline_order_{campaign_id}")])
+                    keyboard.append([InlineKeyboardButton("🚫 Отказаться от кампания", callback_data=f"decline_campaign_{campaign_id}")])
 
             # ИСПРАВЛЕНО: Если блогер откликнулся на кампани - возвращаем в "Мои отклики", иначе в "Доступные кампании"
             back_callback = "worker_my_bids" if already_bid else "worker_view_orders"
@@ -7685,7 +7685,7 @@ async def blogger_view_campaign_details(update: Update, context: ContextTypes.DE
             selected_worker_id = campaign_dict.get('selected_worker_id')
 
             if order_status == 'in_progress' and selected_worker_id == worker_profile["id"]:
-                keyboard.append([InlineKeyboardButton("✅ Контента завершена", callback_data=f"worker_complete_order_{campaign_id}")])
+                keyboard.append([InlineKeyboardButton("✅ Контента завершена", callback_data=f"blogger_complete_campaign_{campaign_id}")])
             # Кнопка предложениа (только для открытых заказов)
             elif order_status == 'open':
                 if is_own_order:
@@ -7693,9 +7693,9 @@ async def blogger_view_campaign_details(update: Update, context: ContextTypes.DE
                 elif already_bid:
                     keyboard.append([InlineKeyboardButton("✅ Вы уже откликнулись", callback_data="noop")])
                 else:
-                    keyboard.append([InlineKeyboardButton("💰 Откликнуться", callback_data=f"bid_on_order_{campaign_id}")])
+                    keyboard.append([InlineKeyboardButton("💰 Откликнуться", callback_data=f"offer_on_campaign_{campaign_id}")])
                     # НОВОЕ: Кнопка "Отказаться от кампания" (не показывать этот кампани больше)
-                    keyboard.append([InlineKeyboardButton("🚫 Отказаться от кампания", callback_data=f"decline_order_{campaign_id}")])
+                    keyboard.append([InlineKeyboardButton("🚫 Отказаться от кампания", callback_data=f"decline_campaign_{campaign_id}")])
 
             # ИСПРАВЛЕНО: Если блогер откликнулся на кампани - возвращаем в "Мои отклики", иначе в "Доступные кампании"
             back_callback = "worker_my_bids" if already_bid else "worker_view_orders"
@@ -7723,8 +7723,8 @@ async def blogger_decline_campaign_confirm(update: Update, context: ContextTypes
     await query.answer()
 
     try:
-        # Извлекаем campaign_id из callback_data: "decline_order_123"
-        campaign_id = int(query.data.replace("decline_order_", ""))
+        # Извлекаем campaign_id из callback_data: "decline_campaign_123"
+        campaign_id = int(query.data.replace("decline_campaign_", ""))
 
         # Получаем кампани
         campaign = db.get_order_by_id(campaign_id)
@@ -7745,8 +7745,8 @@ async def blogger_decline_campaign_confirm(update: Update, context: ContextTypes
 
         keyboard = [
             [
-                InlineKeyboardButton("✅ Да, отказаться", callback_data=f"decline_order_yes_{campaign_id}"),
-                InlineKeyboardButton("❌ Нет, вернуться", callback_data=f"decline_order_no_{campaign_id}")
+                InlineKeyboardButton("✅ Да, отказаться", callback_data=f"decline_campaign_yes_{campaign_id}"),
+                InlineKeyboardButton("❌ Нет, вернуться", callback_data=f"decline_campaign_no_{campaign_id}")
             ]
         ]
 
@@ -7772,8 +7772,8 @@ async def blogger_decline_campaign_yes(update: Update, context: ContextTypes.DEF
     await query.answer()
 
     try:
-        # Извлекаем campaign_id из callback_data: "decline_order_yes_123"
-        campaign_id = int(query.data.replace("decline_order_yes_", ""))
+        # Извлекаем campaign_id из callback_data: "decline_campaign_yes_123"
+        campaign_id = int(query.data.replace("decline_campaign_yes_", ""))
 
         # Получаем user_id
         user = db.get_user(query.from_user.id)
@@ -7822,13 +7822,13 @@ async def blogger_decline_campaign_no(update: Update, context: ContextTypes.DEFA
     await query.answer()
 
     try:
-        # Извлекаем campaign_id из callback_data: "decline_order_no_123"
-        campaign_id = int(query.data.replace("decline_order_no_", ""))
+        # Извлекаем campaign_id из callback_data: "decline_campaign_no_123"
+        campaign_id = int(query.data.replace("decline_campaign_no_", ""))
 
         # Возвращаемся к просмотру кампания (симулируем callback)
         # Создаем новый query с правильным callback_data
         query.data = f"view_order_{campaign_id}"
-        await worker_view_order_details(update, context)
+        await blogger_view_campaign_details(update, context)
 
     except Exception as e:
         logger.error(f"Ошибка при отмене отказа: {e}", exc_info=True)
@@ -7898,7 +7898,7 @@ async def blogger_campaign_photo_nav(update: Update, context: ContextTypes.DEFAU
         elif already_bid:
             keyboard.append([InlineKeyboardButton("✅ Вы уже откликнулись", callback_data="noop")])
         else:
-            keyboard.append([InlineKeyboardButton("💰 Откликнуться", callback_data=f"bid_on_order_{campaign_id}")])
+            keyboard.append([InlineKeyboardButton("💰 Откликнуться", callback_data=f"offer_on_campaign_{campaign_id}")])
         
         keyboard.append([InlineKeyboardButton("⬅️ К списку заказов", callback_data="worker_view_orders")])
 
@@ -8162,7 +8162,7 @@ async def blogger_offer_on_campaign(update: Update, context: ContextTypes.DEFAUL
     await query.answer()
 
     # Извлекаем campaign_id
-    campaign_id = int(query.data.replace("bid_on_order_", ""))
+    campaign_id = int(query.data.replace("offer_on_campaign_", ""))
     context.user_data['bid_order_id'] = campaign_id
 
     # Проверяем не откликался ли уже
@@ -9607,7 +9607,7 @@ async def blogger_complete_campaign(update: Update, context: ContextTypes.DEFAUL
     query = update.callback_query
     await query.answer()
 
-    campaign_id = int(query.data.replace("worker_complete_order_", ""))
+    campaign_id = int(query.data.replace("blogger_complete_campaign_", ""))
 
     # ИСПРАВЛЕНО: Кампани завершается сразу (не требуется подтверждение от обеих сторон)
     db.mark_order_completed_by_worker(campaign_id)
