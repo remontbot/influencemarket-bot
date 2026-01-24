@@ -7621,10 +7621,10 @@ async def blogger_view_campaign_details(update: Update, context: ContextTypes.DE
         
         # Информация о клиенте
         text += f"👤 <b>Рекламодател:</b> {campaign_dict.get('advertiser_name', 'Неизвестно')}\n"
-        client_rating = campaign_dict.get('client_rating', 0)
-        client_rating_count = campaign_dict.get('client_rating_count', 0)
-        if client_rating_count > 0:
-            text += f"⭐ {client_rating:.1f} ({client_rating_count} отзывов)\n"
+        advertiser_rating = campaign_dict.get('advertiser_rating', 0)
+        advertiser_rating_count = campaign_dict.get('advertiser_rating_count', 0)
+        if advertiser_rating_count > 0:
+            text += f"⭐ {advertiser_rating:.1f} ({advertiser_rating_count} отзывов)\n"
         
         # Получаем фото
         photos = campaign_dict.get('photos', '')
