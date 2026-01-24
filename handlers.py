@@ -4951,7 +4951,7 @@ async def cancel_campaign_handler(update: Update, context: ContextTypes.DEFAULT_
 
     try:
         # Извлекаем campaign_id из callback_data
-        campaign_id = int(query.data.replace("cancel_order_", ""))
+        campaign_id = int(query.data.replace("cancel_campaign_", ""))
 
         # Получаем пользователя
         user = db.get_user(query.from_user.id)
@@ -5026,7 +5026,7 @@ async def complete_campaign_handler(update: Update, context: ContextTypes.DEFAUL
 
     try:
         # Извлекаем campaign_id из callback_data
-        campaign_id = int(query.data.replace("complete_order_", ""))
+        campaign_id = int(query.data.replace("complete_campaign_", ""))
 
         # Получаем пользователя
         user = db.get_user(query.from_user.id)
@@ -5294,7 +5294,7 @@ async def submit_campaign_rating(update: Update, context: ContextTypes.DEFAULT_T
                 keyboard = []
                 # Если блогер еще не оценил клиента, добавляем кнопку оценки
                 if not opposite_review_exists:
-                    keyboard.append([InlineKeyboardButton("⭐ Оценить рекламодатела", callback_data=f"complete_order_{campaign_id}")])
+                    keyboard.append([InlineKeyboardButton("⭐ Оценить рекламодатела", callback_data=f"complete_campaign_{campaign_id}")])
                 keyboard.append([InlineKeyboardButton("📸 Загрузить фото контенты", callback_data=f"upload_work_photo_{campaign_id}")])
                 keyboard.append([InlineKeyboardButton("➡️ Пропустить", callback_data=f"skip_work_photo_{campaign_id}")])
 
@@ -5312,7 +5312,7 @@ async def submit_campaign_rating(update: Update, context: ContextTypes.DEFAULT_T
                 # Блогер оценил клиента - предлагаем клиенту оценить блогера
                 keyboard = []
                 if not opposite_review_exists:
-                    keyboard.append([InlineKeyboardButton("⭐ Оценить блогера", callback_data=f"complete_order_{campaign_id}")])
+                    keyboard.append([InlineKeyboardButton("⭐ Оценить блогера", callback_data=f"complete_campaign_{campaign_id}")])
                 extra_text = "\n\nОцените контенту блогера!"
                 logger.info(f"⭐ Блогер оценил клиента - предлагаем оценить блогера")
 
@@ -6171,7 +6171,7 @@ async def view_campaign_offers(update: Update, context: ContextTypes.DEFAULT_TYP
 
     try:
         # Извлекаем campaign_id из callback_data
-        campaign_id = int(query.data.replace("view_bids_", ""))
+        campaign_id = int(query.data.replace("view_offers_", ""))
 
         # Проверяем что кампани принадлежит текущему пользователю
         user = db.get_user(query.from_user.id)
@@ -6583,7 +6583,7 @@ async def select_blogger(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         keyboard = [
             [InlineKeyboardButton("💝 Сказать спасибо и получить контакт", callback_data=f"thank_platform_{offer_id}")],
-            [InlineKeyboardButton("⬅️ Назад к откликам", callback_data=f"view_bids_{campaign_id}")],
+            [InlineKeyboardButton("⬅️ Назад к откликам", callback_data=f"view_offers_{campaign_id}")],
         ]
 
         await safe_edit_message(
@@ -9597,7 +9597,7 @@ async def advertiser_complete_campaign(update: Update, context: ContextTypes.DEF
     query = update.callback_query
     await query.answer()
 
-    campaign_id = int(query.data.replace("complete_order_", ""))
+    campaign_id = int(query.data.replace("complete_campaign_", ""))
 
     # ИСПРАВЛЕНО: Кампани завершается сразу (не требуется подтверждение от обеих сторон)
     db.mark_order_completed_by_client(campaign_id)
