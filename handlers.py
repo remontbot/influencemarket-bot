@@ -8201,13 +8201,13 @@ async def blogger_offer_on_campaign(update: Update, context: ContextTypes.DEFAUL
     # Выбор валюты
     keyboard = [
         [
-            InlineKeyboardButton("BYN (₽)", callback_data="bid_currency_BYN"),
-            InlineKeyboardButton("USD ($)", callback_data="bid_currency_USD"),
+            InlineKeyboardButton("BYN (₽)", callback_data="offer_currency_BYN"),
+            InlineKeyboardButton("USD ($)", callback_data="offer_currency_USD"),
         ],
         [
-            InlineKeyboardButton("EUR (€)", callback_data="bid_currency_EUR"),
+            InlineKeyboardButton("EUR (€)", callback_data="offer_currency_EUR"),
         ],
-        [InlineKeyboardButton("❌ Отмена", callback_data="cancel_bid")],
+        [InlineKeyboardButton("❌ Отмена", callback_data="cancel_offer")],
     ]
 
     # Пробуем отредактировать как caption (если есть фото), иначе как text
@@ -8263,7 +8263,7 @@ async def blogger_offer_enter_price(update: Update, context: ContextTypes.DEFAUL
             InlineKeyboardButton("Через 2 недели", callback_data="ready_days_14"),
             InlineKeyboardButton("Через месяц", callback_data="ready_days_30"),
         ],
-        [InlineKeyboardButton("❌ Отмена", callback_data="cancel_bid")],
+        [InlineKeyboardButton("❌ Отмена", callback_data="cancel_offer")],
     ]
 
     await update.message.reply_text(
@@ -8282,7 +8282,7 @@ async def blogger_offer_select_currency(update: Update, context: ContextTypes.DE
     query = update.callback_query
     await query.answer()
 
-    currency = query.data.replace("bid_currency_", "")
+    currency = query.data.replace("offer_currency_", "")
     context.user_data['bid_currency'] = currency
 
     # Получаем символ валюты для отображения
@@ -8295,7 +8295,7 @@ async def blogger_offer_select_currency(update: Update, context: ContextTypes.DE
 
     # Спрашиваем цену в выбранной валюте
     keyboard = InlineKeyboardMarkup([[
-        InlineKeyboardButton("❌ Отмена", callback_data="cancel_bid")
+        InlineKeyboardButton("❌ Отмена", callback_data="cancel_offer")
     ]])
 
     text = (
@@ -8366,8 +8366,8 @@ async def blogger_offer_select_ready_days(update: Update, context: ContextTypes.
         "Напишите комментарий или нажмите «Пропустить»:",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup([[
-            InlineKeyboardButton("⏭ Пропустить", callback_data="bid_skip_comment"),
-            InlineKeyboardButton("❌ Отмена", callback_data="cancel_bid")
+            InlineKeyboardButton("⏭ Пропустить", callback_data="offer_skip_comment"),
+            InlineKeyboardButton("❌ Отмена", callback_data="cancel_offer")
         ]])
     )
 
