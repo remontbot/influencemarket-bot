@@ -1627,6 +1627,9 @@ def update_order_status(campaign_id, new_status):
     Args:
         campaign_id: ID заказа
         new_status: Новый статус ('open', 'in_progress', 'completed', 'canceled')
+
+    Returns:
+        bool: True если статус обновлен, False если заказ не найден
     """
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
@@ -1636,6 +1639,12 @@ def update_order_status(campaign_id, new_status):
             WHERE id = ?
         """, (new_status, campaign_id))
         conn.commit()
+        success = cursor.rowcount > 0
+        if success:
+            logger.info(f"✅ Обновлен статус заказа: ID={campaign_id}, Новый статус={new_status}")
+        else:
+            logger.warning(f"⚠️ Заказ {campaign_id} не найден для обновления статуса")
+        return success
 
 
 def get_all_user_telegram_ids():
@@ -4170,43 +4179,6 @@ def get_client_orders(advertiser_id, page=1, per_page=10):
         return campaigns, total_count, has_next_page
 
 
-def get_order_by_id(campaign_id):
-    """Получает заказ по ID"""
-    with get_db_connection() as conn:
-
-        cursor = get_cursor(conn)
-
-        cursor.execute("""
-            SELECT
-                o.*,
-                c.name as advertiser_name,
-                c.phone as advertiser_phone,
-                c.rating as advertiser_rating,
-                c.rating_count as advertiser_rating_count
-            FROM campaigns o
-            JOIN advertisers c ON o.advertiser_id = c.id
-            WHERE o.id = ?
-        """, (campaign_id,))
-
-        return cursor.fetchone()
-
-
-def update_order_status(campaign_id, new_status):
-    """Обновляет статус заказа"""
-    with get_db_connection() as conn:
-        cursor = get_cursor(conn)
-        cursor.execute("""
-            UPDATE campaigns
-            SET status = ?
-            WHERE id = ?
-        """, (new_status, campaign_id))
-        conn.commit()
-        success = cursor.rowcount > 0
-        if success:
-            logger.info(f"✅ Обновлен статус заказа: ID={campaign_id}, Новый статус={new_status}")
-        else:
-            logger.warning(f"⚠️ Заказ {campaign_id} не найден для обновления статуса")
-        return success
 
 
 def cancel_order(campaign_id, cancelled_by_user_id, reason=""):
