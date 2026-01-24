@@ -6234,7 +6234,7 @@ async def view_campaign_offers(update: Update, context: ContextTypes.DEFAULT_TYP
         }
 
         # Показываем первый предложени
-        await show_bid_card(update, context, query=query)
+        await show_offer_card(update, context, query=query)
 
     except Exception as e:
         logger.error(f"Ошибка в view_order_bids: {e}", exc_info=True)
@@ -6464,7 +6464,7 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
             )
 
     except Exception as e:
-        logger.error(f"Ошибка в show_bid_card: {e}", exc_info=True)
+        logger.error(f"Ошибка в show_offer_card: {e}", exc_info=True)
         keyboard = [[InlineKeyboardButton("⬅️ К моим заказам", callback_data="client_my_orders")]]
         # Сообщение могло быть удалено, поэтому используем send_message вместо edit
         try:
@@ -6500,7 +6500,7 @@ async def offer_navigate(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         context.user_data['viewing_bids']['current_index'] = current_index
 
-        await show_bid_card(update, context, query=query)
+        await show_offer_card(update, context, query=query)
 
     except Exception as e:
         logger.error(f"Ошибка в bid_navigate: {e}", exc_info=True)
@@ -6526,7 +6526,7 @@ async def back_to_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE)
             return
 
         # Показываем текущую карточку предложениа
-        await show_bid_card(update, context, query=query)
+        await show_offer_card(update, context, query=query)
 
     except Exception as e:
         logger.error(f"Ошибка в back_to_bid_card: {e}", exc_info=True)
