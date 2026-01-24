@@ -4341,9 +4341,9 @@ def check_expired_orders():
         result = []
 
         for campaign_row in expired_orders:
-            campaign_id = campaign_row[0]
-            title = campaign_row[1]
-            advertiser_user_id = campaign_row[3]
+            campaign_id = campaign_row['id']
+            title = campaign_row['title']
+            advertiser_user_id = campaign_row['advertiser_user_id']
 
             # Получаем всех мастеров, которые откликнулись
             cursor.execute("""
@@ -4354,7 +4354,7 @@ def check_expired_orders():
             """, (campaign_id,))
 
             blogger_rows = cursor.fetchall()
-            blogger_user_ids = [row[0] for row in blogger_rows]
+            blogger_user_ids = [row['user_id'] for row in blogger_rows]
 
             # Обновляем статус заказа
             cursor.execute("""
@@ -4689,7 +4689,7 @@ def add_test_orders(telegram_id):
                 VALUES (?, ?, ?, ?, ?)
             """, (user_id, "Тестовый клиент", "+375291234567", "Минск", "Тестовый профиль"))
         else:
-            user_id = user_row[0]
+            user_id = user_row['id']
             # Пользователь может быть мастером или клиентом - это не важно
             # Проверим наличие профиля клиента и создадим если нужно
 
@@ -4705,7 +4705,7 @@ def add_test_orders(telegram_id):
             """, (user_id, "Тестовый клиент", "+375291234567", "Минск", "Тестовый профиль"))
             advertiser_id = cursor.lastrowid
         else:
-            advertiser_id = advertiser_row[0]
+            advertiser_id = advertiser_row['id']
 
         # Данные для создания тестовых заказов
         categories = [
