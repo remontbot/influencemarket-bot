@@ -5039,7 +5039,7 @@ async def complete_campaign_handler(update: Update, context: ContextTypes.DEFAUL
         client_profile = db.get_client_profile(user_dict["id"])
         worker_profile_caller = db.get_worker_profile(user_dict["id"])
 
-        is_client = client_profile and campaign_dict['client_id'] == dict(client_profile)['id']
+        is_client = client_profile and campaign_dict['advertiser_id'] == dict(client_profile)['id']
         is_worker = worker_profile_caller and dict(worker_profile_caller)['id'] == selected_worker_id
 
         if not is_client and not is_worker:
@@ -5069,7 +5069,7 @@ async def complete_campaign_handler(update: Update, context: ContextTypes.DEFAUL
             cancel_callback = "client_my_orders"
         else:
             # Блогер оценивает клиента
-            client_data = db.get_client_by_id(campaign_dict['client_id'])
+            client_data = db.get_client_by_id(campaign_dict['advertiser_id'])
             if not client_data:
                 await safe_edit_message(query, "❌ Информация о клиенте не найдена.")
                 return
@@ -5176,7 +5176,7 @@ async def submit_campaign_rating(update: Update, context: ContextTypes.DEFAULT_T
         blogger_user_id = worker_dict['user_id']
 
         # Получаем информацию о клиенте
-        client_data = db.get_client_by_id(campaign_dict['client_id'])
+        client_data = db.get_client_by_id(campaign_dict['advertiser_id'])
         if not client_data:
             await safe_edit_message(query, "❌ Информация о клиенте не найдена.")
             return
@@ -5665,7 +5665,7 @@ async def blogger_finish_work_photos(update: Update, context: ContextTypes.DEFAU
         campaign = db.get_order_by_id(campaign_id)
         if campaign:
             campaign_dict = dict(campaign)
-            advertiser = db.get_client_by_id(campaign_dict['client_id'])
+            advertiser = db.get_client_by_id(campaign_dict['advertiser_id'])
             if advertiser:
                 client_dict = dict(advertiser)
                 client_user = db.get_user_by_id(client_dict['user_id'])
@@ -6162,7 +6162,7 @@ async def view_campaign_offers(update: Update, context: ContextTypes.DEFAULT_TYP
 
         # Получаем кампани
         campaign = db.get_order_by_id(campaign_id)
-        if not campaign or campaign['client_id'] != client_profile['id']:
+        if not campaign or campaign['advertiser_id'] != client_profile['id']:
             await query.edit_message_text(
                 "❌ Кампани не найден или у вас нет доступа к нему.",
                 parse_mode="HTML"
@@ -7606,12 +7606,12 @@ async def blogger_view_campaign_details(update: Update, context: ContextTypes.DE
         already_bid = db.check_worker_bid_exists(campaign_id, worker_profile["id"])
 
         # ПРОВЕРКА: Блогер не может откликаться на свой кампани
-        advertiser = db.get_client_by_id(campaign_dict['client_id'])
+        advertiser = db.get_client_by_id(campaign_dict['advertiser_id'])
         is_own_order = False
         if advertiser:
             client_dict = dict(advertiser)
             is_own_order = (client_dict['user_id'] == user["id"])
-        
+
         # Формируем текст
         text = f"📋 <b>Кампани #{campaign_id}</b>\n\n"
         text += f"📍 <b>Город:</b> {campaign_dict.get('city', 'Не указан')}\n"
@@ -7871,7 +7871,7 @@ async def blogger_campaign_photo_nav(update: Update, context: ContextTypes.DEFAU
         already_bid = db.check_worker_bid_exists(campaign_id, worker_profile["id"])
 
         # ПРОВЕРКА: Блогер не может откликаться на свой кампани
-        advertiser = db.get_client_by_id(campaign_dict['client_id'])
+        advertiser = db.get_client_by_id(campaign_dict['advertiser_id'])
         is_own_order = False
         if advertiser:
             client_dict = dict(advertiser)
@@ -8181,7 +8181,7 @@ async def blogger_offer_on_campaign(update: Update, context: ContextTypes.DEFAUL
     campaign = db.get_order_by_id(campaign_id)
     if campaign:
         campaign_dict = dict(campaign)
-        advertiser = db.get_client_by_id(campaign_dict['client_id'])
+        advertiser = db.get_client_by_id(campaign_dict['advertiser_id'])
         if advertiser:
             client_dict = dict(advertiser)
             if client_dict['user_id'] == user_dict.get("id"):
@@ -8447,7 +8447,7 @@ async def blogger_offer_publish(update: Update, context: ContextTypes.DEFAULT_TY
         campaign = db.get_order_by_id(campaign_id)
         if campaign:
             # Получаем telegram_id клиента
-            advertiser = db.get_client_by_id(campaign['client_id'])
+            advertiser = db.get_client_by_id(campaign['advertiser_id'])
             client_user = db.get_user_by_id(advertiser['user_id'])
 
             blogger_name = worker_profile_dict.get('name', 'Блогер')
