@@ -8413,7 +8413,7 @@ async def blogger_offer_publish(update: Update, context: ContextTypes.DEFAULT_TY
         try:
             offer_id = db.create_bid(
                 campaign_id=campaign_id,
-                worker_id=worker_profile_dict["id"],
+                blogger_id=worker_profile_dict["id"],
                 proposed_price=price,
                 currency=currency,
                 comment=comment,
