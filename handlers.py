@@ -6309,10 +6309,19 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
 
         text += "\n"
 
-        # Предложенная цена
+        # Предложенная цена (с учетом типа бюджета кампании)
         price = offer.get('proposed_price', 0)
         currency = offer.get('currency', 'BYN')
-        text += f"💰 <b>Предложенная цена: {price} {currency}</b>\n"
+        campaign_budget_type = offer.get('campaign_budget_type', '')
+        campaign_budget_value = offer.get('campaign_budget_value', 0)
+
+        if campaign_budget_type == 'barter':
+            text += f"💰 <b>Блогер согласился работать за бартер</b>\n"
+        elif campaign_budget_type == 'fixed' and campaign_budget_value:
+            text += f"💰 <b>Блогер согласился работать за фиксированную сумму {int(campaign_budget_value)} {currency}</b>\n"
+        else:
+            # Блогер сам предлагает цену (flexible или без типа)
+            text += f"💰 <b>Блогер предложил {int(price)} {currency}</b>\n"
 
         # Срок готовности (больше не используется)
         # ready_in_days = offer.get('ready_in_days', None)
@@ -7500,19 +7509,27 @@ async def blogger_view_campaigns(update: Update, context: ContextTypes.DEFAULT_T
             orders_text += f"🟢 <b>Кампания #{campaign['id']}</b>\n"
             orders_text += f"📍 Город: {campaign.get('city', 'Не указан')}\n"
             orders_text += f"📱 Категория: {campaign.get('category', 'Не указана')}\n"
-            
-            # Описание (сокращённое)
-            description = campaign.get('description', '')
-            if len(description) > 80:
-                description = description[:80] + "..."
-            orders_text += f"📝 {description}\n"
-            
+
+            # Вид и сумма оплаты
+            budget_type = campaign.get('budget_type', '')
+            budget_value = campaign.get('budget_value')
+
+            if budget_type == 'barter':
+                orders_text += f"💰 Оплата: <b>Бартер</b>\n"
+            elif budget_type == 'fixed' and budget_value:
+                orders_text += f"💰 Оплата: <b>Фиксированная - {int(budget_value)} BYN</b>\n"
+            elif budget_type == 'flexible':
+                if budget_value:
+                    orders_text += f"💰 Оплата: <b>Гибкая - до {int(budget_value)} BYN</b>\n"
+                else:
+                    orders_text += f"💰 Оплата: <b>Гибкая</b>\n"
+
             # Фото
             photos = campaign.get('photos', '')
             photos_count = len([p for p in photos.split(',') if p]) if photos else 0
             if photos_count > 0:
                 orders_text += f"📸 {photos_count} фото\n"
-            
+
             orders_text += f"📅 {campaign.get('created_at', '')}\n"
             orders_text += "\n"
             
