@@ -5116,18 +5116,18 @@ async def complete_campaign_handler(update: Update, context: ContextTypes.DEFAUL
         )
 
         # Кнопки с оценками от 1 до 5 звезд
-        # Формат callback: rate_order_{campaign_id}_{rating}_{role}
+        # Формат callback: rate_campaign_{campaign_id}_{rating}_{role}
         # role: 'advertiser' если оценивает клиент, 'blogger' если оценивает блогер
         role_suffix = 'advertiser' if is_client else 'blogger'
         keyboard = [
             [
-                InlineKeyboardButton("⭐", callback_data=f"rate_order_{campaign_id}_1_{role_suffix}"),
-                InlineKeyboardButton("⭐⭐", callback_data=f"rate_order_{campaign_id}_2_{role_suffix}"),
-                InlineKeyboardButton("⭐⭐⭐", callback_data=f"rate_order_{campaign_id}_3_{role_suffix}"),
+                InlineKeyboardButton("⭐", callback_data=f"rate_campaign_{campaign_id}_1_{role_suffix}"),
+                InlineKeyboardButton("⭐⭐", callback_data=f"rate_campaign_{campaign_id}_2_{role_suffix}"),
+                InlineKeyboardButton("⭐⭐⭐", callback_data=f"rate_campaign_{campaign_id}_3_{role_suffix}"),
             ],
             [
-                InlineKeyboardButton("⭐⭐⭐⭐", callback_data=f"rate_order_{campaign_id}_4_{role_suffix}"),
-                InlineKeyboardButton("⭐⭐⭐⭐⭐", callback_data=f"rate_order_{campaign_id}_5_{role_suffix}"),
+                InlineKeyboardButton("⭐⭐⭐⭐", callback_data=f"rate_campaign_{campaign_id}_4_{role_suffix}"),
+                InlineKeyboardButton("⭐⭐⭐⭐⭐", callback_data=f"rate_campaign_{campaign_id}_5_{role_suffix}"),
             ],
             [InlineKeyboardButton("❌ Отмена", callback_data=cancel_callback)]
         ]
@@ -5152,7 +5152,7 @@ async def complete_campaign_handler(update: Update, context: ContextTypes.DEFAUL
 async def submit_campaign_rating(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     ОБНОВЛЕНО: Обработчик сохранения оценки кампания - работает для ОБЕИХ сторон.
-    Callback data format: rate_order_{campaign_id}_{rating}_{role}
+    Callback data format: rate_campaign_{campaign_id}_{rating}_{role}
     role: 'advertiser' (клиент оценивает блогера) или 'blogger' (блогер оценивает клиента)
     """
     query = update.callback_query
@@ -5160,8 +5160,8 @@ async def submit_campaign_rating(update: Update, context: ContextTypes.DEFAULT_T
 
     try:
         # Извлекаем campaign_id, rating и role из callback_data
-        # Формат: rate_order_{campaign_id}_{rating}_{role}
-        data_parts = query.data.replace("rate_order_", "").split("_")
+        # Формат: rate_campaign_{campaign_id}_{rating}_{role}
+        data_parts = query.data.replace("rate_campaign_", "").split("_")
         campaign_id = int(data_parts[0])
         rating = int(data_parts[1])
         role = data_parts[2] if len(data_parts) > 2 else 'advertiser'  # По умолчанию клиент (обратная совместимость)
