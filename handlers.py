@@ -9118,7 +9118,7 @@ async def create_campaign_photo_upload(update: Update, context: ContextTypes.DEF
         # КРИТИЧНО: Валидация file_id
         if not validate_file_id(file_id):
             logger.error(f"❌ Невалидный file_id при загрузке фото кампания: {file_id}")
-            keyboard = [[InlineKeyboardButton("✅ Завершить и опубликовать", callback_data="campaign_publish")]]
+            keyboard = [[InlineKeyboardButton("✅ Далее →", callback_data="campaign_confirm")]]
             await update.message.reply_text(
                 "❌ Ошибка при обработке фото.\n\n"
                 "Попробуйте отправить фото еще раз или используйте другое изображение.\n\n"
@@ -9130,7 +9130,7 @@ async def create_campaign_photo_upload(update: Update, context: ContextTypes.DEF
         # Сохраняем file_id
         photos.append(file_id)
 
-        keyboard = [[InlineKeyboardButton("✅ Завершить и опубликовать", callback_data="campaign_publish")]]
+        keyboard = [[InlineKeyboardButton("✅ Далее →", callback_data="campaign_confirm")]]
 
         await update.message.reply_text(
             f"✅ Фото {len(photos)}/10 добавлено!\n\n"
@@ -9168,7 +9168,7 @@ async def create_campaign_photo_upload(update: Update, context: ContextTypes.DEF
         # КРИТИЧНО: Валидация file_id
         if not validate_file_id(file_id):
             logger.error(f"❌ Невалидный file_id при загрузке видео кампания: {file_id}")
-            keyboard = [[InlineKeyboardButton("✅ Завершить и опубликовать", callback_data="campaign_publish")]]
+            keyboard = [[InlineKeyboardButton("✅ Далее →", callback_data="campaign_confirm")]]
             await update.message.reply_text(
                 "❌ Ошибка при обработке видео.\n\n"
                 "Попробуйте отправить видео еще раз или используйте другой файл.\n\n"
@@ -9180,7 +9180,7 @@ async def create_campaign_photo_upload(update: Update, context: ContextTypes.DEF
         # Сохраняем file_id
         videos.append(file_id)
 
-        keyboard = [[InlineKeyboardButton("✅ Завершить и опубликовать", callback_data="campaign_publish")]]
+        keyboard = [[InlineKeyboardButton("✅ Далее →", callback_data="campaign_confirm")]]
 
         await update.message.reply_text(
             f"✅ Видео {len(videos)}/3 добавлено!\n\n"
@@ -9197,7 +9197,7 @@ async def create_campaign_photo_upload(update: Update, context: ContextTypes.DEF
 
 async def create_campaign_done_uploading(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Завершение загрузки фото и видео по команде /done"""
-    return await create_campaign_publish(update, context)
+    return await create_campaign_confirm(update, context)
 
 
 async def create_campaign_skip_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -9208,7 +9208,75 @@ async def create_campaign_skip_photos(update: Update, context: ContextTypes.DEFA
     context.user_data["order_photos"] = []
     context.user_data["order_videos"] = []
 
-    return await create_campaign_publish(update, context)
+    return await create_campaign_confirm(update, context)
+
+
+async def create_campaign_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Экран подтверждения перед публикацией кампании"""
+    if update.callback_query:
+        query = update.callback_query
+        await query.answer()
+        message = query.message
+        is_callback = True
+    else:
+        message = update.message
+        is_callback = False
+
+    # Формируем сводку по кампании
+    city = context.user_data.get("order_city", "Не указан")
+    categories = context.user_data.get("order_categories", [])
+    categories_text = ", ".join(categories) if categories else "Не указаны"
+    description = context.user_data.get("order_description", "Нет описания")
+    photos_count = len(context.user_data.get("order_photos", []))
+    videos_count = len(context.user_data.get("order_videos", []))
+
+    payment_types = context.user_data.get("payment_types", [])
+    budget_value = context.user_data.get("budget_value", 0)
+
+    payment_text = ""
+    if "fixed_budget" in payment_types:
+        payment_text = f"💰 <b>Бюджет:</b> {budget_value} BYN\n"
+    elif "blogger_offer" in payment_types:
+        payment_text = "💬 <b>Оплата:</b> Блогеры предложат цену\n"
+    if "barter" in payment_types:
+        payment_text += "🤝 <b>Бартер:</b> Возможен\n"
+
+    media_text = ""
+    if photos_count > 0:
+        media_text += f"📸 Фото: {photos_count}\n"
+    if videos_count > 0:
+        media_text += f"🎥 Видео: {videos_count}\n"
+
+    text = (
+        "✨ <b>Подтверждение публикации</b>\n\n"
+        f"📍 <b>Город:</b> {city}\n"
+        f"📱 <b>Категории:</b> {categories_text}\n"
+        f"{payment_text}"
+        f"{media_text}"
+        f"📝 <b>Описание:</b> {description[:100]}{'...' if len(description) > 100 else ''}\n\n"
+        "🎯 Нажмите кнопку ниже чтобы опубликовать кампанию.\n"
+        "Блогеры получат уведомление и смогут откликнуться!"
+    )
+
+    keyboard = [
+        [InlineKeyboardButton("✅ Опубликовать", callback_data="campaign_publish_confirmed")],
+        [InlineKeyboardButton("❌ Отменить", callback_data="show_client_menu")]
+    ]
+
+    if is_callback:
+        await query.edit_message_text(
+            text,
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+    else:
+        await message.reply_text(
+            text,
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+
+    return CREATE_CAMPAIGN_PHOTOS
 
 
 
@@ -9351,6 +9419,11 @@ async def create_campaign_city_other(update: Update, context: ContextTypes.DEFAU
         )
         return CREATE_CAMPAIGN_MAIN_CATEGORY
 
+
+
+async def create_campaign_publish_confirmed(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработчик подтверждения публикации - вызывает create_campaign_publish"""
+    return await create_campaign_publish(update, context)
 
 
 async def create_campaign_publish(update: Update, context: ContextTypes.DEFAULT_TYPE):
