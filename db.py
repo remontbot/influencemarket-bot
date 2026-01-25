@@ -1182,7 +1182,7 @@ def count_orders_between_users(user1_id, user2_id, days=7):
         # Считаем заказы где user1 клиент, а user2 мастер ИЛИ наоборот
         cursor.execute("""
             SELECT COUNT(*) FROM campaigns o
-            LEFT JOIN offers b ON o.selected_offer_id = b.id
+            LEFT JOIN offers b ON o.selected_worker_id = b.id
             WHERE o.status = 'completed'
             AND o.completed_at >= ?
             AND (
@@ -1228,7 +1228,7 @@ def get_suspicious_activity_report(days=7, min_orders=3):
                 COUNT(*) as campaign_count,
                 MAX(o.completed_at) as last_order
             FROM campaigns o
-            LEFT JOIN offers b ON o.selected_offer_id = b.id
+            LEFT JOIN offers b ON o.selected_worker_id = b.id
             WHERE o.status = 'completed'
             AND o.completed_at >= ?
             AND b.blogger_id IS NOT NULL
@@ -1249,7 +1249,7 @@ def get_suspicious_activity_report(days=7, min_orders=3):
                 o.completed_at,
                 CAST((julianday(o.completed_at) - julianday(o.accepted_at)) * 24 AS REAL) as hours_diff
             FROM campaigns o
-            LEFT JOIN offers b ON o.selected_offer_id = b.id
+            LEFT JOIN offers b ON o.selected_worker_id = b.id
             WHERE o.status = 'completed'
             AND o.completed_at >= ?
             AND o.accepted_at IS NOT NULL
