@@ -5341,25 +5341,66 @@ def count_available_orders_for_worker(blogger_user_id):
 
         # ИСПРАВЛЕНО: Используем нормализованные таблицы вместо LIKE
         # Ищем заказы через JOIN с campaign_categories и blogger_categories
+        # FALLBACK: если нет категорий в blogger_categories, используем поле categories (LIKE)
         # Проверяем, что заказ находится в одном из городов мастера ИЛИ город = "Вся Беларусь"
         placeholders = ','.join('?' * len(cities))
-        query = f"""
-            SELECT COUNT(DISTINCT o.id)
-            FROM campaigns o
-            JOIN campaign_categories oc ON o.id = oc.campaign_id
-            JOIN blogger_categories wc ON oc.category = wc.category
-            WHERE o.status = 'open'
-            AND (o.city IN ({placeholders}) OR o.city = 'Вся Беларусь')
-            AND wc.blogger_id = ?
-            AND o.id NOT IN (
-                SELECT campaign_id FROM offers WHERE blogger_id = ?
-            )
-        """
 
-        cursor.execute(query, (*cities, blogger_id, blogger_id))
+        # Сначала проверяем есть ли у блогера категории в blogger_categories
+        cursor.execute("SELECT COUNT(*) FROM blogger_categories WHERE blogger_id = ?", (blogger_id,))
+        cat_count_result = cursor.fetchone()
+        has_categories_table = False
+        if cat_count_result:
+            cat_count = cat_count_result['count'] if isinstance(cat_count_result, dict) else cat_count_result[0]
+            has_categories_table = cat_count > 0
+
+        if has_categories_table:
+            # Используем нормализованную таблицу blogger_categories
+            query = f"""
+                SELECT COUNT(DISTINCT o.id)
+                FROM campaigns o
+                JOIN campaign_categories oc ON o.id = oc.campaign_id
+                JOIN blogger_categories wc ON oc.category = wc.category
+                WHERE o.status = 'open'
+                AND (o.city IN ({placeholders}) OR o.city = 'Вся Беларусь')
+                AND wc.blogger_id = ?
+                AND o.id NOT IN (
+                    SELECT campaign_id FROM offers WHERE blogger_id = ?
+                )
+            """
+            cursor.execute(query, (*cities, blogger_id, blogger_id))
+        else:
+            # FALLBACK: используем старое поле categories с LIKE
+            logger.info(f"⚠️ Блогер {blogger_id} использует старое поле categories (FALLBACK)")
+            cursor.execute("SELECT categories FROM bloggers WHERE id = ?", (blogger_id,))
+            cat_result = cursor.fetchone()
+            if not cat_result:
+                return 0
+
+            categories_str = cat_result['categories'] if isinstance(cat_result, dict) else cat_result[0]
+            if not categories_str:
+                return 0
+
+            # Разбиваем категории и строим запрос с OR для каждой категории
+            categories_list = [c.strip() for c in categories_str.split(',') if c.strip()]
+
+            # Используем campaign_categories для точного поиска
+            cat_placeholders = ','.join('?' * len(categories_list))
+            query = f"""
+                SELECT COUNT(DISTINCT o.id)
+                FROM campaigns o
+                JOIN campaign_categories oc ON o.id = oc.campaign_id
+                WHERE o.status = 'open'
+                AND (o.city IN ({placeholders}) OR o.city = 'Вся Беларусь')
+                AND oc.category IN ({cat_placeholders})
+                AND o.id NOT IN (
+                    SELECT campaign_id FROM offers WHERE blogger_id = ?
+                )
+            """
+            cursor.execute(query, (*cities, *categories_list, blogger_id))
 
         result = cursor.fetchone()
         if not result:
+            logger.warning(f"⚠️ Запрос не вернул результат для blogger_id={blogger_id}")
             return 0
         # PostgreSQL возвращает dict, SQLite может вернуть tuple
         if isinstance(result, dict):
@@ -5367,6 +5408,7 @@ def count_available_orders_for_worker(blogger_user_id):
         else:
             count = result[0]
 
+        logger.info(f"✅ Найдено доступных заказов для blogger_id={blogger_id}: {count}")
         return count
 
 
