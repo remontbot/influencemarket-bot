@@ -6314,24 +6314,24 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
         currency = offer.get('currency', 'BYN')
         text += f"💰 <b>Предложенная цена: {price} {currency}</b>\n"
 
-        # Срок готовности
-        ready_in_days = offer.get('ready_in_days', None)
-        if ready_in_days is not None:
-            if ready_in_days == 0:
-                ready_text = "Сегодня"
-            elif ready_in_days == 1:
-                ready_text = "Завтра"
-            elif ready_in_days == 3:
-                ready_text = "Через 3 дня"
-            elif ready_in_days == 7:
-                ready_text = "Через неделю"
-            elif ready_in_days == 14:
-                ready_text = "Через 2 недели"
-            elif ready_in_days == 30:
-                ready_text = "Через месяц"
-            else:
-                ready_text = f"Через {ready_in_days} дн."
-            text += f"⏱ <b>Готов приступить:</b> {ready_text}\n"
+        # Срок готовности (больше не используется)
+        # ready_in_days = offer.get('ready_in_days', None)
+        # if ready_in_days is not None:
+        #     if ready_in_days == 0:
+        #         ready_text = "Сегодня"
+        #     elif ready_in_days == 1:
+        #         ready_text = "Завтра"
+        #     elif ready_in_days == 3:
+        #         ready_text = "Через 3 дня"
+        #     elif ready_in_days == 7:
+        #         ready_text = "Через неделю"
+        #     elif ready_in_days == 14:
+        #         ready_text = "Через 2 недели"
+        #     elif ready_in_days == 30:
+        #         ready_text = "Через месяц"
+        #     else:
+        #         ready_text = f"Через {ready_in_days} дн."
+        #     text += f"⏱ <b>Готов приступить:</b> {ready_text}\n"
 
         text += "\n"
 
@@ -7059,11 +7059,12 @@ async def handle_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE
             db.confirm_worker_in_chat(chat_id)
             logger.info(f"✅ Блогер подтвердил готовность в чате #{chat_id}")
 
-            # Обновляем статус кампания
-            chat = db.get_chat_by_id(chat_id)
-            if chat:
-                db.update_order_status(chat['campaign_id'], "master_confirmed")
-                logger.info(f"✅ Кампания #{chat['campaign_id']} переведён в статус 'master_confirmed'")
+            # НОВАЯ ЛОГИКА: Кампания остаётся открытой для множественного выбора блогеров
+            # Статус не меняется, заказчик может продолжать выбирать других блогеров
+            # chat = db.get_chat_by_id(chat_id)
+            # if chat:
+            #     db.update_order_status(chat['campaign_id'], "master_confirmed")
+            #     logger.info(f"✅ Кампания #{chat['campaign_id']} переведён в статус 'master_confirmed'")
 
         # Получаем информацию о чате для уведомления
         chat = db.get_chat_by_id(chat_id)
@@ -8909,7 +8910,8 @@ async def create_campaign_subcategory_select(update: Update, context: ContextTyp
                 f"📱 Категории: <b>{categories_text}</b>\n"
                 f"💳 Оплата: <b>{payment_text}</b>\n\n"
                 "💰 <b>Шаг 4:</b> Укажите ваш бюджет\n\n"
-                "Введите сумму, которую вы готовы заплатить за публикацию (например: 100 или 50.5)\n\n"
+                "Введите сумму в белорусских рублях (BYN), которую вы готовы заплатить за публикацию.\n"
+                "Например: 100 или 50.5\n\n"
                 "💡 Блогеры увидят эту сумму и будут откликаться, если их устраивает цена.",
                 parse_mode="HTML"
             )
