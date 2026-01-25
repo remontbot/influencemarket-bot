@@ -2309,7 +2309,7 @@ async def blogger_active_campaigns(update: Update, context: ContextTypes.DEFAULT
             # Кнопка завершения
             keyboard.append([InlineKeyboardButton(
                 f"✅ Завершить кампани #{campaign['campaign_id']}",
-                callback_data=f"complete_order_{campaign['campaign_id']}"
+                callback_data=f"complete_campaign_{campaign['campaign_id']}"
             )])
 
             text += "\n"
@@ -2394,12 +2394,6 @@ async def blogger_completed_campaigns(update: Update, context: ContextTypes.DEFA
                     f"💬 Посмотреть чат (кампани #{campaign['campaign_id']})",
                     callback_data=f"open_chat_{chat_dict['id']}"
                 )])
-
-            # НОВОЕ: Кнопка для загрузки/добавления фото контенты
-            keyboard.append([InlineKeyboardButton(
-                f"📸 Добавить фото контенты (кампани #{campaign['campaign_id']})",
-                callback_data=f"upload_work_photo_{campaign['campaign_id']}"
-            )])
 
             text += "\n"
 
@@ -4835,7 +4829,7 @@ async def advertiser_in_progress_campaigns(update: Update, context: ContextTypes
 
             keyboard.append([InlineKeyboardButton(
                 f"✅ Завершить кампани #{campaign_id}",
-                callback_data=f"complete_order_{campaign_id}"
+                callback_data=f"complete_campaign_{campaign_id}"
             )])
 
             text += "\n"
@@ -5289,32 +5283,21 @@ async def submit_campaign_rating(update: Update, context: ContextTypes.DEFAULT_T
             # ИСПРАВЛЕНО: НЕ показываем рейтинг в уведомлении
             # Пользователь НЕ должен видеть кто и какую оценку ему поставил
 
-            # Если клиент оценил блогера - предлагаем блогеру загрузить фото И оценить клиента
-            if is_client:
-                keyboard = []
-                # Если блогер еще не оценил клиента, добавляем кнопку оценки
-                if not opposite_review_exists:
-                    keyboard.append([InlineKeyboardButton("⭐ Оценить рекламодатела", callback_data=f"complete_campaign_{campaign_id}")])
-                keyboard.append([InlineKeyboardButton("📸 Загрузить фото контенты", callback_data=f"upload_work_photo_{campaign_id}")])
-                keyboard.append([InlineKeyboardButton("➡️ Пропустить", callback_data=f"skip_work_photo_{campaign_id}")])
-
-                extra_text = (
-                    f"\n\n🌟 <b>Повысьте свой рейтинг и авторитетность!</b>\n\n"
-                    f"📸 <b>Добавьте фото выполненной контенты прямо сейчас:</b>\n"
-                    f"• Клиент сможет подтвердить фото - отзыв станет более весомым\n"
-                    f"• Подтверждённые фото получат специальный значок ✅\n"
-                    f"• Это повысит доверие будущих клиентов\n"
-                    f"• Больше заказов - выше заработок!\n\n"
-                    f"💡 Не упустите возможность - добавьте фото сейчас!"
-                )
-                logger.info(f"📸 Клиент оценил блогера - предлагаем загрузить фото контенты")
+            # Предлагаем противоположной стороне оценить
+            keyboard = []
+            if not opposite_review_exists:
+                if is_client:
+                    # Клиент оценил блогера - предлагаем блогеру оценить клиента
+                    keyboard.append([InlineKeyboardButton("⭐ Оценить рекламодателя", callback_data=f"leave_review_{campaign_id}")])
+                    extra_text = "\n\n💡 Оцените работу с рекламодателем - это поможет другим блогерам!"
+                    logger.info(f"⭐ Клиент оценил блогера - предлагаем блогеру оценить клиента")
+                else:
+                    # Блогер оценил клиента - предлагаем клиенту оценить блогера
+                    keyboard.append([InlineKeyboardButton("⭐ Оценить блогера", callback_data=f"leave_review_{campaign_id}")])
+                    extra_text = "\n\n💡 Оцените работу блогера - это поможет другим рекламодателям!"
+                    logger.info(f"⭐ Блогер оценил клиента - предлагаем клиенту оценить блогера")
             else:
-                # Блогер оценил клиента - предлагаем клиенту оценить блогера
-                keyboard = []
-                if not opposite_review_exists:
-                    keyboard.append([InlineKeyboardButton("⭐ Оценить блогера", callback_data=f"complete_campaign_{campaign_id}")])
-                extra_text = "\n\nОцените контенту блогера!"
-                logger.info(f"⭐ Блогер оценил клиента - предлагаем оценить блогера")
+                extra_text = ""
 
             await context.bot.send_message(
                 chat_id=notify_user_dict['telegram_id'],
@@ -9512,6 +9495,8 @@ async def create_campaign_publish(update: Update, context: ContextTypes.DEFAULT_
             f"📱 Категории: {categories_text}\n"
             f"{media_info}"
             f"📝 Описание: {context.user_data['order_description'][:50]}...\n\n"
+            "⏰ <b>Срок действия: 7 дней</b>\n"
+            "После этого кампания автоматически закроется и её нужно будет создать заново.\n\n"
             "Блогеры получили уведомление о вашей кампании и скоро начнут откликаться!\n"
             "Вы сможете выбрать лучших и начать общение для обсуждения деталей.",
             parse_mode="HTML",
