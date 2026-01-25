@@ -5317,14 +5317,27 @@ def count_available_orders_for_worker(blogger_user_id):
         cursor.execute("SELECT city FROM blogger_cities WHERE blogger_id = ?", (blogger_id,))
         cities_result = cursor.fetchall()
 
+        # FALLBACK: Если нет городов в blogger_cities, используем основной город из bloggers
         if not cities_result:
-            return 0
-
-        # PostgreSQL возвращает dict, SQLite может вернуть tuple
-        if cities_result and isinstance(cities_result[0], dict):
-            cities = [row['city'] for row in cities_result]
+            cursor.execute("SELECT city FROM bloggers WHERE id = ?", (blogger_id,))
+            main_city = cursor.fetchone()
+            if main_city:
+                city_value = main_city['city'] if isinstance(main_city, dict) else main_city[0]
+                if city_value:
+                    cities = [city_value]
+                else:
+                    logger.warning(f"⚠️ У блогера {blogger_id} нет городов")
+                    return 0
+            else:
+                return 0
         else:
-            cities = [row[0] for row in cities_result]
+            # PostgreSQL возвращает dict, SQLite может вернуть tuple
+            if cities_result and isinstance(cities_result[0], dict):
+                cities = [row['city'] for row in cities_result]
+            else:
+                cities = [row[0] for row in cities_result]
+
+        logger.info(f"🔍 Подсчет доступных заказов для blogger_id={blogger_id}, города={cities}")
 
         # ИСПРАВЛЕНО: Используем нормализованные таблицы вместо LIKE
         # Ищем заказы через JOIN с campaign_categories и blogger_categories
