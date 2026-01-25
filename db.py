@@ -4008,14 +4008,25 @@ def create_order(advertiser_id, city, categories, description, photos, videos=No
         """, (advertiser_id, city, categories_str, description, photos_str, videos_str, budget_type, budget_value, payment_type, now))
 
         campaign_id = cursor.lastrowid
-        conn.commit()  # КРИТИЧНО: Фиксируем транзакцию создания заказа
-        logger.info(f"✅ Создан заказ: ID={campaign_id}, Клиент={advertiser_id}, Город={city}, Категории={categories_str}, Фото={len(photos) if photos else 0}, Видео={len(videos) if videos else 0}")
 
-    # ИСПРАВЛЕНИЕ: Добавляем категории в нормализованную таблицу
-    if categories:
-        categories_list = categories if isinstance(categories, list) else [cat.strip() for cat in categories.split(',') if cat.strip()]
-        add_order_categories(campaign_id, categories_list)
-        logger.info(f"📋 Добавлены категории для заказа {campaign_id}: {categories_list}")
+        # ИСПРАВЛЕНИЕ: Добавляем категории в той же транзакции
+        if categories:
+            categories_list = categories if isinstance(categories, list) else [cat.strip() for cat in categories.split(',') if cat.strip()]
+            for category in categories_list:
+                if not category or not category.strip():
+                    continue
+                try:
+                    cursor.execute("""
+                        INSERT INTO campaign_categories (campaign_id, category)
+                        VALUES (?, ?)
+                    """, (campaign_id, category.strip()))
+                except:
+                    # Игнорируем дубликаты (UNIQUE constraint)
+                    pass
+            logger.info(f"📋 Добавлены категории для заказа {campaign_id}: {categories_list}")
+
+        conn.commit()  # КРИТИЧНО: Фиксируем транзакцию создания заказа И категорий
+        logger.info(f"✅ Создан заказ: ID={campaign_id}, Клиент={advertiser_id}, Город={city}, Категории={categories_str}, Фото={len(photos) if photos else 0}, Видео={len(videos) if videos else 0}")
 
     return campaign_id
 
