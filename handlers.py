@@ -8143,7 +8143,7 @@ async def browse_restart(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ------- ОТКЛИКИ МАСТЕРОВ НА ЗАКАЗЫ -------
 
 async def blogger_offer_on_campaign(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Начало создания предложениа - выбор валюты"""
+    """Начало создания предложениа - зависит от payment_type"""
     query = update.callback_query
     await query.answer()
 
@@ -8165,53 +8165,125 @@ async def blogger_offer_on_campaign(update: Update, context: ContextTypes.DEFAUL
 
     # ПРОВЕРКА: Блогер не может откликаться на свой кампани
     campaign = db.get_order_by_id(campaign_id)
-    if campaign:
-        campaign_dict = dict(campaign)
-        advertiser = db.get_client_by_id(campaign_dict['advertiser_id'])
-        if advertiser:
-            client_dict = dict(advertiser)
-            if client_dict['user_id'] == user_dict.get("id"):
-                await query.answer("❌ Вы не можете откликнуться на свой кампани!", show_alert=True)
-                return ConversationHandler.END
+    if not campaign:
+        await query.answer("❌ Кампания не найдена!", show_alert=True)
+        return ConversationHandler.END
+
+    campaign_dict = dict(campaign)
+    advertiser = db.get_client_by_id(campaign_dict['advertiser_id'])
+    if advertiser:
+        client_dict = dict(advertiser)
+        if client_dict['user_id'] == user_dict.get("id"):
+            await query.answer("❌ Вы не можете откликнуться на свой кампани!", show_alert=True)
+            return ConversationHandler.END
 
     if db.check_worker_bid_exists(campaign_id, worker_id):
         await query.answer("Вы уже откликнулись на эту кампанию!", show_alert=True)
         return ConversationHandler.END
 
-    text = (
-        "💰 <b>Ваш предложени на кампани</b>\n\n"
-        "⚠️ <b>ВНИМАНИЕ:</b> Цену изменить будет НЕЛЬЗЯ!\n\n"
-        "💵 Сначала выберите валюту, в которой будете указывать цену:"
-    )
+    # НОВАЯ ЛОГИКА: проверяем payment_type
+    payment_type = campaign_dict.get('payment_type', 'paid')
+    budget_value = campaign_dict.get('budget_value', 0)
 
-    # Выбор валюты
-    keyboard = [
-        [
-            InlineKeyboardButton("BYN (₽)", callback_data="offer_currency_BYN"),
-            InlineKeyboardButton("USD ($)", callback_data="offer_currency_USD"),
-        ],
-        [
-            InlineKeyboardButton("EUR (€)", callback_data="offer_currency_EUR"),
-        ],
-        [InlineKeyboardButton("❌ Отмена", callback_data="cancel_offer")],
-    ]
+    # 1. БАРТЕР: сразу создаем отклик без ввода цены
+    if payment_type == "barter":
+        context.user_data['bid_price'] = 0
+        context.user_data['bid_currency'] = 'BYN'
+        context.user_data['bid_ready_days'] = 7
 
-    # Пробуем отредактировать как caption (если есть фото), иначе как text
-    try:
-        await query.edit_message_caption(
-            caption=text,
-            parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
-    except:
-        # Если не получилось (нет фото), редактируем текст
-        await query.edit_message_text(
-            text=text,
-            parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup(keyboard)
+        text = (
+            "🤝 <b>Отклик на бартер</b>\n\n"
+            f"📋 <b>Кампания #{campaign_id}</b>\n"
+            f"💼 Бартерное сотрудничество\n\n"
+            "📝 Хотите добавить комментарий к вашему отклику?\n\n"
+            "💡 Расскажите о себе:\n"
+            "✓ Ваш опыт в создании подобного контента\n"
+            "✓ Примеры ваших работ\n"
+            "✓ Почему вас интересует это сотрудничество\n\n"
+            "Напишите комментарий или нажмите «Пропустить»:"
         )
 
-    return OFFER_SELECT_CURRENCY
+        keyboard = InlineKeyboardMarkup([[
+            InlineKeyboardButton("⏭ Пропустить", callback_data="offer_skip_comment"),
+            InlineKeyboardButton("❌ Отмена", callback_data="cancel_offer")
+        ]])
+
+        try:
+            await query.edit_message_caption(caption=text, parse_mode="HTML", reply_markup=keyboard)
+        except:
+            await query.edit_message_text(text=text, parse_mode="HTML", reply_markup=keyboard)
+
+        return OFFER_ENTER_COMMENT
+
+    # 2. ФИКСИРОВАННЫЙ БЮДЖЕТ: сразу создаем отклик без ввода цены
+    elif payment_type == "fixed_budget" and budget_value > 0:
+        context.user_data['bid_price'] = budget_value
+        context.user_data['bid_currency'] = 'BYN'
+        context.user_data['bid_ready_days'] = 7
+
+        text = (
+            "💰 <b>Отклик на кампанию</b>\n\n"
+            f"📋 <b>Кампания #{campaign_id}</b>\n"
+            f"💵 Бюджет: <b>{budget_value} BYN</b>\n\n"
+            "✅ Вы соглашаетесь работать за указанную сумму.\n\n"
+            "📝 Хотите добавить комментарий к вашему отклику?\n\n"
+            "💡 Расскажите о себе:\n"
+            "✓ Ваш опыт в создании подобного контента\n"
+            "✓ Примеры ваших работ\n"
+            "✓ Почему именно вы подходите для этой кампании\n\n"
+            "Напишите комментарий или нажмите «Пропустить»:"
+        )
+
+        keyboard = InlineKeyboardMarkup([[
+            InlineKeyboardButton("⏭ Пропустить", callback_data="offer_skip_comment"),
+            InlineKeyboardButton("❌ Отмена", callback_data="cancel_offer")
+        ]])
+
+        try:
+            await query.edit_message_caption(caption=text, parse_mode="HTML", reply_markup=keyboard)
+        except:
+            await query.edit_message_text(text=text, parse_mode="HTML", reply_markup=keyboard)
+
+        return OFFER_ENTER_COMMENT
+
+    # 3. БЛОГЕР ПРЕДЛАГАЕТ ЦЕНУ: запрашиваем ввод цены
+    else:  # payment_type == "blogger_offer"
+        text = (
+            "💰 <b>Ваше предложение по цене</b>\n\n"
+            f"📋 <b>Кампания #{campaign_id}</b>\n\n"
+            "Заказчик хочет, чтобы вы предложили свою цену за выполнение кампании.\n\n"
+            "⚠️ <b>ВНИМАНИЕ:</b> Цену изменить будет НЕЛЬЗЯ!\n\n"
+            "💵 Сначала выберите валюту, в которой будете указывать цену:"
+        )
+
+        # Выбор валюты
+        keyboard = [
+            [
+                InlineKeyboardButton("BYN (₽)", callback_data="offer_currency_BYN"),
+                InlineKeyboardButton("USD ($)", callback_data="offer_currency_USD"),
+            ],
+            [
+                InlineKeyboardButton("EUR (€)", callback_data="offer_currency_EUR"),
+            ],
+            [InlineKeyboardButton("❌ Отмена", callback_data="cancel_offer")],
+        ]
+
+        # Пробуем отредактировать как caption (если есть фото), иначе как text
+        try:
+            await query.edit_message_caption(
+                caption=text,
+                parse_mode="HTML",
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+        except:
+            # Если не получилось (нет фото), редактируем текст
+            await query.edit_message_text(
+                text=text,
+                parse_mode="HTML",
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+
+        return OFFER_SELECT_CURRENCY
 
 
 async def blogger_offer_enter_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -9026,7 +9098,7 @@ async def create_campaign_budget(update: Update, context: ContextTypes.DEFAULT_T
         return CREATE_CAMPAIGN_BUDGET
 
     # Сохраняем бюджет
-    context.user_data["campaign_budget"] = budget
+    context.user_data["budget_value"] = budget
 
     # Переходим к описанию
     city = context.user_data.get('order_city', '')
@@ -9486,6 +9558,7 @@ async def create_campaign_publish(update: Update, context: ContextTypes.DEFAULT_
                 description=context.user_data["order_description"],
                 photos=valid_order_photos,
                 videos=valid_order_videos,
+                budget_value=context.user_data.get("budget_value", 0),
                 payment_type=context.user_data.get("payment_type", "paid")
             )
         except ValueError as e:
