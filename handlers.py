@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 # - Используется для:
 #   1. Регистрация блогера: блогер работает в указанном городе
 #   2. Регистрация клиента: город проживания клиента (для статистики)
-#   3. Создание кампании: кампани создаётся в указанном городе
+#   3. Создание кампании: кампания создаётся в указанном городе
 # - Блогеры получают уведомления о кампаниях из своих городов
 # - Если город блогера совпадает с городом кампания - блогер видит кампани
 # - Полезно для небольших городов, посёлков и агрогородков
@@ -2079,7 +2079,7 @@ async def blogger_my_offers(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [[InlineKeyboardButton("⬅️ Назад", callback_data="show_worker_menu")]]
         await query.edit_message_text(
             "💼 <b>Мои отклики</b>\n\n"
-            "У вас пока нет откликов на кампании.\n\n"
+            "У вас пока нет откликов на кампаниюи.\n\n"
             "Перейдите в раздел \"Доступные кампании\" и откликнитесь на интересные вам кампании!",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
@@ -2199,7 +2199,7 @@ async def blogger_my_campaigns(update: Update, context: ContextTypes.DEFAULT_TYP
                 query,
                 "📦 <b>Мои кампании</b>\n\n"
                 "У вас пока нет заказов.\n\n"
-                "Когда клиент выберет ваш предложени, кампани появится здесь.",
+                "Когда клиент выберет ваш предложени, кампания появится здесь.",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
@@ -2302,13 +2302,13 @@ async def blogger_active_campaigns(update: Update, context: ContextTypes.DEFAULT
             if chat:
                 chat_dict = dict(chat)
                 keyboard.append([InlineKeyboardButton(
-                    f"💬 Чат (кампани #{campaign['campaign_id']})",
+                    f"💬 Чат (кампания #{campaign['campaign_id']})",
                     callback_data=f"open_chat_{chat_dict['id']}"
                 )])
 
             # Кнопка завершения
             keyboard.append([InlineKeyboardButton(
-                f"✅ Завершить кампани #{campaign['campaign_id']}",
+                f"✅ Завершить кампаниюя #{campaign['campaign_id']}",
                 callback_data=f"complete_campaign_{campaign['campaign_id']}"
             )])
 
@@ -2391,7 +2391,7 @@ async def blogger_completed_campaigns(update: Update, context: ContextTypes.DEFA
             if chat:
                 chat_dict = dict(chat)
                 keyboard.append([InlineKeyboardButton(
-                    f"💬 Посмотреть чат (кампани #{campaign['campaign_id']})",
+                    f"💬 Посмотреть чат (кампания #{campaign['campaign_id']})",
                     callback_data=f"open_chat_{chat_dict['id']}"
                 )])
 
@@ -4591,7 +4591,7 @@ async def advertiser_my_campaigns(update: Update, context: ContextTypes.DEFAULT_
             return
         
         # Подсчитываем кампании по трем категориям
-        # 1. В ожидании блогеров (кампани открыт, но блогер еще не выбран)
+        # 1. В ожидании блогеров (кампания открыта, но блогер еще не выбран)
         waiting_statuses = ['open']
         # 2. В работе (блогер выбран и работает)
         in_progress_statuses = ['master_selected', 'contact_shared', 'waiting_master_confirmation', 'master_confirmed', 'in_progress']
@@ -4823,12 +4823,12 @@ async def advertiser_in_progress_campaigns(update: Update, context: ContextTypes
             if chat:
                 chat_dict = dict(chat)
                 keyboard.append([InlineKeyboardButton(
-                    f"💬 Чат (кампани #{campaign_id})",
+                    f"💬 Чат (кампания #{campaign_id})",
                     callback_data=f"open_chat_{chat_dict['id']}"
                 )])
 
             keyboard.append([InlineKeyboardButton(
-                f"✅ Завершить кампани #{campaign_id}",
+                f"✅ Завершить кампаниюя #{campaign_id}",
                 callback_data=f"complete_campaign_{campaign_id}"
             )])
 
@@ -4921,7 +4921,7 @@ async def advertiser_completed_campaigns(update: Update, context: ContextTypes.D
                 if chat:
                     chat_dict = dict(chat)
                     keyboard.append([InlineKeyboardButton(
-                        f"💬 Посмотреть чат (кампани #{campaign_id})",
+                        f"💬 Посмотреть чат (кампания #{campaign_id})",
                         callback_data=f"open_chat_{chat_dict['id']}"
                     )])
 
@@ -4976,7 +4976,7 @@ async def cancel_campaign_handler(update: Update, context: ContextTypes.DEFAULT_
                         chat_id=worker_user['telegram_id'],
                         text=(
                             f"❌ <b>Кампани #{campaign_id} отменен</b>\n\n"
-                            f"Клиент отменил кампани на который вы откликались.\n"
+                            f"Клиент отменил кампанию на который вы откликались.\n"
                             f"Ваш предложени больше не актуален."
                         ),
                         parse_mode="HTML"
@@ -5043,7 +5043,7 @@ async def complete_campaign_handler(update: Update, context: ContextTypes.DEFAUL
         if campaign_dict['status'] in ('cancelled',):
             await safe_edit_message(
                 query,
-                f"❌ Этот кампани был отменён.\n\n"
+                f"❌ Этот кампания была отменён.\n\n"
                 f"Статус: {campaign_dict['status']}",
                 parse_mode="HTML"
             )
@@ -5075,7 +5075,7 @@ async def complete_campaign_handler(update: Update, context: ContextTypes.DEFAUL
         if existing_review:
             await safe_edit_message(
                 query,
-                "✅ Вы уже завершили этот кампани и оставили отзыв.",
+                "✅ Вы уже завершили эту кампанию и оставили отзыв.",
                 parse_mode="HTML"
             )
             return
@@ -5116,18 +5116,18 @@ async def complete_campaign_handler(update: Update, context: ContextTypes.DEFAUL
         )
 
         # Кнопки с оценками от 1 до 5 звезд
-        # Формат callback: rate_order_{campaign_id}_{rating}_{role}
+        # Формат callback: rate_campaign_{campaign_id}_{rating}_{role}
         # role: 'advertiser' если оценивает клиент, 'blogger' если оценивает блогер
         role_suffix = 'advertiser' if is_client else 'blogger'
         keyboard = [
             [
-                InlineKeyboardButton("⭐", callback_data=f"rate_order_{campaign_id}_1_{role_suffix}"),
-                InlineKeyboardButton("⭐⭐", callback_data=f"rate_order_{campaign_id}_2_{role_suffix}"),
-                InlineKeyboardButton("⭐⭐⭐", callback_data=f"rate_order_{campaign_id}_3_{role_suffix}"),
+                InlineKeyboardButton("⭐", callback_data=f"rate_campaign_{campaign_id}_1_{role_suffix}"),
+                InlineKeyboardButton("⭐⭐", callback_data=f"rate_campaign_{campaign_id}_2_{role_suffix}"),
+                InlineKeyboardButton("⭐⭐⭐", callback_data=f"rate_campaign_{campaign_id}_3_{role_suffix}"),
             ],
             [
-                InlineKeyboardButton("⭐⭐⭐⭐", callback_data=f"rate_order_{campaign_id}_4_{role_suffix}"),
-                InlineKeyboardButton("⭐⭐⭐⭐⭐", callback_data=f"rate_order_{campaign_id}_5_{role_suffix}"),
+                InlineKeyboardButton("⭐⭐⭐⭐", callback_data=f"rate_campaign_{campaign_id}_4_{role_suffix}"),
+                InlineKeyboardButton("⭐⭐⭐⭐⭐", callback_data=f"rate_campaign_{campaign_id}_5_{role_suffix}"),
             ],
             [InlineKeyboardButton("❌ Отмена", callback_data=cancel_callback)]
         ]
@@ -5152,7 +5152,7 @@ async def complete_campaign_handler(update: Update, context: ContextTypes.DEFAUL
 async def submit_campaign_rating(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     ОБНОВЛЕНО: Обработчик сохранения оценки кампания - работает для ОБЕИХ сторон.
-    Callback data format: rate_order_{campaign_id}_{rating}_{role}
+    Callback data format: rate_campaign_{campaign_id}_{rating}_{role}
     role: 'advertiser' (клиент оценивает блогера) или 'blogger' (блогер оценивает клиента)
     """
     query = update.callback_query
@@ -5160,8 +5160,8 @@ async def submit_campaign_rating(update: Update, context: ContextTypes.DEFAULT_T
 
     try:
         # Извлекаем campaign_id, rating и role из callback_data
-        # Формат: rate_order_{campaign_id}_{rating}_{role}
-        data_parts = query.data.replace("rate_order_", "").split("_")
+        # Формат: rate_campaign_{campaign_id}_{rating}_{role}
+        data_parts = query.data.replace("rate_campaign_", "").split("_")
         campaign_id = int(data_parts[0])
         rating = int(data_parts[1])
         role = data_parts[2] if len(data_parts) > 2 else 'advertiser'  # По умолчанию клиент (обратная совместимость)
@@ -5224,7 +5224,7 @@ async def submit_campaign_rating(update: Update, context: ContextTypes.DEFAULT_T
             return_callback = "client_my_orders"
             return_menu_callback = "show_client_menu"
             notify_user_id = blogger_user_id
-            notify_text_prefix = "Клиент завершил кампани и оставил вам оценку"
+            notify_text_prefix = "Клиент завершил кампанию и оставил вам оценку"
         else:
             # Блогер оценивает клиента
             review_saved = db.add_review(
@@ -5243,12 +5243,12 @@ async def submit_campaign_rating(update: Update, context: ContextTypes.DEFAULT_T
             return_callback = "worker_my_orders"
             return_menu_callback = "show_worker_menu"
             notify_user_id = advertiser_user_id
-            notify_text_prefix = "Блогер завершил кампани и оставил вам оценку"
+            notify_text_prefix = "Блогер завершил кампанию и оставил вам оценку"
 
         if not review_saved:
             await safe_edit_message(
                 query,
-                "❌ Не удалось сохранить отзыв. Возможно, вы уже оценили этот кампани.",
+                "❌ Не удалось сохранить отзыв. Возможно, вы уже оценили эту кампанию.",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup([[
                     InlineKeyboardButton("⬅️ Назад к заказам", callback_data=return_callback)
@@ -5260,7 +5260,7 @@ async def submit_campaign_rating(update: Update, context: ContextTypes.DEFAULT_T
         opposite_review_exists = db.check_review_exists(campaign_id, notify_user_id)
 
         # ИСПРАВЛЕНО: Обновляем статус кампания на "completed" СРАЗУ при первой оценке
-        # Это делает кампани видимым в "Завершенные кампании" у обеих сторон
+        # Это делает кампанию видимой в "Завершенные кампании" у обеих сторон
         if campaign_dict['status'] not in ['completed', 'done']:
             db.update_order_status(campaign_id, 'completed')
             logger.info(f"✅ Кампани {campaign_id} помечен как 'completed' - первая оценка получена")
@@ -5336,7 +5336,7 @@ async def submit_campaign_rating(update: Update, context: ContextTypes.DEFAULT_T
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-        logger.info(f"{'Клиент' if is_client else 'Блогер'} {user_dict['id']} завершил кампани {campaign_id} с оценкой {rating}")
+        logger.info(f"{'Клиент' if is_client else 'Блогер'} {user_dict['id']} завершил кампанию {campaign_id} с оценкой {rating}")
 
     except Exception as e:
         logger.error(f"Ошибка при сохранении оценки кампания: {e}", exc_info=True)
@@ -5368,7 +5368,7 @@ async def add_comment_to_review(update: Update, context: ContextTypes.DEFAULT_TY
         if not db.check_review_exists(campaign_id, user_dict['id']):
             await safe_edit_message(
                 query,
-                "❌ Отзыв не найден. Сначала завершите кампани с оценкой.",
+                "❌ Отзыв не найден. Сначала завершите кампанию с оценкой.",
                 parse_mode="HTML"
             )
             return
@@ -5385,7 +5385,7 @@ async def add_comment_to_review(update: Update, context: ContextTypes.DEFAULT_TY
             parse_mode="HTML"
         )
 
-        logger.info(f"Пользователь {user_dict['id']} начал добавление комментария к отзыву по кампаниу {campaign_id}")
+        logger.info(f"Пользователь {user_dict['id']} начал добавление комментария к отзыву по кампании {campaign_id}")
 
     except Exception as e:
         logger.error(f"Ошибка при начале добавления комментария: {e}", exc_info=True)
@@ -5443,7 +5443,7 @@ async def receive_review_comment(update: Update, context: ContextTypes.DEFAULT_T
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
-        logger.info(f"Пользователь {user_dict['id']} добавил комментарий к отзыву по кампаниу {campaign_id}")
+        logger.info(f"Пользователь {user_dict['id']} добавил комментарий к отзыву по кампании {campaign_id}")
     else:
         await update.message.reply_text(
             "❌ Не удалось обновить комментарий.\n\n"
@@ -5674,7 +5674,7 @@ async def blogger_finish_work_photos(update: Update, context: ContextTypes.DEFAU
             if result:
                 saved_count += 1
 
-        # Получаем кампани для уведомления клиента
+        # Получаем кампании для уведомления клиента
         campaign = db.get_order_by_id(campaign_id)
         if campaign:
             campaign_dict = dict(campaign)
@@ -6024,7 +6024,7 @@ async def advertiser_check_work_photos(update: Update, context: ContextTypes.DEF
 
         # Отправляем фото с кнопками подтверждения
         text = (
-            f"📸 <b>Фотографии контенты по кампаниу #{campaign_id}</b>\n\n"
+            f"📸 <b>Фотографии контенты по кампании #{campaign_id}</b>\n\n"
             f"Всего фото: {len(photos)}\n\n"
             f"Подтвердите, что это фото вашего кампания:"
         )
@@ -6100,7 +6100,7 @@ async def advertiser_verify_work_photo(update: Update, context: ContextTypes.DEF
                                     chat_id=worker_user_dict['telegram_id'],
                                     text=(
                                         f"✅ <b>Клиент подтвердил ваше фото!</b>\n\n"
-                                        f"Ваше фото контенты по кампаниу #{campaign_id} подтверждено клиентом.\n\n"
+                                        f"Ваше фото контенты по кампании #{campaign_id} подтверждено клиентом.\n\n"
                                         f"🎉 Фото добавлено в ваш профиль с отметкой ✅ «Подтверждено клиентом».\n\n"
                                         f"💡 Подтверждённые фото повышают доверие новых клиентов!"
                                     ),
@@ -6148,7 +6148,7 @@ def _get_photos_word(count):
 
 
 async def view_campaign_offers(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Просмотр откликов на кампани клиента с навигацией"""
+    """Просмотр откликов на кампанию клиента с навигацией"""
     query = update.callback_query
     await query.answer()
 
@@ -6156,7 +6156,7 @@ async def view_campaign_offers(update: Update, context: ContextTypes.DEFAULT_TYP
         # Извлекаем campaign_id из callback_data
         campaign_id = int(query.data.replace("view_offers_", ""))
 
-        # Проверяем что кампани принадлежит текущему пользователю
+        # Проверяем что кампания принадлежит текущему пользователю
         user = db.get_user(query.from_user.id)
         if not user:
             await query.edit_message_text(
@@ -6742,7 +6742,7 @@ async def process_offer_selection(update: Update, context: ContextTypes.DEFAULT_
             )
             logger.info(f"✅ Чат #{chat_id} создан между рекламодателем {user['id']} и блогером {blogger_user_id}")
 
-        # 3. Отмечаем предложени как выбранный, НО кампани в статусе "waiting_blogger_confirmation"
+        # 3. Отмечаем предложени как выбранный, НО кампания в статусе "waiting_blogger_confirmation"
         db.update_order_status(campaign_id, "waiting_master_confirmation")
         db.select_bid(offer_id)
 
@@ -7329,7 +7329,7 @@ async def add_test_advertisers_command(update: Update, context: ContextTypes.DEF
 
 async def add_test_offers_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    Команда для добавления тестовых откликов на кампани
+    Команда для добавления тестовых откликов на кампанию
     Использование: /add_test_bids campaign_id
     """
     telegram_id = update.effective_user.id
@@ -7427,7 +7427,7 @@ async def add_test_offers_command(update: Update, context: ContextTypes.DEFAULT_
         await update.message.reply_text(
             f"⚠️ Не удалось создать отклики.\n\n"
             f"Возможные причины:\n"
-            f"• Все блогера уже откликнулись на этот кампани\n"
+            f"• Все блогера уже откликнулись на эту кампанию\n"
             f"• Произошла ошибка при создании",
             parse_mode="HTML"
         )
@@ -7636,10 +7636,10 @@ async def blogger_view_campaign_details(update: Update, context: ContextTypes.DE
                     keyboard.append([InlineKeyboardButton("✅ Вы уже откликнулись", callback_data="noop")])
                 else:
                     keyboard.append([InlineKeyboardButton("💰 Откликнуться", callback_data=f"offer_on_campaign_{campaign_id}")])
-                    # НОВОЕ: Кнопка "Отказаться от кампания" (не показывать этот кампани больше)
+                    # НОВОЕ: Кнопка "Отказаться от кампания" (не показывать эту кампанию больше)
                     keyboard.append([InlineKeyboardButton("🚫 Отказаться от кампания", callback_data=f"decline_campaign_{campaign_id}")])
 
-            # ИСПРАВЛЕНО: Если блогер откликнулся на кампани - возвращаем в "Мои отклики", иначе в "Доступные кампании"
+            # ИСПРАВЛЕНО: Если блогер откликнулся на кампанию - возвращаем в "Мои отклики", иначе в "Доступные кампании"
             back_callback = "worker_my_bids" if already_bid else "worker_view_orders"
             keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data=back_callback)])
             
@@ -7668,10 +7668,10 @@ async def blogger_view_campaign_details(update: Update, context: ContextTypes.DE
                     keyboard.append([InlineKeyboardButton("✅ Вы уже откликнулись", callback_data="noop")])
                 else:
                     keyboard.append([InlineKeyboardButton("💰 Откликнуться", callback_data=f"offer_on_campaign_{campaign_id}")])
-                    # НОВОЕ: Кнопка "Отказаться от кампания" (не показывать этот кампани больше)
+                    # НОВОЕ: Кнопка "Отказаться от кампания" (не показывать эту кампанию больше)
                     keyboard.append([InlineKeyboardButton("🚫 Отказаться от кампания", callback_data=f"decline_campaign_{campaign_id}")])
 
-            # ИСПРАВЛЕНО: Если блогер откликнулся на кампани - возвращаем в "Мои отклики", иначе в "Доступные кампании"
+            # ИСПРАВЛЕНО: Если блогер откликнулся на кампанию - возвращаем в "Мои отклики", иначе в "Доступные кампании"
             back_callback = "worker_my_bids" if already_bid else "worker_view_orders"
             keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data=back_callback)])
             
@@ -7835,7 +7835,7 @@ async def blogger_campaign_photo_nav(update: Update, context: ContextTypes.DEFAU
         
         context.user_data['current_photo_index'] = current_index
         
-        # Получаем кампани для caption
+        # Получаем кампании для caption
         campaign = db.get_order_by_id(campaign_id)
         campaign_dict = dict(campaign)
         
@@ -8174,7 +8174,7 @@ async def blogger_offer_on_campaign(update: Update, context: ContextTypes.DEFAUL
                 return ConversationHandler.END
 
     if db.check_worker_bid_exists(campaign_id, worker_id):
-        await query.answer("Вы уже откликнулись на этот кампани!", show_alert=True)
+        await query.answer("Вы уже откликнулись на эту кампанию!", show_alert=True)
         return ConversationHandler.END
 
     text = (
@@ -9402,7 +9402,7 @@ async def create_campaign_publish(update: Update, context: ContextTypes.DEFAULT_
             removed_count = len(order_videos) - len(valid_order_videos)
             logger.warning(f"⚠️ Удалено {removed_count} невалидных file_id из видео кампания")
 
-        # Создаём кампани в БД (может вызвать ValueError при rate limiting)
+        # Создаём кампанию в БД (может вызвать ValueError при rate limiting)
         try:
             campaign_id = db.create_order(
                 advertiser_id=context.user_data["order_client_id"],
@@ -9428,7 +9428,7 @@ async def create_campaign_publish(update: Update, context: ContextTypes.DEFAULT_
         # КРИТИЧНО: Логирование для диагностики уведомлений
         logger.info(f"🔔 НАЧИНАЮ ОТПРАВКУ УВЕДОМЛЕНИЙ для кампания #{campaign_id}")
 
-        # Получаем созданный кампани для отправки уведомлений
+        # Получаем созданный кампании для отправки уведомлений
         campaign = db.get_order_by_id(campaign_id)
         logger.info(f"🔔 Кампани получен из БД: {campaign is not None}")
         if campaign:
@@ -10198,7 +10198,7 @@ async def notify_blogger_selected(context, blogger_telegram_id, campaign_id, adv
             f"Имя: {advertiser_name}\n"
             f"Телефон: <code>{advertiser_phone}</code>\n\n"
             f"✅ Свяжитесь с клиентом и обсудите детали кампания!\n\n"
-            f"💡 После завершения контенты не забудьте отметить кампани как выполненный."
+            f"💡 После завершения контенты не забудьте отметить кампанию как выполненный."
         )
 
         await context.bot.send_message(
@@ -10222,7 +10222,7 @@ async def notify_advertiser_master_selected(context, advertiser_telegram_id, cam
             f"Имя: {blogger_name}\n"
             f"Телефон: <code>{blogger_phone}</code>\n\n"
             f"✅ Свяжитесь с мастером и обсудите детали кампания!\n\n"
-            f"💡 После завершения контенты не забудьте отметить кампани как выполненный и оставить отзыв."
+            f"💡 После завершения контенты не забудьте отметить кампанию как выполненный и оставить отзыв."
         )
 
         await context.bot.send_message(
@@ -10243,7 +10243,7 @@ async def notify_completion_request(context, recipient_telegram_id, campaign_id,
     try:
         text = (
             f"✅ <b>Запрос на завершение кампания #{campaign_id}</b>\n\n"
-            f"{role_text} отметил кампани как выполненный.\n\n"
+            f"{role_text} отметил кампанию как выполненный.\n\n"
             f"Если контента действительно завершена, подтвердите завершение в разделе «Мои кампании».\n\n"
             f"💡 После подтверждения обеих сторон вы сможете оставить отзыв."
         )
