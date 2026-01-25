@@ -7059,11 +7059,12 @@ async def handle_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE
             db.confirm_worker_in_chat(chat_id)
             logger.info(f"✅ Блогер подтвердил готовность в чате #{chat_id}")
 
-            # Обновляем статус кампания
-            chat = db.get_chat_by_id(chat_id)
-            if chat:
-                db.update_order_status(chat['campaign_id'], "master_confirmed")
-                logger.info(f"✅ Кампания #{chat['campaign_id']} переведён в статус 'master_confirmed'")
+            # НОВАЯ ЛОГИКА: Кампания остаётся открытой для множественного выбора блогеров
+            # Статус не меняется, заказчик может продолжать выбирать других блогеров
+            # chat = db.get_chat_by_id(chat_id)
+            # if chat:
+            #     db.update_order_status(chat['campaign_id'], "master_confirmed")
+            #     logger.info(f"✅ Кампания #{chat['campaign_id']} переведён в статус 'master_confirmed'")
 
         # Получаем информацию о чате для уведомления
         chat = db.get_chat_by_id(chat_id)
