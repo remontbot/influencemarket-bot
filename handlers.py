@@ -2118,14 +2118,14 @@ async def blogger_my_offers(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if len(description) > 40:
                 description = description[:40] + "..."
 
-            text += f"{i}. <b>Кампани #{campaign_id}</b>\n"
+            text += f"{i}. <b>Кампания #{campaign_id}</b>\n"
             text += f"📱 {category}\n"
             text += f"📝 {description}\n"
             text += f"💰 Ваша цена: {offer['proposed_price']} {offer['currency']}\n"
 
             # Добавляем кнопку для просмотра кампания
             keyboard.append([InlineKeyboardButton(
-                f"📋 Кампани #{campaign_id}",
+                f"📋 Кампания #{campaign_id}",
                 callback_data=f"view_order_{campaign_id}"
             )])
 
@@ -2288,7 +2288,7 @@ async def blogger_active_campaigns(update: Update, context: ContextTypes.DEFAULT
         keyboard = []
 
         for i, campaign in enumerate(active_orders[:10], 1):
-            text += f"{i}. <b>Кампани #{campaign['campaign_id']}</b>\n"
+            text += f"{i}. <b>Кампания #{campaign['campaign_id']}</b>\n"
             text += f"📱 {campaign.get('order_category', 'Без категории')}\n"
 
             description = campaign.get('order_description', '')
@@ -2377,7 +2377,7 @@ async def blogger_completed_campaigns(update: Update, context: ContextTypes.DEFA
             status_emoji = {"done": "✅", "completed": "✅", "canceled": "❌"}
             emoji = status_emoji.get(campaign.get('order_status', 'done'), "✅")
 
-            text += f"{i}. {emoji} <b>Кампани #{campaign['campaign_id']}</b>\n"
+            text += f"{i}. {emoji} <b>Кампания #{campaign['campaign_id']}</b>\n"
             text += f"📱 {campaign.get('order_category', 'Без категории')}\n"
 
             description = campaign.get('order_description', '')
@@ -4602,7 +4602,7 @@ async def advertiser_my_campaigns(update: Update, context: ContextTypes.DEFAULT_
         logger.info(f"🔍 DEBUG client_my_orders: Всего заказов: {len(all_orders)}")
         for o in all_orders:
             campaign_dict = dict(o)
-            logger.info(f"🔍 DEBUG: Кампани #{campaign_dict.get('id')} - статус: '{campaign_dict.get('status')}'")
+            logger.info(f"🔍 DEBUG: Кампания #{campaign_dict.get('id')} - статус: '{campaign_dict.get('status')}'")
 
         waiting_count = sum(1 for o in all_orders if dict(o).get('status', 'open') in waiting_statuses)
         in_progress_count = sum(1 for o in all_orders if dict(o).get('status', 'open') in in_progress_statuses)
@@ -4755,7 +4755,7 @@ async def advertiser_in_progress_campaigns(update: Update, context: ContextTypes
         logger.info(f"🔍 DEBUG client_in_progress_orders: Всего заказов клиента: {len(all_orders)}")
         for o in all_orders:
             campaign_dict = dict(o)
-            logger.info(f"🔍 DEBUG: Кампани #{campaign_dict.get('id')} - статус: '{campaign_dict.get('status')}' (тип: {type(o).__name__})")
+            logger.info(f"🔍 DEBUG: Кампания #{campaign_dict.get('id')} - статус: '{campaign_dict.get('status')}' (тип: {type(o).__name__})")
 
         orders = [o for o in all_orders if dict(o).get('status', 'open') in in_progress_statuses]
         logger.info(f"🔍 DEBUG: Отфильтровано заказов 'в работе': {len(orders)}")
@@ -4800,7 +4800,7 @@ async def advertiser_in_progress_campaigns(update: Update, context: ContextTypes
             emoji = status_emoji.get(order_status, "⚪")
             status = status_text.get(order_status, "В работе")
 
-            text += f"{emoji} <b>Кампани #{campaign_id}</b> - {status}\n"
+            text += f"{emoji} <b>Кампания #{campaign_id}</b> - {status}\n"
             text += f"📱 {campaign_dict.get('category', 'Не указана')}\n"
 
             # Тип оплаты
@@ -4896,7 +4896,7 @@ async def advertiser_completed_campaigns(update: Update, context: ContextTypes.D
             emoji = status_emoji.get(campaign_dict.get("status", "done"), "✅")
             status = status_text.get(campaign_dict.get("status", "done"), "Завершён")
 
-            text += f"{emoji} <b>Кампани #{campaign_id}</b> - {status}\n"
+            text += f"{emoji} <b>Кампания #{campaign_id}</b> - {status}\n"
             text += f"📱 {campaign_dict.get('category', 'Не указана')}\n"
 
             # Тип оплаты
@@ -4975,7 +4975,7 @@ async def cancel_campaign_handler(update: Update, context: ContextTypes.DEFAULT_
                     await context.bot.send_message(
                         chat_id=worker_user['telegram_id'],
                         text=(
-                            f"❌ <b>Кампани #{campaign_id} отменен</b>\n\n"
+                            f"❌ <b>Кампания #{campaign_id} отменен</b>\n\n"
                             f"Клиент отменил кампанию на который вы откликались.\n"
                             f"Ваш предложени больше не актуален."
                         ),
@@ -4987,7 +4987,7 @@ async def cancel_campaign_handler(update: Update, context: ContextTypes.DEFAULT_
 
         # Сообщаем клиенту об успехе
         await query.edit_message_text(
-            f"✅ <b>Кампани #{campaign_id} успешно отменен</b>\n\n"
+            f"✅ <b>Кампания #{campaign_id} успешно отменен</b>\n\n"
             f"📨 Уведомлено блогеров: {notified_count}\n\n"
             f"Кампани больше не будет показываться в поиске.",
             parse_mode="HTML",
@@ -5289,7 +5289,7 @@ async def submit_campaign_rating(update: Update, context: ContextTypes.DEFAULT_T
                 if is_client:
                     # Клиент оценил блогера - предлагаем блогеру оценить клиента
                     keyboard.append([InlineKeyboardButton("⭐ Оценить рекламодателя", callback_data=f"leave_review_{campaign_id}")])
-                    extra_text = "\n\n💡 Оцените работу с рекламодателем - это поможет другим блогерам!"
+                    extra_text = "\n\n💡 Оцените рекламодателя - это поможет другим блогерам!"
                     logger.info(f"⭐ Клиент оценил блогера - предлагаем блогеру оценить клиента")
                 else:
                     # Блогер оценил клиента - предлагаем клиенту оценить блогера
@@ -5302,9 +5302,9 @@ async def submit_campaign_rating(update: Update, context: ContextTypes.DEFAULT_T
             await context.bot.send_message(
                 chat_id=notify_user_dict['telegram_id'],
                 text=(
-                    f"✅ <b>Кампани #{campaign_id} завершен!</b>\n\n"
-                    f"Противоположная сторона завершила кампани.\n\n"
-                    f"🎉 Поздравляем с успешным {'выполнением контенты' if is_client else 'заказом'}!"
+                    f"✅ <b>Кампания #{campaign_id} завершена!</b>\n\n"
+                    f"Противоположная сторона завершила кампанию.\n\n"
+                    f"🎉 Поздравляем с успешным {'выполнением контента' if is_client else 'заказом'}!"
                     f"{extra_text}"
                 ),
                 parse_mode="HTML",
@@ -5317,7 +5317,7 @@ async def submit_campaign_rating(update: Update, context: ContextTypes.DEFAULT_T
         # Показываем сообщение об успехе
         stars = "⭐" * rating
         text = (
-            f"✅ <b>Кампани завершен!</b>\n\n"
+            f"✅ <b>Кампани завершена!</b>\n\n"
             f"Спасибо за вашу оценку: {stars} ({rating}/5)\n\n"
             f"👤 <b>{target_role.capitalize()}:</b> {target_name}\n\n"
             f"💬 Хотите оставить комментарий к отзыву?"
@@ -5380,7 +5380,7 @@ async def add_comment_to_review(update: Update, context: ContextTypes.DEFAULT_TY
         await safe_edit_message(
             query,
             f"💬 <b>Добавление комментария к отзыву</b>\n\n"
-            f"Кампани #{campaign_id}\n\n"
+            f"Кампания #{campaign_id}\n\n"
             f"Напишите ваш комментарий к отзыву (до 500 символов):",
             parse_mode="HTML"
         )
@@ -6936,7 +6936,7 @@ async def open_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Формируем текст чата
         text = f"💬 <b>Чат с {other_name}</b>\n"
-        text += f"📋 Кампани #{chat_dict['campaign_id']}\n\n"
+        text += f"📋 Кампания #{chat_dict['campaign_id']}\n\n"
 
         if messages_list:
             text += "<b>История сообщений:</b>\n\n"
@@ -7063,7 +7063,7 @@ async def handle_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE
             chat = db.get_chat_by_id(chat_id)
             if chat:
                 db.update_order_status(chat['campaign_id'], "master_confirmed")
-                logger.info(f"✅ Кампани #{chat['campaign_id']} переведён в статус 'master_confirmed'")
+                logger.info(f"✅ Кампания #{chat['campaign_id']} переведён в статус 'master_confirmed'")
 
         # Получаем информацию о чате для уведомления
         chat = db.get_chat_by_id(chat_id)
@@ -7091,7 +7091,7 @@ async def handle_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE
                 if order_status in ['open', 'waiting_master_confirmation', 'master_confirmed', 'in_progress']:
                     should_notify = True
                 else:
-                    logger.info(f"Кампани #{chat_dict['campaign_id']} имеет статус '{order_status}' - пропускаем уведомление о сообщении")
+                    logger.info(f"Кампания #{chat_dict['campaign_id']} имеет статус '{order_status}' - пропускаем уведомление о сообщении")
 
             if should_notify:
                 try:
@@ -7496,7 +7496,7 @@ async def blogger_view_campaigns(update: Update, context: ContextTypes.DEFAULT_T
         # Показываем первые 5 заказов
         keyboard = []
         for i, campaign in enumerate(all_orders[:5], 1):
-            orders_text += f"🟢 <b>Кампани #{campaign['id']}</b>\n"
+            orders_text += f"🟢 <b>Кампания #{campaign['id']}</b>\n"
             orders_text += f"📍 Город: {campaign.get('city', 'Не указан')}\n"
             orders_text += f"📱 Категория: {campaign.get('category', 'Не указана')}\n"
             
@@ -7517,7 +7517,7 @@ async def blogger_view_campaigns(update: Update, context: ContextTypes.DEFAULT_T
             
             # Добавляем кнопку для просмотра деталей
             keyboard.append([InlineKeyboardButton(
-                f"👁 Кампани #{campaign['id']} - Подробнее", 
+                f"👁 Кампания #{campaign['id']} - Подробнее", 
                 callback_data=f"view_order_{campaign['id']}"
             )])
         
@@ -7576,7 +7576,7 @@ async def blogger_view_campaign_details(update: Update, context: ContextTypes.DE
             is_own_order = (client_dict['user_id'] == user["id"])
 
         # Формируем текст
-        text = f"📋 <b>Кампани #{campaign_id}</b>\n\n"
+        text = f"📋 <b>Кампания #{campaign_id}</b>\n\n"
         text += f"📍 <b>Город:</b> {campaign_dict.get('city', 'Не указан')}\n"
         text += f"📱 <b>Категория:</b> {campaign_dict.get('category', 'Не указана')}\n"
 
@@ -7711,7 +7711,7 @@ async def blogger_decline_campaign_confirm(update: Update, context: ContextTypes
         # Спрашиваем подтверждение
         text = (
             f"🚫 <b>Отказаться от кампания?</b>\n\n"
-            f"Кампани #{campaign_id} больше не будет отображаться в списке доступных заказов.\n\n"
+            f"Кампания #{campaign_id} больше не будет отображаться в списке доступных заказов.\n\n"
             f"📍 <b>Город:</b> {campaign_dict.get('city', 'Не указан')}\n"
             f"📱 <b>Категория:</b> {campaign_dict.get('category', 'Не указана')}\n\n"
             f"Вы уверены, что хотите отказаться от этого кампания?"
@@ -7763,7 +7763,7 @@ async def blogger_decline_campaign_yes(update: Update, context: ContextTypes.DEF
         if success:
             text = (
                 f"✅ <b>Кампани скрыт</b>\n\n"
-                f"Кампани #{campaign_id} больше не будет отображаться в списке доступных заказов.\n\n"
+                f"Кампания #{campaign_id} больше не будет отображаться в списке доступных заказов.\n\n"
                 f"Вы можете продолжить просмотр других заказов."
             )
         else:
@@ -7852,7 +7852,7 @@ async def blogger_campaign_photo_nav(update: Update, context: ContextTypes.DEFAU
             is_own_order = (client_dict['user_id'] == user["id"])
 
         # Формируем текст
-        text = f"📋 <b>Кампани #{campaign_id}</b>\n\n"
+        text = f"📋 <b>Кампания #{campaign_id}</b>\n\n"
         text += f"📍 <b>Город:</b> {campaign_dict.get('city', 'Не указан')}\n"
         text += f"📱 <b>Категория:</b> {campaign_dict.get('category', 'Не указана')}\n"
 
@@ -9423,7 +9423,7 @@ async def create_campaign_publish(update: Update, context: ContextTypes.DEFAULT_
             context.user_data.clear()
             return ConversationHandler.END
 
-        logger.info(f"✅ Кампани #{campaign_id} успешно сохранён в БД!")
+        logger.info(f"✅ Кампания #{campaign_id} успешно сохранён в БД!")
 
         # КРИТИЧНО: Логирование для диагностики уведомлений
         logger.info(f"🔔 НАЧИНАЮ ОТПРАВКУ УВЕДОМЛЕНИЙ для кампания #{campaign_id}")
@@ -9547,8 +9547,8 @@ async def advertiser_complete_campaign(update: Update, context: ContextTypes.DEF
 
         # Уведомляем клиента
         await query.edit_message_text(
-            "✅ <b>Кампани завершен!</b>\n\n"
-            "Кампани перемещен во вкладку \"Завершенные кампании\".\n\n"
+            "✅ <b>Кампани завершена!</b>\n\n"
+            "Кампания перемещена во вкладку \"Завершенные кампании\".\n\n"
             "💡 Оставьте отзыв о контенте блогера - это поможет другим заказчикам выбрать проверенного специалиста!",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([
@@ -9566,9 +9566,9 @@ async def advertiser_complete_campaign(update: Update, context: ContextTypes.DEF
             try:
                 await context.bot.send_message(
                     chat_id=telegram_id,
-                    text=f"✅ <b>Кампани #{campaign_id} завершен!</b>\n\n"
-                         f"Клиент завершил кампани.\n"
-                         f"Кампани перемещен во вкладку \"Завершенные кампании\".\n\n"
+                    text=f"✅ <b>Кампания #{campaign_id} завершена!</b>\n\n"
+                         f"Клиент завершил кампанию.\n"
+                         f"Кампания перемещена во вкладку \"Завершенные кампании\".\n\n"
                          f"💡 Оставьте отзыв о контенте с клиентом!",
                     parse_mode="HTML",
                     reply_markup=InlineKeyboardMarkup([
@@ -9601,8 +9601,8 @@ async def blogger_complete_campaign(update: Update, context: ContextTypes.DEFAUL
 
         # Уведомляем блогера
         await query.edit_message_text(
-            "✅ <b>Кампани завершен!</b>\n\n"
-            "Кампани перемещен во вкладку \"Завершенные кампании\".\n\n"
+            "✅ <b>Кампани завершена!</b>\n\n"
+            "Кампания перемещена во вкладку \"Завершенные кампании\".\n\n"
             "💡 Оставьте отзыв о контенте с рекламодателем!",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([
@@ -9620,9 +9620,9 @@ async def blogger_complete_campaign(update: Update, context: ContextTypes.DEFAUL
             try:
                 await context.bot.send_message(
                     chat_id=telegram_id,
-                    text=f"✅ <b>Кампани #{campaign_id} завершен!</b>\n\n"
-                         f"Блогер завершил кампани.\n"
-                         f"Кампани перемещен во вкладку \"Завершенные кампании\".\n\n"
+                    text=f"✅ <b>Кампания #{campaign_id} завершена!</b>\n\n"
+                         f"Блогер завершил кампанию.\n"
+                         f"Кампания перемещена во вкладку \"Завершенные кампании\".\n\n"
                          f"💡 Оставьте отзыв о контенте блогера!",
                     parse_mode="HTML",
                     reply_markup=InlineKeyboardMarkup([
@@ -9712,7 +9712,7 @@ async def start_review(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     InlineKeyboardButton("⬅️ Назад", callback_data="go_main_menu")
                 ]])
             )
-            logger.warning(f"🛡️ [ANTI-FRAUD] Кампани #{campaign_id} завершен за {time_diff:.2f}ч - отзыв ЗАБЛОКИРОВАН")
+            logger.warning(f"🛡️ [ANTI-FRAUD] Кампания #{campaign_id} завершен за {time_diff:.2f}ч - отзыв ЗАБЛОКИРОВАН")
             return ConversationHandler.END
 
     # 🛡️ ЗАЩИТА 4: Лимит заказов между одними и теми же пользователями (макс 5 за неделю)
@@ -10144,7 +10144,7 @@ async def notify_advertiser_new_offer(context, advertiser_telegram_id, advertise
 
         text = (
             f"🔔 <b>У вас {total_bids} {declension_bids(total_bids)}!</b>\n\n"
-            f"📍 Последний: Кампани #{campaign_id} от {blogger_name} ({price} {currency})\n\n"
+            f"📍 Последний: Кампания #{campaign_id} от {blogger_name} ({price} {currency})\n\n"
             f"👇 Нажмите кнопку чтобы посмотреть все отклики"
         )
 
@@ -10263,7 +10263,7 @@ async def notify_campaign_completed(context, telegram_id, campaign_id, role):
     """Уведомление об успешном завершении кампания"""
     try:
         text = (
-            f"🎉 <b>Кампани #{campaign_id} завершён!</b>\n\n"
+            f"🎉 <b>Кампания #{campaign_id} завершён!</b>\n\n"
             f"Обе стороны подтвердили завершение кампания.\n\n"
             f"💬 Не забудьте оставить отзыв о {'блогере' if role == 'advertiser' else 'клиенте'}!\n\n"
             f"Это поможет другим пользователям сделать правильный выбор. 🤝"
