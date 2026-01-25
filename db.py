@@ -1913,7 +1913,8 @@ def get_all_workers(city=None, category=None):
         params = []
 
         # ИСПРАВЛЕНО: Поиск по городу через blogger_cities ИЛИ через city (для старых записей)
-        if city:
+        # Если город "Вся Беларусь", не фильтруем по городу - показываем всем блогерам
+        if city and city != "Вся Беларусь":
             query += """
                 AND (
                     EXISTS (
@@ -4115,11 +4116,13 @@ def get_orders_by_categories(categories_list, per_page=30, blogger_id=None):
         placeholders = ', '.join(['?' for _ in categories_list])
 
         # ИСПРАВЛЕНО: Добавлена фильтрация по городам мастера
+        # Заказы из "Вся Беларусь" видны всем блогерам
         city_filter = ""
         if blogger_id:
             city_filter = """
                 AND (
-                    o.city IN (SELECT city FROM blogger_cities WHERE blogger_id = ?)
+                    o.city = 'Вся Беларусь'
+                    OR o.city IN (SELECT city FROM blogger_cities WHERE blogger_id = ?)
                     OR o.city = (SELECT city FROM bloggers WHERE id = ?)
                 )
             """
@@ -5325,7 +5328,7 @@ def count_available_orders_for_worker(blogger_user_id):
 
         # ИСПРАВЛЕНО: Используем нормализованные таблицы вместо LIKE
         # Ищем заказы через JOIN с campaign_categories и blogger_categories
-        # Проверяем, что заказ находится в одном из городов мастера
+        # Проверяем, что заказ находится в одном из городов мастера ИЛИ город = "Вся Беларусь"
         placeholders = ','.join('?' * len(cities))
         query = f"""
             SELECT COUNT(DISTINCT o.id)
@@ -5333,7 +5336,7 @@ def count_available_orders_for_worker(blogger_user_id):
             JOIN campaign_categories oc ON o.id = oc.campaign_id
             JOIN blogger_categories wc ON oc.category = wc.category
             WHERE o.status = 'open'
-            AND o.city IN ({placeholders})
+            AND (o.city IN ({placeholders}) OR o.city = 'Вся Беларусь')
             AND wc.blogger_id = ?
             AND o.id NOT IN (
                 SELECT campaign_id FROM offers WHERE blogger_id = ?

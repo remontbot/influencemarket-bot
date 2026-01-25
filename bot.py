@@ -304,7 +304,8 @@ def main():
                 MessageHandler(filters.VIDEO, handlers.create_campaign_photo_upload),
                 CommandHandler("done", handlers.create_campaign_done_uploading),
                 CallbackQueryHandler(handlers.create_campaign_skip_photos, pattern="^campaign_skip_photos$"),
-                CallbackQueryHandler(handlers.create_campaign_publish, pattern="^campaign_publish$"),
+                CallbackQueryHandler(handlers.create_campaign_confirm, pattern="^campaign_confirm$"),
+                CallbackQueryHandler(handlers.create_campaign_publish_confirmed, pattern="^campaign_publish_confirmed$"),
             ],
         },
         fallbacks=[
