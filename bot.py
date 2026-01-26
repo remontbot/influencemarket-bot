@@ -377,6 +377,10 @@ def main():
             CallbackQueryHandler(handlers.blogger_offer_on_campaign, pattern="^offer_on_campaign_")
         ],
         states={
+            handlers.OFFER_SELECT_PAYMENT_TYPE: [
+                CallbackQueryHandler(handlers.blogger_offer_select_paid, pattern="^offer_paid_"),
+                CallbackQueryHandler(handlers.blogger_offer_select_barter, pattern="^offer_barter_"),
+            ],
             handlers.OFFER_SELECT_CURRENCY: [
                 CallbackQueryHandler(handlers.blogger_offer_select_currency, pattern="^offer_currency_"),
             ],
