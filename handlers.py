@@ -317,6 +317,7 @@ def _get_bids_word(count):
     CREATE_CAMPAIGN_DESCRIPTION,
     CREATE_CAMPAIGN_PHOTOS,
     # Состояния для создания предложения
+    OFFER_SELECT_PAYMENT_TYPE,
     OFFER_ENTER_PRICE,
     OFFER_SELECT_CURRENCY,
     OFFER_SELECT_READY_DAYS,
@@ -330,7 +331,7 @@ def _get_bids_word(count):
     BROADCAST_ENTER_MESSAGE,
     ADMIN_BAN_REASON,
     ADMIN_SEARCH,
-) = range(45)
+) = range(46)
 
 
 def is_valid_name(name: str) -> bool:
@@ -4690,15 +4691,24 @@ async def advertiser_waiting_campaigns(update: Update, context: ContextTypes.DEF
             text += f"🟢 <b>Кампания #{campaign_id}</b> - Открыт\n"
             text += f"📱 {campaign_dict.get('category', 'Не указана')}\n"
 
-            # Тип оплаты
+            # ИСПРАВЛЕНО: Тип оплаты с поддержкой комбинированного варианта
             payment_type = campaign_dict.get('payment_type', 'paid')
+            budget_type = campaign_dict.get('budget_type', 'none')
             budget_value = campaign_dict.get('budget_value', 0)
-            if payment_type == "fixed_budget" and budget_value > 0:
-                text += f"💰 Бюджет: {budget_value} BYN\n"
-            elif payment_type == "blogger_offer":
-                text += f"💬 Блогеры предложат цену\n"
-            elif payment_type == "barter":
-                text += f"🤝 Бартер\n"
+
+            payment_parts = []
+            if payment_type in ['paid', 'both'] and budget_value > 0:
+                if budget_type == 'fixed':
+                    payment_parts.append(f"💰 {int(budget_value)} BYN")
+                elif budget_type == 'flexible':
+                    payment_parts.append(f"💬 до {int(budget_value)} BYN")
+                else:
+                    payment_parts.append(f"💰 {int(budget_value)} BYN")
+            if payment_type in ['barter', 'both']:
+                payment_parts.append("🤝 Бартер")
+
+            if payment_parts:
+                text += f"{' + '.join(payment_parts)}\n"
 
             description = campaign_dict.get('description', '')
             if len(description) > 50:
@@ -4803,15 +4813,24 @@ async def advertiser_in_progress_campaigns(update: Update, context: ContextTypes
             text += f"{emoji} <b>Кампания #{campaign_id}</b> - {status}\n"
             text += f"📱 {campaign_dict.get('category', 'Не указана')}\n"
 
-            # Тип оплаты
+            # ИСПРАВЛЕНО: Тип оплаты с поддержкой комбинированного варианта
             payment_type = campaign_dict.get('payment_type', 'paid')
+            budget_type = campaign_dict.get('budget_type', 'none')
             budget_value = campaign_dict.get('budget_value', 0)
-            if payment_type == "fixed_budget" and budget_value > 0:
-                text += f"💰 Бюджет: {budget_value} BYN\n"
-            elif payment_type == "blogger_offer":
-                text += f"💬 Блогеры предложат цену\n"
-            elif payment_type == "barter":
-                text += f"🤝 Бартер\n"
+
+            payment_parts = []
+            if payment_type in ['paid', 'both'] and budget_value > 0:
+                if budget_type == 'fixed':
+                    payment_parts.append(f"💰 {int(budget_value)} BYN")
+                elif budget_type == 'flexible':
+                    payment_parts.append(f"💬 до {int(budget_value)} BYN")
+                else:
+                    payment_parts.append(f"💰 {int(budget_value)} BYN")
+            if payment_type in ['barter', 'both']:
+                payment_parts.append("🤝 Бартер")
+
+            if payment_parts:
+                text += f"{' + '.join(payment_parts)}\n"
 
             description = campaign_dict.get('description', '')
             if len(description) > 50:
@@ -4899,15 +4918,24 @@ async def advertiser_completed_campaigns(update: Update, context: ContextTypes.D
             text += f"{emoji} <b>Кампания #{campaign_id}</b> - {status}\n"
             text += f"📱 {campaign_dict.get('category', 'Не указана')}\n"
 
-            # Тип оплаты
+            # ИСПРАВЛЕНО: Тип оплаты с поддержкой комбинированного варианта
             payment_type = campaign_dict.get('payment_type', 'paid')
+            budget_type = campaign_dict.get('budget_type', 'none')
             budget_value = campaign_dict.get('budget_value', 0)
-            if payment_type == "fixed_budget" and budget_value > 0:
-                text += f"💰 Бюджет: {budget_value} BYN\n"
-            elif payment_type == "blogger_offer":
-                text += f"💬 Блогеры предложат цену\n"
-            elif payment_type == "barter":
-                text += f"🤝 Бартер\n"
+
+            payment_parts = []
+            if payment_type in ['paid', 'both'] and budget_value > 0:
+                if budget_type == 'fixed':
+                    payment_parts.append(f"💰 {int(budget_value)} BYN")
+                elif budget_type == 'flexible':
+                    payment_parts.append(f"💬 до {int(budget_value)} BYN")
+                else:
+                    payment_parts.append(f"💰 {int(budget_value)} BYN")
+            if payment_type in ['barter', 'both']:
+                payment_parts.append("🤝 Бартер")
+
+            if payment_parts:
+                text += f"{' + '.join(payment_parts)}\n"
 
             description = campaign_dict.get('description', '')
             if len(description) > 50:
@@ -7528,29 +7556,41 @@ async def blogger_view_campaigns(update: Update, context: ContextTypes.DEFAULT_T
         for i, campaign in enumerate(all_orders[:5], 1):
             orders_text += f"🟢 <b>Кампания #{campaign['id']}</b>\n"
             orders_text += f"📍 Город: {campaign.get('city', 'Не указан')}\n"
-            orders_text += f"📱 Категория: {campaign.get('category', 'Не указана')}\n"
 
-            # Вид и сумма оплаты
-            budget_type = campaign.get('budget_type', '')
-            budget_value = campaign.get('budget_value')
+            # ИСПРАВЛЕНО: Показываем payment_type и budget для корректного отображения оплаты
+            payment_type = campaign.get('payment_type', 'paid')
+            budget_type = campaign.get('budget_type', 'none')
+            budget_value = campaign.get('budget_value', 0)
 
-            if budget_type == 'barter':
-                orders_text += f"💰 Оплата: <b>Бартер</b>\n"
-            elif budget_type == 'fixed' and budget_value:
-                orders_text += f"💰 Оплата: <b>Фиксированная - {int(budget_value)} BYN</b>\n"
-            elif budget_type == 'flexible':
-                if budget_value:
-                    orders_text += f"💰 Оплата: <b>Гибкая - до {int(budget_value)} BYN</b>\n"
+            # Формируем строку оплаты
+            payment_parts = []
+
+            # Если есть денежная оплата
+            if payment_type == 'paid' and budget_value and budget_value > 0:
+                if budget_type == 'fixed':
+                    payment_parts.append(f"💰 {int(budget_value)} BYN")
+                elif budget_type == 'flexible':
+                    payment_parts.append(f"💰 до {int(budget_value)} BYN (гибкая)")
                 else:
-                    orders_text += f"💰 Оплата: <b>Гибкая</b>\n"
+                    payment_parts.append(f"💰 {int(budget_value)} BYN")
 
-            # Фото
-            photos = campaign.get('photos', '')
-            photos_count = len([p for p in photos.split(',') if p]) if photos else 0
-            if photos_count > 0:
-                orders_text += f"📸 {photos_count} фото\n"
+            # Если есть бартер
+            if payment_type == 'barter':
+                payment_parts.append("🤝 Бартер")
 
-            orders_text += f"📅 {campaign.get('created_at', '')}\n"
+            # Показываем оплату
+            if payment_parts:
+                orders_text += f"<b>Оплата:</b> {' + '.join(payment_parts)}\n"
+            else:
+                orders_text += f"<b>Оплата:</b> По договорённости\n"
+
+            # НОВОЕ: Показываем описание (это главное!)
+            description = campaign.get('description', '')
+            if description:
+                # Обрезаем описание до 150 символов для краткости
+                short_desc = description[:150] + "..." if len(description) > 150 else description
+                orders_text += f"📝 <b>Описание:</b> {short_desc}\n"
+
             orders_text += "\n"
             
             # Добавляем кнопку для просмотра деталей
@@ -7618,15 +7658,31 @@ async def blogger_view_campaign_details(update: Update, context: ContextTypes.DE
         text += f"📍 <b>Город:</b> {campaign_dict.get('city', 'Не указан')}\n"
         text += f"📱 <b>Категория:</b> {campaign_dict.get('category', 'Не указана')}\n"
 
-        # Тип оплаты
+        # ИСПРАВЛЕНО: Правильное отображение типа оплаты
         payment_type = campaign_dict.get('payment_type', 'paid')
+        budget_type = campaign_dict.get('budget_type', 'none')
         budget_value = campaign_dict.get('budget_value', 0)
-        if payment_type == "fixed_budget" and budget_value > 0:
-            text += f"💰 <b>Бюджет:</b> {budget_value} BYN\n"
-        elif payment_type == "blogger_offer":
-            text += f"💬 <b>Оплата:</b> Блогеры предложат цену\n"
-        elif payment_type == "barter":
-            text += f"🤝 <b>Оплата:</b> Бартер\n"
+
+        payment_parts = []
+
+        # Если есть денежная оплата
+        if payment_type in ['paid', 'both'] and budget_value and budget_value > 0:
+            if budget_type == 'fixed':
+                payment_parts.append(f"💰 {int(budget_value)} BYN (фиксированная)")
+            elif budget_type == 'flexible':
+                payment_parts.append(f"💰 до {int(budget_value)} BYN (блогеры предложат цену)")
+            else:
+                payment_parts.append(f"💰 {int(budget_value)} BYN")
+
+        # Если есть бартер
+        if payment_type in ['barter', 'both']:
+            payment_parts.append("🤝 Бартер")
+
+        # Показываем оплату
+        if payment_parts:
+            text += f"<b>Оплата:</b> {' + '.join(payment_parts)}\n"
+        else:
+            text += f"<b>Оплата:</b> По договорённости\n"
 
         text += f"📅 <b>Создан:</b> {campaign_dict.get('created_at', '')}\n\n"
         text += f"📝 <b>Описание:</b>\n{campaign_dict.get('description', 'Нет описания')}\n\n"
@@ -7894,15 +7950,31 @@ async def blogger_campaign_photo_nav(update: Update, context: ContextTypes.DEFAU
         text += f"📍 <b>Город:</b> {campaign_dict.get('city', 'Не указан')}\n"
         text += f"📱 <b>Категория:</b> {campaign_dict.get('category', 'Не указана')}\n"
 
-        # Тип оплаты
+        # ИСПРАВЛЕНО: Правильное отображение типа оплаты
         payment_type = campaign_dict.get('payment_type', 'paid')
+        budget_type = campaign_dict.get('budget_type', 'none')
         budget_value = campaign_dict.get('budget_value', 0)
-        if payment_type == "fixed_budget" and budget_value > 0:
-            text += f"💰 <b>Бюджет:</b> {budget_value} BYN\n"
-        elif payment_type == "blogger_offer":
-            text += f"💬 <b>Оплата:</b> Блогеры предложат цену\n"
-        elif payment_type == "barter":
-            text += f"🤝 <b>Оплата:</b> Бартер\n"
+
+        payment_parts = []
+
+        # Если есть денежная оплата
+        if payment_type in ['paid', 'both'] and budget_value and budget_value > 0:
+            if budget_type == 'fixed':
+                payment_parts.append(f"💰 {int(budget_value)} BYN (фиксированная)")
+            elif budget_type == 'flexible':
+                payment_parts.append(f"💰 до {int(budget_value)} BYN (блогеры предложат цену)")
+            else:
+                payment_parts.append(f"💰 {int(budget_value)} BYN")
+
+        # Если есть бартер
+        if payment_type in ['barter', 'both']:
+            payment_parts.append("🤝 Бартер")
+
+        # Показываем оплату
+        if payment_parts:
+            text += f"<b>Оплата:</b> {' + '.join(payment_parts)}\n"
+        else:
+            text += f"<b>Оплата:</b> По договорённости\n"
 
         text += f"📅 <b>Создан:</b> {campaign_dict.get('created_at', '')}\n\n"
         text += f"📝 <b>Описание:</b>\n{campaign_dict.get('description', 'Нет описания')}\n\n"
@@ -8220,10 +8292,35 @@ async def blogger_offer_on_campaign(update: Update, context: ContextTypes.DEFAUL
 
     # НОВАЯ ЛОГИКА: проверяем payment_type
     payment_type = campaign_dict.get('payment_type', 'paid')
+    budget_type = campaign_dict.get('budget_type', 'none')
     budget_value = campaign_dict.get('budget_value', 0)
 
+    # НОВОЕ: Если выбраны оба варианта (оплата + бартер), блогер выбирает
+    if payment_type == "both":
+        text = (
+            "💰🤝 <b>Выберите вариант оплаты</b>\n\n"
+            f"📋 <b>Кампания #{campaign_id}</b>\n\n"
+            "Рекламодатель готов рассмотреть два варианта:\n\n"
+            f"💰 <b>Денежная оплата:</b> {int(budget_value)} BYN\n"
+            "🤝 <b>Бартер:</b> взаимовыгодное сотрудничество\n\n"
+            "Выберите удобный для вас вариант:"
+        )
+
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton(f"💰 Работать за {int(budget_value)} BYN", callback_data=f"offer_paid_{campaign_id}")],
+            [InlineKeyboardButton("🤝 Работать за бартер", callback_data=f"offer_barter_{campaign_id}")],
+            [InlineKeyboardButton("❌ Отмена", callback_data="cancel_offer")]
+        ])
+
+        try:
+            await query.edit_message_caption(caption=text, parse_mode="HTML", reply_markup=keyboard)
+        except:
+            await query.edit_message_text(text=text, parse_mode="HTML", reply_markup=keyboard)
+
+        return OFFER_SELECT_PAYMENT_TYPE
+
     # 1. БАРТЕР: сразу создаем отклик без ввода цены
-    if payment_type == "barter":
+    elif payment_type == "barter":
         context.user_data['bid_price'] = 0
         context.user_data['bid_currency'] = 'BYN'
         context.user_data['bid_ready_days'] = 7
@@ -8321,6 +8418,95 @@ async def blogger_offer_on_campaign(update: Update, context: ContextTypes.DEFAUL
             )
 
         return OFFER_SELECT_CURRENCY
+
+
+async def blogger_offer_select_paid(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Блогер выбрал работать за деньги (в случае payment_type = "both")"""
+    query = update.callback_query
+    await query.answer()
+
+    # Извлекаем campaign_id из callback_data
+    campaign_id = int(query.data.replace("offer_paid_", ""))
+
+    # Получаем кампанию
+    campaign = db.get_order_by_id(campaign_id)
+    if not campaign:
+        await query.answer("❌ Кампания не найдена!", show_alert=True)
+        return ConversationHandler.END
+
+    campaign_dict = dict(campaign)
+    budget_value = campaign_dict.get('budget_value', 0)
+
+    # Сохраняем параметры для создания отклика
+    context.user_data['bid_price'] = budget_value
+    context.user_data['bid_currency'] = 'BYN'
+    context.user_data['bid_ready_days'] = 7
+    context.user_data['current_campaign_id'] = campaign_id
+
+    text = (
+        "💰 <b>Отклик на кампанию</b>\n\n"
+        f"📋 <b>Кампания #{campaign_id}</b>\n"
+        f"💵 Оплата: <b>{int(budget_value)} BYN</b>\n\n"
+        "✅ Вы выбрали работать за денежную оплату.\n\n"
+        "📝 Хотите добавить комментарий к вашему отклику?\n\n"
+        "💡 Расскажите о себе:\n"
+        "✓ Ваш опыт в создании подобного контента\n"
+        "✓ Примеры ваших работ\n"
+        "✓ Почему именно вы подходите для этой кампании\n\n"
+        "Напишите комментарий или нажмите «Пропустить»:"
+    )
+
+    keyboard = InlineKeyboardMarkup([[
+        InlineKeyboardButton("⏭ Пропустить", callback_data="offer_skip_comment"),
+        InlineKeyboardButton("❌ Отмена", callback_data="cancel_offer")
+    ]])
+
+    try:
+        await query.edit_message_caption(caption=text, parse_mode="HTML", reply_markup=keyboard)
+    except:
+        await query.edit_message_text(text=text, parse_mode="HTML", reply_markup=keyboard)
+
+    return OFFER_ENTER_COMMENT
+
+
+async def blogger_offer_select_barter(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Блогер выбрал работать за бартер (в случае payment_type = "both")"""
+    query = update.callback_query
+    await query.answer()
+
+    # Извлекаем campaign_id из callback_data
+    campaign_id = int(query.data.replace("offer_barter_", ""))
+
+    # Сохраняем параметры для создания отклика (бартер = цена 0)
+    context.user_data['bid_price'] = 0
+    context.user_data['bid_currency'] = 'BYN'
+    context.user_data['bid_ready_days'] = 7
+    context.user_data['current_campaign_id'] = campaign_id
+
+    text = (
+        "🤝 <b>Отклик на бартер</b>\n\n"
+        f"📋 <b>Кампания #{campaign_id}</b>\n"
+        "💼 Бартерное сотрудничество\n\n"
+        "✅ Вы выбрали работать за бартер.\n\n"
+        "📝 Хотите добавить комментарий к вашему отклику?\n\n"
+        "💡 Расскажите о себе:\n"
+        "✓ Ваш опыт в создании подобного контента\n"
+        "✓ Примеры ваших работ\n"
+        "✓ Почему вас интересует это сотрудничество\n\n"
+        "Напишите комментарий или нажмите «Пропустить»:"
+    )
+
+    keyboard = InlineKeyboardMarkup([[
+        InlineKeyboardButton("⏭ Пропустить", callback_data="offer_skip_comment"),
+        InlineKeyboardButton("❌ Отмена", callback_data="cancel_offer")
+    ]])
+
+    try:
+        await query.edit_message_caption(caption=text, parse_mode="HTML", reply_markup=keyboard)
+    except:
+        await query.edit_message_text(text=text, parse_mode="HTML", reply_markup=keyboard)
+
+    return OFFER_ENTER_COMMENT
 
 
 async def blogger_offer_enter_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -9009,8 +9195,25 @@ async def create_campaign_subcategory_select(update: Update, context: ContextTyp
             payment_names.append("Бартер")
         payment_text = ", ".join(payment_names)
 
-        # Сохраняем для совместимости с БД (основной тип)
-        context.user_data["payment_type"] = selected_payments[0] if selected_payments else "fixed_budget"
+        # ИСПРАВЛЕНО: Правильно сохраняем payment_type для комбинированных вариантов
+        # payment_type может быть: "paid", "barter", "both"
+        has_paid = ("fixed_budget" in selected_payments or "blogger_offer" in selected_payments)
+        has_barter = "barter" in selected_payments
+
+        if has_paid and has_barter:
+            context.user_data["payment_type"] = "both"
+        elif has_barter:
+            context.user_data["payment_type"] = "barter"
+        else:
+            context.user_data["payment_type"] = "paid"
+
+        # Сохраняем тип бюджета отдельно
+        if "fixed_budget" in selected_payments:
+            context.user_data["budget_type"] = "fixed"
+        elif "blogger_offer" in selected_payments:
+            context.user_data["budget_type"] = "flexible"
+        else:
+            context.user_data["budget_type"] = "none"
 
         # Если выбран "Указать бюджет" - запрашиваем сумму
         if "fixed_budget" in selected_payments:
@@ -9595,6 +9798,7 @@ async def create_campaign_publish(update: Update, context: ContextTypes.DEFAULT_
                 description=context.user_data["order_description"],
                 photos=valid_order_photos,
                 videos=valid_order_videos,
+                budget_type=context.user_data.get("budget_type", "none"),
                 budget_value=context.user_data.get("budget_value", 0),
                 payment_type=context.user_data.get("payment_type", "paid")
             )
