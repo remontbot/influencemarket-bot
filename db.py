@@ -1182,13 +1182,15 @@ def count_orders_between_users(user1_id, user2_id, days=7):
         # Считаем заказы где user1 клиент, а user2 мастер ИЛИ наоборот
         cursor.execute("""
             SELECT COUNT(*) FROM campaigns o
-            LEFT JOIN offers b ON o.selected_worker_id = b.id
+            JOIN advertisers adv ON o.advertiser_id = adv.id
+            LEFT JOIN offers off ON o.selected_worker_id = off.id
+            LEFT JOIN bloggers blog ON off.blogger_id = blog.id
             WHERE o.status = 'completed'
-            AND o.completed_at >= ?
+            AND o.created_at >= ?
             AND (
-                (o.advertiser_user_id = ? AND b.blogger_id = ?)
+                (adv.user_id = ? AND blog.user_id = ?)
                 OR
-                (o.advertiser_user_id = ? AND b.blogger_id = ?)
+                (adv.user_id = ? AND blog.user_id = ?)
             )
         """, (cutoff_date, user1_id, user2_id, user2_id, user1_id))
 
@@ -1223,16 +1225,18 @@ def get_suspicious_activity_report(days=7, min_orders=3):
         # 1. Находим пары пользователей с большим количеством заказов друг с другом
         cursor.execute("""
             SELECT
-                o.advertiser_user_id,
-                b.blogger_id,
+                adv.user_id as advertiser_user_id,
+                blog.user_id as blogger_user_id,
                 COUNT(*) as campaign_count,
-                MAX(o.completed_at) as last_order
+                MAX(o.created_at) as last_order
             FROM campaigns o
-            LEFT JOIN offers b ON o.selected_worker_id = b.id
+            JOIN advertisers adv ON o.advertiser_id = adv.id
+            LEFT JOIN offers off ON o.selected_worker_id = off.id
+            LEFT JOIN bloggers blog ON off.blogger_id = blog.id
             WHERE o.status = 'completed'
-            AND o.completed_at >= ?
-            AND b.blogger_id IS NOT NULL
-            GROUP BY o.advertiser_user_id, b.blogger_id
+            AND o.created_at >= ?
+            AND blog.user_id IS NOT NULL
+            GROUP BY adv.user_id, blog.user_id
             HAVING COUNT(*) >= ?
             ORDER BY campaign_count DESC
         """, (cutoff_date, min_orders))
@@ -1240,24 +1244,8 @@ def get_suspicious_activity_report(days=7, min_orders=3):
         repeated_orders = cursor.fetchall()
 
         # 2. Находим заказы, завершенные слишком быстро (менее 1 часа)
-        cursor.execute("""
-            SELECT
-                o.id as campaign_id,
-                o.advertiser_user_id,
-                b.blogger_id,
-                o.accepted_at,
-                o.completed_at,
-                CAST((julianday(o.completed_at) - julianday(o.accepted_at)) * 24 AS REAL) as hours_diff
-            FROM campaigns o
-            LEFT JOIN offers b ON o.selected_worker_id = b.id
-            WHERE o.status = 'completed'
-            AND o.completed_at >= ?
-            AND o.accepted_at IS NOT NULL
-            AND (julianday(o.completed_at) - julianday(o.accepted_at)) * 24 < 1
-            ORDER BY hours_diff ASC
-        """, (cutoff_date,))
-
-        quick_completions = cursor.fetchall()
+        # ВРЕМЕННО ОТКЛЮЧЕНО: поля accepted_at и completed_at не существуют в campaigns
+        quick_completions = []
 
         # 3. Находим пользователей с подозрительно высоким рейтингом (все отзывы 5 звезд)
         cursor.execute("""
@@ -4421,10 +4409,13 @@ def get_bids_for_order(campaign_id):
                 w.city as blogger_city,
                 w.categories as blogger_categories,
                 w.verified_reviews as blogger_verified_reviews,
-                u.telegram_id as blogger_telegram_id
+                u.telegram_id as blogger_telegram_id,
+                c.budget_type as campaign_budget_type,
+                c.budget_value as campaign_budget_value
             FROM offers b
             JOIN bloggers w ON b.blogger_id = w.id
             JOIN users u ON w.user_id = u.id
+            JOIN campaigns c ON b.campaign_id = c.id
             WHERE b.campaign_id = ?
             AND b.status = 'active'
             ORDER BY b.created_at ASC
