@@ -1938,6 +1938,28 @@ async def blogger_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE
             orders_text += f"📍 Город: {campaign.get('city', 'Не указан')}\n"
             orders_text += f"📱 Категория: {campaign.get('category', 'Не указана')}\n"
 
+            # Отображение оплаты
+            payment_type = campaign.get('payment_type', 'paid')
+            budget_type = campaign.get('budget_type', 'none')
+            budget_value = campaign.get('budget_value', 0)
+
+            payment_parts = []
+
+            # Если есть фиксированный бюджет
+            if budget_type == 'fixed' and budget_value and budget_value > 0:
+                payment_parts.append(f"💰 {int(budget_value)} BYN")
+            # Если блогеры предложат цену
+            elif budget_type == 'flexible':
+                payment_parts.append("💬 Блогеры предложат цену")
+
+            # Если есть бартер
+            if payment_type in ['barter', 'both']:
+                payment_parts.append("🤝 Бартер")
+
+            # Показываем оплату
+            if payment_parts:
+                orders_text += f"💵 {' + '.join(payment_parts)}\n"
+
             # Описание (сокращённое)
             description = campaign.get('description', '')
             if len(description) > 80:
@@ -7665,14 +7687,12 @@ async def blogger_view_campaign_details(update: Update, context: ContextTypes.DE
 
         payment_parts = []
 
-        # Если есть денежная оплата
-        if payment_type in ['paid', 'both'] and budget_value and budget_value > 0:
-            if budget_type == 'fixed':
-                payment_parts.append(f"💰 {int(budget_value)} BYN (фиксированная)")
-            elif budget_type == 'flexible':
-                payment_parts.append(f"💰 до {int(budget_value)} BYN (блогеры предложат цену)")
-            else:
-                payment_parts.append(f"💰 {int(budget_value)} BYN")
+        # Если есть фиксированный бюджет
+        if budget_type == 'fixed' and budget_value and budget_value > 0:
+            payment_parts.append(f"💰 {int(budget_value)} BYN (фиксированная)")
+        # Если блогеры предложат цену
+        elif budget_type == 'flexible':
+            payment_parts.append("💬 Блогеры предложат цену")
 
         # Если есть бартер
         if payment_type in ['barter', 'both']:
@@ -7957,14 +7977,12 @@ async def blogger_campaign_photo_nav(update: Update, context: ContextTypes.DEFAU
 
         payment_parts = []
 
-        # Если есть денежная оплата
-        if payment_type in ['paid', 'both'] and budget_value and budget_value > 0:
-            if budget_type == 'fixed':
-                payment_parts.append(f"💰 {int(budget_value)} BYN (фиксированная)")
-            elif budget_type == 'flexible':
-                payment_parts.append(f"💰 до {int(budget_value)} BYN (блогеры предложат цену)")
-            else:
-                payment_parts.append(f"💰 {int(budget_value)} BYN")
+        # Если есть фиксированный бюджет
+        if budget_type == 'fixed' and budget_value and budget_value > 0:
+            payment_parts.append(f"💰 {int(budget_value)} BYN (фиксированная)")
+        # Если блогеры предложат цену
+        elif budget_type == 'flexible':
+            payment_parts.append("💬 Блогеры предложат цену")
 
         # Если есть бартер
         if payment_type in ['barter', 'both']:
