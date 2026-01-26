@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 #   2. Регистрация клиента: город проживания клиента (для статистики)
 #   3. Создание кампании: кампания создаётся в указанном городе
 # - Блогеры получают уведомления о кампаниях из своих городов
-# - Если город блогера совпадает с городом кампания - блогер видит кампани
+# - Если город блогера совпадает с городом кампании - блогер видит кампанию
 # - Полезно для небольших городов, посёлков и агрогородков
 #
 
@@ -271,13 +271,13 @@ def validate_file_id(file_id):
 
 
 def _get_bids_word(count):
-    """Возвращает правильное склонение слова 'предложени'"""
+    """Возвращает правильное склонение слова 'предложение'"""
     if count % 10 == 1 and count % 100 != 11:
-        return "предложени"
+        return "предложение"
     elif count % 10 in (2, 3, 4) and count % 100 not in (12, 13, 14):
-        return "предложениа"
+        return "предложения"
     else:
-        return "откликов"
+        return "предложений"
 
 (
     SELECTING_ROLE,
@@ -316,7 +316,7 @@ def _get_bids_word(count):
     CREATE_CAMPAIGN_BUDGET,
     CREATE_CAMPAIGN_DESCRIPTION,
     CREATE_CAMPAIGN_PHOTOS,
-    # Состояния для создания предложениа
+    # Состояния для создания предложения
     OFFER_ENTER_PRICE,
     OFFER_SELECT_CURRENCY,
     OFFER_SELECT_READY_DAYS,
@@ -884,8 +884,8 @@ async def register_blogger_experience(update: Update, context: ContextTypes.DEFA
         f"Уровень: {experience}\n\n"
         "📝 <b>Расскажите о своём опыте и выполненных проектах</b>\n\n"
         "💡 Это описание увидят потенциальные рекламодатели. Укажите:\n\n"
-        "✓ <b>Опыт контенты:</b> Сколько лет в профессии, какие объекты выполняли\n"
-        "✓ <b>Примеры проектов:</b> Что делали, какой сложности контенты\n"
+        "✓ <b>Опыт создания контента:</b> Сколько лет в профессии, какие проекты выполняли\n"
+        "✓ <b>Примеры проектов:</b> Что делали, какой сложности контент\n"
         "✓ <b>Специализация:</b> В чём вы особенно сильны\n"
         "✓ <b>Как работаете:</b> Опыт, стиль контента, аудитория, охваты\n\n"
         "<b>Пример:</b>\n"
@@ -2087,7 +2087,7 @@ async def blogger_my_offers(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     # ИСПРАВЛЕНО: Фильтруем только АКТИВНЫЕ отклики (active - ждём ответа клиента)
-    # Статус 'active' присваивается при создании предложениа в db.create_bid()
+    # Статус 'active' присваивается при создании предложения в db.create_bid()
     active_bids = [dict(offer) for offer in all_bids if dict(offer)['status'] == 'active']
 
     if not active_bids:
@@ -2199,7 +2199,7 @@ async def blogger_my_campaigns(update: Update, context: ContextTypes.DEFAULT_TYP
                 query,
                 "📦 <b>Мои кампании</b>\n\n"
                 "У вас пока нет заказов.\n\n"
-                "Когда клиент выберет ваш предложени, кампания появится здесь.",
+                "Когда клиент выберет ваше предложение, кампания появится здесь.",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
@@ -2688,7 +2688,7 @@ async def show_blogger_profile(update: Update, context: ContextTypes.DEFAULT_TYP
 
         # Добавляем кнопку просмотра контент если они есть
         if photos_count > 0:
-            keyboard.append([InlineKeyboardButton("📸 Посмотреть все контенты", callback_data="view_portfolio")])
+            keyboard.append([InlineKeyboardButton("📸 Посмотреть портфолио", callback_data="view_portfolio")])
 
         # Добавляем кнопку отзывов если они есть
         if rating_count > 0:
@@ -2776,8 +2776,8 @@ async def blogger_add_photos_start(update: Update, context: ContextTypes.DEFAULT
             "Используйте кнопку «🗑 Управление фото» чтобы удалить старые.\n\n"
             "✨ <b>Хотите больше фото?</b>\n"
             "Загружайте фото завершенных контент после каждого кампания!\n"
-            "• До 3 фото за кампани\n"
-            "• С подтверждением рекламодатела ✅\n"
+            "• До 3 фото за кампанию\n"
+            "• С подтверждением рекламодателя ✅\n"
             "• До 90 подтвержденных фото в профиле",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([
@@ -3067,7 +3067,7 @@ async def blogger_add_photos_finish(query, context: ContextTypes.DEFAULT_TYPE):
             f"📊 Итого:\n"
             f"• Добавлено новых: {added_count}\n"
             f"• Всего в портфолио: {total_count}/10\n\n"
-            f"Теперь клиенты увидят ваши контенты!"
+            f"Теперь клиенты увидят ваш контент!"
         )
         
         logger.info("Отправка успешного сообщения пользователю")
@@ -4381,7 +4381,7 @@ async def edit_experience_save(update: Update, context: ContextTypes.DEFAULT_TYP
     keyboard = [[InlineKeyboardButton("👤 Вернуться к профилю", callback_data="worker_profile")]]
     
     await query.edit_message_text(
-        f"✅ Опыт контенты успешно изменён на: <b>{new_exp}</b>",
+        f"✅ Опыт создания контента успешно изменён на: <b>{new_exp}</b>",
         reply_markup=InlineKeyboardMarkup(keyboard),
         parse_mode="HTML",
     )
@@ -4576,7 +4576,7 @@ async def advertiser_my_campaigns(update: Update, context: ContextTypes.DEFAULT_
 
         if not all_orders:
             keyboard = [
-                [InlineKeyboardButton("📝 Создать первый кампани", callback_data="client_create_order")],
+                [InlineKeyboardButton("📝 Создать первую кампанию", callback_data="client_create_order")],
                 [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_client_menu")],
             ]
 
@@ -4953,8 +4953,8 @@ async def cancel_campaign_handler(update: Update, context: ContextTypes.DEFAULT_
             await query.edit_message_text("❌ Пользователь не найден.")
             return
 
-        # Отменяем кампани
-        result = db.cancel_order(campaign_id, user['id'], reason="Отменен клиентом через бот")
+        # Отменяем кампанию
+        result = db.cancel_order(campaign_id, user['id'], reason="Отменена клиентом через бот")
 
         if not result['success']:
             await query.edit_message_text(
@@ -4977,7 +4977,7 @@ async def cancel_campaign_handler(update: Update, context: ContextTypes.DEFAULT_
                         text=(
                             f"❌ <b>Кампания #{campaign_id} отменен</b>\n\n"
                             f"Клиент отменил кампанию на который вы откликались.\n"
-                            f"Ваш предложени больше не актуален."
+                            f"Ваше предложение больше не актуально."
                         ),
                         parse_mode="HTML"
                     )
@@ -4987,9 +4987,9 @@ async def cancel_campaign_handler(update: Update, context: ContextTypes.DEFAULT_
 
         # Сообщаем клиенту об успехе
         await query.edit_message_text(
-            f"✅ <b>Кампания #{campaign_id} успешно отменен</b>\n\n"
+            f"✅ <b>Кампания #{campaign_id} успешно отменена</b>\n\n"
             f"📨 Уведомлено блогеров: {notified_count}\n\n"
-            f"Кампани больше не будет показываться в поиске.",
+            f"Кампания больше не будет показываться в поиске.",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([[
                 InlineKeyboardButton("📂 Мои кампании", callback_data="client_my_orders"),
@@ -4997,7 +4997,7 @@ async def cancel_campaign_handler(update: Update, context: ContextTypes.DEFAULT_
             ]])
         )
 
-        logger.info(f"Кампани {campaign_id} отменен пользователем {user['id']}. Уведомлено мастеров: {notified_count}")
+        logger.info(f"Кампания {campaign_id} отменена пользователем {user['id']}. Уведомлено блогеров: {notified_count}")
 
     except Exception as e:
         logger.error(f"Ошибка при отмене кампания: {e}", exc_info=True)
@@ -5038,7 +5038,7 @@ async def complete_campaign_handler(update: Update, context: ContextTypes.DEFAUL
 
         campaign_dict = dict(campaign)
 
-        # Проверяем статус кампания - нельзя оценить отменённый кампани
+        # Проверяем статус кампании - нельзя оценить отменённую кампанию
         # ВАЖНО: 'completed' разрешён, чтобы обе стороны могли оставить отзыв
         if campaign_dict['status'] in ('cancelled',):
             await safe_edit_message(
@@ -5111,7 +5111,7 @@ async def complete_campaign_handler(update: Update, context: ContextTypes.DEFAUL
         text = (
             f"✅ <b>Завершение кампания #{campaign_id}</b>\n\n"
             f"👤 <b>{target_role}:</b> {target_name}\n\n"
-            f"📊 <b>Оцените {'контенту блогера' if is_client else 'рекламодатела'}:</b>\n"
+            f"📊 <b>Оцените {'работу блогера' if is_client else 'рекламодателя'}:</b>\n"
             f"Ваша оценка поможет {'другим клиентам' if is_client else 'другим мастерам'} сделать правильный выбор."
         )
 
@@ -5176,10 +5176,10 @@ async def submit_campaign_rating(update: Update, context: ContextTypes.DEFAULT_T
 
         user_dict = dict(user)
 
-        # Получаем кампани
+        # Получаем кампанию
         campaign = db.get_order_by_id(campaign_id)
         if not campaign:
-            await safe_edit_message(query, "❌ Кампани не найден.")
+            await safe_edit_message(query, "❌ Кампания не найдена.")
             return
 
         campaign_dict = dict(campaign)
@@ -5263,12 +5263,12 @@ async def submit_campaign_rating(update: Update, context: ContextTypes.DEFAULT_T
         # Это делает кампанию видимой в "Завершенные кампании" у обеих сторон
         if campaign_dict['status'] not in ['completed', 'done']:
             db.update_order_status(campaign_id, 'completed')
-            logger.info(f"✅ Кампани {campaign_id} помечен как 'completed' - первая оценка получена")
+            logger.info(f"✅ Кампания {campaign_id} помечена как 'completed' - первая оценка получена")
 
         # Если обе стороны оценили, дополнительно помечаем как 'done'
         if opposite_review_exists and campaign_dict['status'] != 'done':
             db.update_order_status(campaign_id, 'done')
-            logger.info(f"✅ Кампани {campaign_id} помечен как 'done' - обе стороны оценили")
+            logger.info(f"✅ Кампания {campaign_id} помечена как 'done' - обе стороны оценили")
 
         # Уведомляем противоположную сторону
         try:
@@ -5317,7 +5317,7 @@ async def submit_campaign_rating(update: Update, context: ContextTypes.DEFAULT_T
         # Показываем сообщение об успехе
         stars = "⭐" * rating
         text = (
-            f"✅ <b>Кампани завершена!</b>\n\n"
+            f"✅ <b>Кампания завершена!</b>\n\n"
             f"Спасибо за вашу оценку: {stars} ({rating}/5)\n\n"
             f"👤 <b>{target_role.capitalize()}:</b> {target_name}\n\n"
             f"💬 Хотите оставить комментарий к отзыву?"
@@ -5457,7 +5457,7 @@ async def receive_review_comment(update: Update, context: ContextTypes.DEFAULT_T
 
 async def blogger_upload_work_photo_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    НОВОЕ: Начало загрузки фото завершённой контенты мастером.
+    НОВОЕ: Начало загрузки фото завершённого контента блогером.
     """
     query = update.callback_query
     await query.answer()
@@ -5470,8 +5470,8 @@ async def blogger_upload_work_photo_start(update: Update, context: ContextTypes.
         context.user_data['uploading_work_photo_order_id'] = campaign_id
 
         text = (
-            f"📸 <b>Загрузка фото контенты для кампания #{campaign_id}</b>\n\n"
-            f"Отправьте фотографии выполненной контенты (до 3 фото).\n\n"
+            f"📸 <b>Загрузка фото контента для кампании #{campaign_id}</b>\n\n"
+            f"Отправьте фотографии выполненного контента (до 3 фото).\n\n"
             f"✅ <b>Подтвержденные рекламодателем фото:</b>\n"
             f"• Получат специальный значок ✅\n"
             f"• Повышают доверие клиентов\n"
@@ -5501,7 +5501,7 @@ async def blogger_upload_work_photo_start(update: Update, context: ContextTypes.
         logger.info(f"Блогер начал загрузку фото для кампания {campaign_id}")
 
     except Exception as e:
-        logger.error(f"Ошибка при начале загрузки фото контенты: {e}", exc_info=True)
+        logger.error(f"Ошибка при начале загрузки фото контента: {e}", exc_info=True)
         await safe_edit_message(
             query,
             f"❌ Произошла ошибка:\n{str(e)}",
@@ -5511,7 +5511,7 @@ async def blogger_upload_work_photo_start(update: Update, context: ContextTypes.
 
 async def blogger_skip_work_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    НОВОЕ: Пропуск загрузки фото контенты.
+    НОВОЕ: Пропуск загрузки фото контента.
     """
     query = update.callback_query
     await query.answer()
@@ -5526,8 +5526,8 @@ async def blogger_skip_work_photo(update: Update, context: ContextTypes.DEFAULT_
 
         await safe_edit_message(
             query,
-            "✅ Фото контенты можно добавить позже через профиль.\n\n"
-            "Спасибо за контенту!",
+            "✅ Фото контента можно добавить позже через профиль.\n\n"
+            "Спасибо за контент!",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
@@ -5540,14 +5540,14 @@ async def blogger_skip_work_photo(update: Update, context: ContextTypes.DEFAULT_
 
 async def blogger_upload_work_photo_receive(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    НОВОЕ: Получение фото завершённой контенты от блогера.
+    НОВОЕ: Получение фото завершённого контента от блогера.
     """
     try:
         # КРИТИЧНО: Пропускаем если идет загрузка фото профиля или портфолио
         if context.user_data.get('uploading_profile_photo') or context.user_data.get('adding_photos'):
             return  # Пропускаем - пусть обработают другие handlers
 
-        # Проверяем, что идёт процесс загрузки фото контенты
+        # Проверяем, что идёт процесс загрузки фото контента
         campaign_id = context.user_data.get('uploading_work_photo_order_id')
         if not campaign_id:
             return  # Игнорируем фото, если не в процессе загрузки
@@ -5564,7 +5564,7 @@ async def blogger_upload_work_photo_receive(update: Update, context: ContextType
             if len(context.user_data['uploaded_work_photos']) >= 3:
                 await update.message.reply_text(
                     "⚠️ <b>Достигнут лимит</b>\n\n"
-                    "Максимум 3 фото на один кампани.\n\n"
+                    "Максимум 3 фото на одну кампанию.\n\n"
                     "Нажмите «Завершить загрузку» чтобы сохранить фото.",
                     parse_mode="HTML"
                 )
@@ -5591,12 +5591,12 @@ async def blogger_upload_work_photo_receive(update: Update, context: ContextType
             logger.info(f"Получено фото {count}/3 для кампания {campaign_id}")
 
     except Exception as e:
-        logger.error(f"Ошибка при получении фото контенты: {e}", exc_info=True)
+        logger.error(f"Ошибка при получении фото контента: {e}", exc_info=True)
 
 
 async def blogger_finish_work_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    НОВОЕ: Завершение загрузки фото контенты и сохранение в БД.
+    НОВОЕ: Завершение загрузки фото контента и сохранение в БД.
     """
     query = update.callback_query
     await query.answer()
@@ -5695,9 +5695,9 @@ async def blogger_finish_work_photos(update: Update, context: ContextTypes.DEFAU
                         await context.bot.send_message(
                             chat_id=client_user_dict['telegram_id'],
                             text=(
-                                f"📸 <b>Блогер загрузил фото контенты!</b>\n\n"
-                                f"По кампаниу #{campaign_id} блогер <b>{worker_dict.get('name', 'Блогер')}</b> "
-                                f"загрузил {saved_count} {_get_photos_word(saved_count)} выполненной контенты.\n\n"
+                                f"📸 <b>Блогер загрузил фото контента!</b>\n\n"
+                                f"По кампании #{campaign_id} блогер <b>{worker_dict.get('name', 'Блогер')}</b> "
+                                f"загрузил {saved_count} {_get_photos_word(saved_count)} выполненного контента.\n\n"
                                 f"✅ <b>Подтвердите фотографии:</b>\n"
                                 f"Если это действительно фото вашего кампания, подтвердите их. "
                                 f"Подтверждённые фото получат специальный значок ✅ и будут показаны в профиле блогера."
@@ -5743,7 +5743,7 @@ async def blogger_finish_work_photos(update: Update, context: ContextTypes.DEFAU
 
 async def blogger_cancel_work_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    НОВОЕ: Отмена загрузки фото контенты.
+    НОВОЕ: Отмена загрузки фото контента.
     """
     query = update.callback_query
     await query.answer()
@@ -5817,7 +5817,7 @@ async def manage_completed_photos(update: Update, context: ContextTypes.DEFAULT_
         text = (
             f"🗑 <b>Управление фотографиями контент</b>\n\n"
             f"📊 <b>Всего фото:</b> {total_photos}/90\n\n"
-            f"💡 <b>Совет:</b> Оставляйте только лучшие контенты для красивого портфолио!\n\n"
+            f"💡 <b>Совет:</b> Оставляйте только лучшие работы для красивого портфолио!\n\n"
             f"📸 <b>Страница {page + 1}/{(total_photos - 1) // photos_per_page + 1}:</b>"
         )
 
@@ -5887,7 +5887,7 @@ async def photo_page_navigation(update: Update, context: ContextTypes.DEFAULT_TY
 
 async def view_work_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    НОВОЕ: Просмотр отдельного фото контенты с возможностью удаления.
+    НОВОЕ: Просмотр отдельного фото контента с возможностью удаления.
     """
     query = update.callback_query
     await query.answer()
@@ -5927,8 +5927,8 @@ async def view_work_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         order_title = target_photo.get('order_title', 'Без названия')
 
         text = (
-            f"📸 <b>Фото контенты</b>\n\n"
-            f"📋 <b>Кампани:</b> {order_title}\n"
+            f"📸 <b>Фото контента</b>\n\n"
+            f"📋 <b>Кампания:</b> {order_title}\n"
             f"🔖 <b>Статус:</b> {verified_text}\n\n"
             f"🗑 Хотите удалить это фото?"
         )
@@ -5959,7 +5959,7 @@ async def view_work_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def confirm_delete_work_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    НОВОЕ: Подтверждение удаления фото контенты.
+    НОВОЕ: Подтверждение удаления фото контента.
     """
     query = update.callback_query
     await query.answer()
@@ -6004,7 +6004,7 @@ async def confirm_delete_work_photo(update: Update, context: ContextTypes.DEFAUL
 
 async def advertiser_check_work_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    НОВОЕ: Просмотр фото контенты клиентом для подтверждения.
+    НОВОЕ: Просмотр фото контента клиентом для подтверждения.
     """
     query = update.callback_query
     await query.answer()
@@ -6012,7 +6012,7 @@ async def advertiser_check_work_photos(update: Update, context: ContextTypes.DEF
     try:
         campaign_id = int(query.data.replace("check_work_photos_", ""))
 
-        # Получаем фото контенты
+        # Получаем фото контента
         photos = db.get_completed_work_photos(campaign_id)
         if not photos:
             await safe_edit_message(
@@ -6024,7 +6024,7 @@ async def advertiser_check_work_photos(update: Update, context: ContextTypes.DEF
 
         # Отправляем фото с кнопками подтверждения
         text = (
-            f"📸 <b>Фотографии контенты по кампании #{campaign_id}</b>\n\n"
+            f"📸 <b>Фотографии контента по кампании #{campaign_id}</b>\n\n"
             f"Всего фото: {len(photos)}\n\n"
             f"Подтвердите, что это фото вашего кампания:"
         )
@@ -6054,7 +6054,7 @@ async def advertiser_check_work_photos(update: Update, context: ContextTypes.DEF
         await query.message.delete()
 
     except Exception as e:
-        logger.error(f"Ошибка при просмотре фото контенты: {e}", exc_info=True)
+        logger.error(f"Ошибка при просмотре фото контента: {e}", exc_info=True)
         await safe_edit_message(
             query,
             f"❌ Произошла ошибка:\n{str(e)}",
@@ -6064,7 +6064,7 @@ async def advertiser_check_work_photos(update: Update, context: ContextTypes.DEF
 
 async def advertiser_verify_work_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    ИСПРАВЛЕНО: Подтверждение фото контенты клиентом.
+    ИСПРАВЛЕНО: Подтверждение фото контента клиентом.
     После подтверждения фото добавляется в портфолио блогера.
     """
     query = update.callback_query
@@ -6100,7 +6100,7 @@ async def advertiser_verify_work_photo(update: Update, context: ContextTypes.DEF
                                     chat_id=worker_user_dict['telegram_id'],
                                     text=(
                                         f"✅ <b>Клиент подтвердил ваше фото!</b>\n\n"
-                                        f"Ваше фото контенты по кампании #{campaign_id} подтверждено клиентом.\n\n"
+                                        f"Ваше фото контента по кампании #{campaign_id} подтверждено клиентом.\n\n"
                                         f"🎉 Фото добавлено в ваш профиль с отметкой ✅ «Подтверждено клиентом».\n\n"
                                         f"💡 Подтверждённые фото повышают доверие новых клиентов!"
                                     ),
@@ -6124,7 +6124,7 @@ async def advertiser_verify_work_photo(update: Update, context: ContextTypes.DEF
             await query.edit_message_caption(
                 caption="✅ <b>Фото подтверждено клиентом</b>\n\n"
                         "Это фото добавлено в портфолио блогера с отметкой о подтверждении.\n\n"
-                        "Теперь другие заказчики смогут видеть эту проверенную контенту в профиле блогера.",
+                        "Теперь другие заказчики смогут видеть этот проверенный контент в профиле блогера.",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
@@ -6173,11 +6173,11 @@ async def view_campaign_offers(update: Update, context: ContextTypes.DEFAULT_TYP
             )
             return
 
-        # Получаем кампани
+        # Получаем кампанию
         campaign = db.get_order_by_id(campaign_id)
         if not campaign or campaign['advertiser_id'] != client_profile['id']:
             await query.edit_message_text(
-                "❌ Кампани не найден или у вас нет доступа к нему.",
+                "❌ Кампания не найдена или у вас нет доступа к ней.",
                 parse_mode="HTML"
             )
             return
@@ -6216,7 +6216,7 @@ async def view_campaign_offers(update: Update, context: ContextTypes.DEFAULT_TYP
             'current_index': 0
         }
 
-        # Показываем первый предложени
+        # Показываем первое предложение
         await show_offer_card(update, context, query=query)
 
     except Exception as e:
@@ -6255,7 +6255,7 @@ async def sort_offers_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, query=None):
-    """Показывает карточку предложениа с информацией о блогере"""
+    """Показывает карточку предложения с информацией о блогере"""
     if not query:
         query = update.callback_query
         await query.answer()
@@ -6411,7 +6411,7 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
         portfolio_photos = offer.get('worker_portfolio_photos', '')
         if portfolio_photos:
             keyboard.append([InlineKeyboardButton(
-                "📸 Посмотреть контенты блогера",
+                "📸 Посмотреть портфолио блогера",
                 callback_data=f"view_blogger_portfolio_{offer['worker_id']}"
             )])
 
@@ -6440,7 +6440,7 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
                 )
             except Exception as photo_error:
                 # Если не удалось отправить фото, отправляем без фото
-                logger.warning(f"Не удалось отправить фото предложениа: {photo_error}")
+                logger.warning(f"Не удалось отправить фото предложения: {photo_error}")
                 await context.bot.send_message(
                     chat_id=query.from_user.id,
                     text=text,
@@ -6465,7 +6465,7 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
             pass
         await context.bot.send_message(
             chat_id=query.from_user.id,
-            text=f"❌ Ошибка при отображении предложениа:\n{str(e)}",
+            text=f"❌ Ошибка при отображении предложения:\n{str(e)}",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
@@ -6499,7 +6499,7 @@ async def offer_navigate(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def back_to_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Возврат к карточке предложениа из просмотра портфолио"""
+    """Возврат к карточке предложения из просмотра портфолио"""
     query = update.callback_query
     await query.answer()
 
@@ -6517,7 +6517,7 @@ async def back_to_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE)
             )
             return
 
-        # Показываем текущую карточку предложениа
+        # Показываем текущую карточку предложения
         await show_offer_card(update, context, query=query)
 
     except Exception as e:
@@ -6708,7 +6708,7 @@ async def process_offer_selection(update: Update, context: ContextTypes.DEFAULT_
             if bid_from_db:
                 selected_bid = dict(bid_from_db)
             else:
-                await safe_edit_message(query, "❌ Ошибка: предложени не найден.", parse_mode="HTML")
+                await safe_edit_message(query, "❌ Ошибка: предложение не найдено.", parse_mode="HTML")
                 return
 
         campaign_id = selected_bid['campaign_id']
@@ -6751,7 +6751,7 @@ async def process_offer_selection(update: Update, context: ContextTypes.DEFAULT_
             )
             logger.info(f"✅ Чат #{chat_id} создан между рекламодателем {user['id']} и блогером {blogger_user_id}")
 
-        # 3. Отмечаем предложени как выбранный, НО кампания в статусе "waiting_blogger_confirmation"
+        # 3. Отмечаем предложение как выбранное, НО кампания в статусе "waiting_blogger_confirmation"
         db.update_order_status(campaign_id, "waiting_master_confirmation")
         db.select_bid(offer_id)
 
@@ -7001,7 +7001,7 @@ async def handle_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE
     logger.info(f"[DEBUG] handle_chat_message вызван для пользователя {update.effective_user.id}, текст: {update.message.text[:50] if update.message and update.message.text else 'N/A'}")
     logger.info(f"[DEBUG] context.user_data: suggestion_active={context.user_data.get('suggestion_active')}, broadcast_active={context.user_data.get('broadcast_active')}, ad_step={context.user_data.get('ad_step')}")
 
-    # FIX B: Прямая маршрутизация для гарантированной контенты ConversationHandler
+    # FIX B: Прямая маршрутизация для гарантированной работы ConversationHandler
     # (это резервная проверка, основная обработка в direct_routing group=-1)
     if context.user_data.get("suggestion_active"):
         logger.info(f"[FIX B] Прямая маршрутизация в receive_suggestion_text")
@@ -7305,9 +7305,14 @@ async def reset_profile_command(update: Update, context: ContextTypes.DEFAULT_TY
 
 
 async def add_test_campaigns_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда для добавления тестовых заказов (только для user_id 641830790)"""
+    """Команда для добавления тестовых заказов (только для администраторов)"""
     telegram_id = update.effective_user.id
     logger.info(f"[CMD] /add_test_campaigns вызван от пользователя {telegram_id}")
+
+    # Проверка прав администратора
+    if not db.is_admin(telegram_id):
+        await update.message.reply_text("❌ У вас нет прав администратора.")
+        return
 
     # Вызываем функцию из db.py
     success, message, count = db.add_test_orders(telegram_id)
@@ -7316,9 +7321,14 @@ async def add_test_campaigns_command(update: Update, context: ContextTypes.DEFAU
 
 
 async def add_test_bloggers_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда для добавления тестовых мастеров и откликов (только для user_id 641830790)"""
+    """Команда для добавления тестовых блогеров (только для администраторов)"""
     telegram_id = update.effective_user.id
     logger.info(f"[CMD] /add_test_bloggers вызван от пользователя {telegram_id}")
+
+    # Проверка прав администратора
+    if not db.is_admin(telegram_id):
+        await update.message.reply_text("❌ У вас нет прав администратора.")
+        return
 
     # Вызываем функцию из db.py
     success, message, count = db.add_test_workers(telegram_id)
@@ -7327,9 +7337,14 @@ async def add_test_bloggers_command(update: Update, context: ContextTypes.DEFAUL
 
 
 async def add_test_advertisers_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда для добавления тестовых рекламодателей (только для user_id 641830790)"""
+    """Команда для добавления тестовых рекламодателей (только для администраторов)"""
     telegram_id = update.effective_user.id
     logger.info(f"[CMD] /add_test_advertisers вызван от пользователя {telegram_id}")
+
+    # Проверка прав администратора
+    if not db.is_admin(telegram_id):
+        await update.message.reply_text("❌ У вас нет прав администратора.")
+        return
 
     # Вызываем функцию из db.py
     success, message, count = db.add_test_advertisers(telegram_id)
@@ -7340,17 +7355,22 @@ async def add_test_advertisers_command(update: Update, context: ContextTypes.DEF
 async def add_test_offers_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Команда для добавления тестовых откликов на кампанию
-    Использование: /add_test_bids campaign_id
+    Использование: /add_test_offers campaign_id
     """
     telegram_id = update.effective_user.id
 
+    # Проверка прав администратора
+    if not db.is_admin(telegram_id):
+        await update.message.reply_text("❌ У вас нет прав администратора.")
+        return
+
     if len(context.args) < 1:
         await update.message.reply_text(
-            "📋 <b>Использование команды /add_test_bids</b>\n\n"
-            "<code>/add_test_bids campaign_id</code>\n\n"
+            "📋 <b>Использование команды /add_test_offers</b>\n\n"
+            "<code>/add_test_offers campaign_id</code>\n\n"
             "Пример:\n"
-            "<code>/add_test_bids 123</code>\n\n"
-            "Эта команда добавит несколько тестовых откликов от мастеров на указанный кампани.",
+            "<code>/add_test_offers 123</code>\n\n"
+            "Эта команда добавит несколько тестовых откликов от блогеров на указанную кампанию.",
             parse_mode="HTML"
         )
         return
@@ -7358,21 +7378,21 @@ async def add_test_offers_command(update: Update, context: ContextTypes.DEFAULT_
     try:
         campaign_id = int(context.args[0])
     except ValueError:
-        await update.message.reply_text("❌ ID кампания должен быть числом")
+        await update.message.reply_text("❌ ID кампании должен быть числом")
         return
 
-    # Проверяем существование кампания
+    # Проверяем существование кампании
     campaign = db.get_order(campaign_id)
     if not campaign:
-        await update.message.reply_text(f"❌ Кампани с ID {campaign_id} не найден")
+        await update.message.reply_text(f"❌ Кампания с ID {campaign_id} не найдена")
         return
 
     # Получаем всех мастеров
     all_workers = db.get_all_workers()
     if not all_workers or len(all_workers) == 0:
         await update.message.reply_text(
-            "❌ В системе нет мастеров.\n\n"
-            "Сначала создайте профили мастеров или используйте команду /add_test_workers"
+            "❌ В системе нет блогеров.\n\n"
+            "Сначала создайте профили блогеров или используйте команду /add_test_bloggers"
         )
         return
 
@@ -7383,7 +7403,7 @@ async def add_test_offers_command(update: Update, context: ContextTypes.DEFAULT_
     base_price = 100
     comments = [
         "Готов выполнить качественно и в срок!",
-        "Большой опыт контенты, есть примеры",
+        "Большой опыт создания контента, есть примеры",
         "Сделаю быстро и недорого",
         "Работаю с гарантией качества",
         "Могу приступить уже сегодня"
@@ -7404,7 +7424,7 @@ async def add_test_offers_command(update: Update, context: ContextTypes.DEFAULT_
             if db.check_worker_bid_exists(campaign_id, worker_id):
                 continue
 
-            # Создаем предложени (обходим rate limiting через прямую вставку в БД)
+            # Создаем предложение (обходим rate limiting через прямую вставку в БД)
             with db.get_db_connection() as conn:
                 cursor = db.get_cursor(conn)
                 now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -7419,16 +7439,16 @@ async def add_test_offers_command(update: Update, context: ContextTypes.DEFAULT_
 
                 conn.commit()
                 created_count += 1
-                logger.info(f"✅ Создан тестовый предложени от блогера {worker_id} на кампани {campaign_id}")
+                logger.info(f"✅ Создано тестовое предложение от блогера {worker_id} на кампанию {campaign_id}")
 
         except Exception as e:
-            logger.error(f"Ошибка создания тестового предложениа: {e}")
+            logger.error(f"Ошибка создания тестового предложения: {e}")
             continue
 
     if created_count > 0:
         await update.message.reply_text(
             f"✅ Создано тестовых откликов: {created_count}\n\n"
-            f"📋 Кампани ID: {campaign_id}\n"
+            f"📋 Кампания ID: {campaign_id}\n"
             f"Откликов добавлено: {created_count}\n\n"
             "Теперь вы можете проверить сортировку откликов!",
             parse_mode="HTML"
@@ -7571,22 +7591,22 @@ async def blogger_view_campaign_details(update: Update, context: ContextTypes.DE
     try:
         # Извлекаем campaign_id из callback_data
         campaign_id = int(query.data.replace("view_order_", ""))
-        
-        # Получаем кампани
+
+        # Получаем кампанию
         campaign = db.get_order_by_id(campaign_id)
         if not campaign:
-            await query.edit_message_text("❌ Кампани не найден.")
+            await query.edit_message_text("❌ Кампания не найдена.")
             return
         
         campaign_dict = dict(campaign)
         
-        # Проверяем есть ли уже предложени от этого блогера
+        # Проверяем есть ли уже предложение от этого блогера
         user = db.get_user(query.from_user.id)
         worker_profile = db.get_worker_profile(user["id"])
 
         already_bid = db.check_worker_bid_exists(campaign_id, worker_profile["id"])
 
-        # ПРОВЕРКА: Блогер не может откликаться на свой кампани
+        # ПРОВЕРКА: Блогер не может откликаться на свою кампанию
         advertiser = db.get_client_by_id(campaign_dict['advertiser_id'])
         is_own_order = False
         if advertiser:
@@ -7646,10 +7666,10 @@ async def blogger_view_campaign_details(update: Update, context: ContextTypes.DE
 
             if order_status == 'in_progress' and selected_worker_id == worker_profile["id"]:
                 keyboard.append([InlineKeyboardButton("✅ Контента завершена", callback_data=f"blogger_complete_campaign_{campaign_id}")])
-            # Кнопка предложениа (только для открытых заказов)
+            # Кнопка предложения (только для открытых заказов)
             elif order_status == 'open':
                 if is_own_order:
-                    keyboard.append([InlineKeyboardButton("🚫 Это ваш кампани", callback_data="noop")])
+                    keyboard.append([InlineKeyboardButton("🚫 Это ваша кампания", callback_data="noop")])
                 elif already_bid:
                     keyboard.append([InlineKeyboardButton("✅ Вы уже откликнулись", callback_data="noop")])
                 else:
@@ -7678,10 +7698,10 @@ async def blogger_view_campaign_details(update: Update, context: ContextTypes.DE
 
             if order_status == 'in_progress' and selected_worker_id == worker_profile["id"]:
                 keyboard.append([InlineKeyboardButton("✅ Контента завершена", callback_data=f"blogger_complete_campaign_{campaign_id}")])
-            # Кнопка предложениа (только для открытых заказов)
+            # Кнопка предложения (только для открытых заказов)
             elif order_status == 'open':
                 if is_own_order:
-                    keyboard.append([InlineKeyboardButton("🚫 Это ваш кампани", callback_data="noop")])
+                    keyboard.append([InlineKeyboardButton("🚫 Это ваша кампания", callback_data="noop")])
                 elif already_bid:
                     keyboard.append([InlineKeyboardButton("✅ Вы уже откликнулись", callback_data="noop")])
                 else:
@@ -7718,10 +7738,10 @@ async def blogger_decline_campaign_confirm(update: Update, context: ContextTypes
         # Извлекаем campaign_id из callback_data: "decline_campaign_123"
         campaign_id = int(query.data.replace("decline_campaign_", ""))
 
-        # Получаем кампани
+        # Получаем кампанию
         campaign = db.get_order_by_id(campaign_id)
         if not campaign:
-            await query.edit_message_text("❌ Кампани не найден.")
+            await query.edit_message_text("❌ Кампания не найдена.")
             return
 
         campaign_dict = dict(campaign)
@@ -7780,12 +7800,12 @@ async def blogger_decline_campaign_yes(update: Update, context: ContextTypes.DEF
 
         if success:
             text = (
-                f"✅ <b>Кампани скрыт</b>\n\n"
+                f"✅ <b>Кампания скрыта</b>\n\n"
                 f"Кампания #{campaign_id} больше не будет отображаться в списке доступных заказов.\n\n"
                 f"Вы можете продолжить просмотр других заказов."
             )
         else:
-            text = "❌ Не удалось скрыть кампани. Попробуйте позже."
+            text = "❌ Не удалось скрыть кампанию. Попробуйте позже."
 
         keyboard = [
             [InlineKeyboardButton("📋 К списку заказов", callback_data="worker_view_orders")],
@@ -7857,12 +7877,12 @@ async def blogger_campaign_photo_nav(update: Update, context: ContextTypes.DEFAU
         campaign = db.get_order_by_id(campaign_id)
         campaign_dict = dict(campaign)
         
-        # Проверяем предложени
+        # Проверяем предложение
         user = db.get_user(query.from_user.id)
         worker_profile = db.get_worker_profile(user["id"])
         already_bid = db.check_worker_bid_exists(campaign_id, worker_profile["id"])
 
-        # ПРОВЕРКА: Блогер не может откликаться на свой кампани
+        # ПРОВЕРКА: Блогер не может откликаться на свою кампанию
         advertiser = db.get_client_by_id(campaign_dict['advertiser_id'])
         is_own_order = False
         if advertiser:
@@ -7895,9 +7915,9 @@ async def blogger_campaign_photo_nav(update: Update, context: ContextTypes.DEFAU
         nav_buttons.append(InlineKeyboardButton(f"{current_index+1}/{len(photo_ids)}", callback_data="noop"))
         nav_buttons.append(InlineKeyboardButton("▶️", callback_data=f"order_photo_next_{campaign_id}"))
         keyboard.append(nav_buttons)
-        
+
         if is_own_order:
-            keyboard.append([InlineKeyboardButton("🚫 Это ваш кампани", callback_data="noop")])
+            keyboard.append([InlineKeyboardButton("🚫 Это ваша кампания", callback_data="noop")])
         elif already_bid:
             keyboard.append([InlineKeyboardButton("✅ Вы уже откликнулись", callback_data="noop")])
         else:
@@ -8160,7 +8180,7 @@ async def browse_restart(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ------- ОТКЛИКИ МАСТЕРОВ НА ЗАКАЗЫ -------
 
 async def blogger_offer_on_campaign(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Начало создания предложениа - зависит от payment_type"""
+    """Начало создания предложения - зависит от payment_type"""
     query = update.callback_query
     await query.answer()
 
@@ -8180,7 +8200,7 @@ async def blogger_offer_on_campaign(update: Update, context: ContextTypes.DEFAUL
     profile_dict = dict(worker_profile)
     worker_id = profile_dict.get("id")
 
-    # ПРОВЕРКА: Блогер не может откликаться на свой кампани
+    # ПРОВЕРКА: Блогер не может откликаться на свою кампанию
     campaign = db.get_order_by_id(campaign_id)
     if not campaign:
         await query.answer("❌ Кампания не найдена!", show_alert=True)
@@ -8191,7 +8211,7 @@ async def blogger_offer_on_campaign(update: Update, context: ContextTypes.DEFAUL
     if advertiser:
         client_dict = dict(advertiser)
         if client_dict['user_id'] == user_dict.get("id"):
-            await query.answer("❌ Вы не можете откликнуться на свой кампани!", show_alert=True)
+            await query.answer("❌ Вы не можете откликнуться на свою кампанию!", show_alert=True)
             return ConversationHandler.END
 
     if db.check_worker_bid_exists(campaign_id, worker_id):
@@ -8430,8 +8450,8 @@ async def blogger_offer_select_ready_days(update: Update, context: ContextTypes.
         "✓ Ваш опыт в подобных проектах\n\n"
         "<b>Примеры:</b>\n"
         "• «Цена с моими материалами. Делал 20+ таких объектов»\n"
-        "• «В стоимость входит контента и расходники. Выезд бесплатный. Опыт 8 лет»\n"
-        "• «Цена за контенту, материалы оплачиваете отдельно. Гарантия 2 года»\n\n"
+        "• «В стоимость входит контент и расходники. Выезд бесплатный. Опыт 8 лет»\n"
+        "• «Цена за контент, материалы оплачиваете отдельно. Гарантия 2 года»\n\n"
         "Напишите комментарий или нажмите «Пропустить»:",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup([[
@@ -8462,7 +8482,7 @@ async def blogger_offer_skip_comment(update: Update, context: ContextTypes.DEFAU
 
 
 async def blogger_offer_publish(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Публикация предложениа"""
+    """Публикация предложения"""
     try:
         # Получаем данные
         campaign_id = context.user_data['bid_order_id']
@@ -8484,7 +8504,7 @@ async def blogger_offer_publish(update: Update, context: ContextTypes.DEFAULT_TY
         worker_profile = db.get_worker_profile(user_dict["id"])
         worker_profile_dict = dict(worker_profile)
 
-        # Создаём предложени (может вызвать ValueError при rate limiting)
+        # Создаём предложение (может вызвать ValueError при rate limiting)
         try:
             offer_id = db.create_bid(
                 campaign_id=campaign_id,
@@ -8510,7 +8530,7 @@ async def blogger_offer_publish(update: Update, context: ContextTypes.DEFAULT_TY
             context.user_data.clear()
             return ConversationHandler.END
 
-        logger.info(f"✅ Предложени #{offer_id} создан мастером {worker_profile_dict['id']} на кампани {campaign_id}")
+        logger.info(f"✅ Предложение #{offer_id} создано блогером {worker_profile_dict['id']} на кампанию {campaign_id}")
 
         # Отправляем уведомление клиенту
         campaign = db.get_order_by_id(campaign_id)
@@ -8539,10 +8559,10 @@ async def blogger_offer_publish(update: Update, context: ContextTypes.DEFAULT_TY
         ]
 
         await message.reply_text(
-            "✅ <b>Предложени отправлен!</b>\n\n"
+            "✅ <b>Предложение отправлено!</b>\n\n"
             f"💰 Ваша цена: {price} {currency}\n"
             f"📝 Комментарий: {comment if comment else 'Нет'}\n\n"
-            "Клиент увидит ваш предложени и сможет с вами связаться!\n\n"
+            "Клиент увидит ваше предложение и сможет с вами связаться!\n\n"
             "💡 Вы можете посмотреть свои отклики в разделе \"💼 Мои отклики\"",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard)
@@ -8552,7 +8572,7 @@ async def blogger_offer_publish(update: Update, context: ContextTypes.DEFAULT_TY
         return ConversationHandler.END
         
     except Exception as e:
-        logger.error(f"Ошибка создания предложениа: {e}", exc_info=True)
+        logger.error(f"Ошибка создания предложения: {e}", exc_info=True)
 
         if update.callback_query:
             message = update.callback_query.message
@@ -8560,7 +8580,7 @@ async def blogger_offer_publish(update: Update, context: ContextTypes.DEFAULT_TY
             message = update.message
             
         await message.reply_text(
-            "❌ Произошла ошибка при создании предложениа.\n\nПопробуйте позже.",
+            "❌ Произошла ошибка при создании предложения.\n\nПопробуйте позже.",
             reply_markup=InlineKeyboardMarkup([[
                 InlineKeyboardButton("⬅️ Назад", callback_data="worker_view_orders")
             ]])
@@ -8570,13 +8590,13 @@ async def blogger_offer_publish(update: Update, context: ContextTypes.DEFAULT_TY
 
 
 async def blogger_offer_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Отмена создания предложениа"""
+    """Отмена создания предложения"""
     query = update.callback_query
     await query.answer()
 
     await safe_edit_message(
         query,
-        "❌ Создание предложениа отменено.",
+        "❌ Создание предложения отменено.",
         reply_markup=InlineKeyboardMarkup([[
             InlineKeyboardButton("📋 К доступным заказам", callback_data="worker_view_orders")
         ]])
@@ -8787,8 +8807,8 @@ async def create_campaign_region_select(update: Update, context: ContextTypes.DE
 
         # Добавляем кнопку "Другой город в области"
         # ЛОГИКА "ДРУГОЙ ГОРОД":
-        # - Рекламодател может указать любой город, не входящий в основной список
-        # - Блогера, работающие в этом городе, увидят кампани
+        # - Рекламодатель может указать любой город, не входящий в основной список
+        # - Блогеры, работающие в этом городе, увидят кампанию
         # - Это полезно для небольших городов и посёлков
         keyboard.append([InlineKeyboardButton(
             f"📍 Другой город в области",
@@ -9593,9 +9613,9 @@ async def create_campaign_publish(update: Update, context: ContextTypes.DEFAULT_
         # КРИТИЧНО: Логирование для диагностики уведомлений
         logger.info(f"🔔 НАЧИНАЮ ОТПРАВКУ УВЕДОМЛЕНИЙ для кампания #{campaign_id}")
 
-        # Получаем созданный кампании для отправки уведомлений
+        # Получаем созданную кампанию для отправки уведомлений
         campaign = db.get_order_by_id(campaign_id)
-        logger.info(f"🔔 Кампани получен из БД: {campaign is not None}")
+        logger.info(f"🔔 Кампания получена из БД: {campaign is not None}")
         if campaign:
             campaign_dict = dict(campaign)
 
@@ -9691,15 +9711,15 @@ async def create_campaign_publish(update: Update, context: ContextTypes.DEFAULT_
 
 async def advertiser_complete_campaign(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    ИСПРАВЛЕНО: Клиент завершает кампани.
-    Кампани сразу получает статус 'completed', обе стороны могут оставить отзыв.
+    ИСПРАВЛЕНО: Клиент завершает кампанию.
+    Кампания сразу получает статус 'completed', обе стороны могут оставить отзыв.
     """
     query = update.callback_query
     await query.answer()
 
     campaign_id = int(query.data.replace("complete_campaign_", ""))
 
-    # ИСПРАВЛЕНО: Кампани завершается сразу (не требуется подтверждение от обеих сторон)
+    # ИСПРАВЛЕНО: Кампания завершается сразу (не требуется подтверждение от обеих сторон)
     db.mark_order_completed_by_client(campaign_id)
 
     # Получаем информацию о кампание и блогере
@@ -9712,7 +9732,7 @@ async def advertiser_complete_campaign(update: Update, context: ContextTypes.DEF
 
         # Уведомляем клиента
         await query.edit_message_text(
-            "✅ <b>Кампани завершена!</b>\n\n"
+            "✅ <b>Кампания завершена!</b>\n\n"
             "Кампания перемещена во вкладку \"Завершенные кампании\".\n\n"
             "💡 Оставьте отзыв о контенте блогера - это поможет другим заказчикам выбрать проверенного специалиста!",
             parse_mode="HTML",
@@ -9747,15 +9767,15 @@ async def advertiser_complete_campaign(update: Update, context: ContextTypes.DEF
 
 async def blogger_complete_campaign(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    ИСПРАВЛЕНО: Блогер завершает кампани.
-    Кампани сразу получает статус 'completed', обе стороны могут оставить отзыв.
+    ИСПРАВЛЕНО: Блогер завершает кампанию.
+    Кампания сразу получает статус 'completed', обе стороны могут оставить отзыв.
     """
     query = update.callback_query
     await query.answer()
 
     campaign_id = int(query.data.replace("blogger_complete_campaign_", ""))
 
-    # ИСПРАВЛЕНО: Кампани завершается сразу (не требуется подтверждение от обеих сторон)
+    # ИСПРАВЛЕНО: Кампания завершается сразу (не требуется подтверждение от обеих сторон)
     db.mark_order_completed_by_worker(campaign_id)
 
     # Получаем информацию о кампание
@@ -9766,7 +9786,7 @@ async def blogger_complete_campaign(update: Update, context: ContextTypes.DEFAUL
 
         # Уведомляем блогера
         await query.edit_message_text(
-            "✅ <b>Кампани завершена!</b>\n\n"
+            "✅ <b>Кампания завершена!</b>\n\n"
             "Кампания перемещена во вкладку \"Завершенные кампании\".\n\n"
             "💡 Оставьте отзыв о контенте с рекламодателем!",
             parse_mode="HTML",
@@ -9818,7 +9838,7 @@ async def start_review(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Получаем информацию о кампание
     campaign = db.get_order_by_id(campaign_id)
     if not campaign:
-        await query.edit_message_text("❌ Кампани не найден")
+        await query.edit_message_text("❌ Кампания не найдена")
         return ConversationHandler.END
 
     campaign_dict = dict(campaign)
@@ -9828,7 +9848,7 @@ async def start_review(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(
             "⚠️ <b>Отзыв можно оставить только после завершения кампания</b>\n\n"
             f"Текущий статус: {campaign_dict['status']}\n\n"
-            "Сначала завершите кампани!",
+            "Сначала завершите кампанию!",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([[
                 InlineKeyboardButton("⬅️ Назад", callback_data="go_main_menu")
@@ -9869,7 +9889,7 @@ async def start_review(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if time_diff < MIN_HOURS:
             await query.edit_message_text(
                 "⚠️ <b>Подозрительно быстрое завершение</b>\n\n"
-                f"Кампани был завершен слишком быстро (менее {MIN_HOURS} часа после принятия ставки).\n\n"
+                f"Кампания была завершена слишком быстро (менее {MIN_HOURS} часа после принятия ставки).\n\n"
                 "Отзывы для такихзаказов недоступны для предотвращения накрутки рейтинга.\n\n"
                 "💡 Если это ошибка, обратитесь в поддержку.",
                 parse_mode="HTML",
@@ -9959,7 +9979,7 @@ async def start_review(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await query.edit_message_text(
         f"⭐ <b>Оставьте отзыв</b>\n\n"
-        f"Оцените контенту: <b>{reviewer_name}</b>\n\n"
+        f"Оцените работу: <b>{reviewer_name}</b>\n\n"
         f"Выберите оценку от 1 до 5 звезд:",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard)
@@ -9984,7 +10004,7 @@ async def review_select_rating(update: Update, context: ContextTypes.DEFAULT_TYP
         f"✅ Оценка: {stars} ({rating}/5)\n\n"
         f"📝 Теперь напишите отзыв:\n"
         f"• Что понравилось или не понравилось?\n"
-        f"• Качество контенты\n"
+        f"• Качество контента\n"
         f"• Соблюдение сроков\n"
         f"• Коммуникация\n\n"
         f"Или пропустите, если хотите оставить только оценку.",
@@ -10213,23 +10233,23 @@ async def show_reviews(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ===== NOTIFICATION HELPERS =====
 
 def declension_orders(count):
-    """Склонение слова 'кампани' в зависимости от числа"""
+    """Склонение слова 'кампания' в зависимости от числа"""
     if count % 10 == 1 and count % 100 != 11:
-        return "доступный кампани"
+        return "доступная кампания"
     elif count % 10 in [2, 3, 4] and count % 100 not in [12, 13, 14]:
-        return "доступных кампания"
+        return "доступные кампании"
     else:
-        return "доступных заказов"
+        return "доступных кампаний"
 
 
 def declension_bids(count):
-    """Склонение слова 'предложени' в зависимости от числа"""
+    """Склонение слова 'предложение' в зависимости от числа"""
     if count % 10 == 1 and count % 100 != 11:
-        return "новый предложени"
+        return "новое предложение"
     elif count % 10 in [2, 3, 4] and count % 100 not in [12, 13, 14]:
-        return "новых предложениа"
+        return "новых предложения"
     else:
-        return "новых откликов"
+        return "новых предложений"
 
 
 async def notify_blogger_new_campaign(context, blogger_telegram_id, blogger_user_id, campaign_dict):
@@ -10363,7 +10383,7 @@ async def notify_blogger_selected(context, blogger_telegram_id, campaign_id, adv
             f"Имя: {advertiser_name}\n"
             f"Телефон: <code>{advertiser_phone}</code>\n\n"
             f"✅ Свяжитесь с клиентом и обсудите детали кампания!\n\n"
-            f"💡 После завершения контенты не забудьте отметить кампанию как выполненный."
+            f"💡 После завершения работы не забудьте отметить кампанию как выполненную."
         )
 
         await context.bot.send_message(
@@ -10402,7 +10422,7 @@ async def notify_advertiser_master_selected(context, advertiser_telegram_id, cam
 
 
 async def notify_completion_request(context, recipient_telegram_id, campaign_id, requester_role):
-    """Уведомление о том что другая сторона отметила кампани как завершённый"""
+    """Уведомление о том что другая сторона отметила кампанию как завершённую"""
     role_text = "Клиент" if requester_role == "advertiser" else "Блогер"
 
     try:
@@ -10454,7 +10474,7 @@ async def notify_new_review(context, telegram_id, reviewer_name, rating, campaig
             f"📝 <b>Новый отзыв!</b>\n\n"
             f"👤 От: {reviewer_name}\n"
             f"{stars} {rating}/5\n"
-            f"📋 Кампани: #{campaign_id}\n\n"
+            f"📋 Кампания: #{campaign_id}\n\n"
             f"Посмотрите отзыв в своём профиле!"
         )
 
@@ -10578,7 +10598,7 @@ async def ban_user_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         # Нельзя забанить самого себя или другого админа
-        if target_telegram_id in ADMIN_IDS:
+        if db.is_admin(target_telegram_id):
             await update.message.reply_text("❌ Нельзя забанить администратора.")
             return
 
@@ -10742,7 +10762,7 @@ async def announce_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Использование:\n"
             "<code>/announce Текст уведомления</code>\n\n"
             "Пример:\n"
-            "<code>/announce ⚠️ Завтра с 10:00 до 12:00 технические контенты. Бот будет недоступен.</code>",
+            "<code>/announce ⚠️ Завтра с 10:00 до 12:00 технические работы. Бот будет недоступен.</code>",
             parse_mode="HTML"
         )
         return
@@ -10827,7 +10847,7 @@ async def check_expired_chats_command(update: Update, context: ContextTypes.DEFA
             # Получаем информацию о кампание
             campaign = db.get_order_by_id(campaign_id)
             if not campaign:
-                logger.warning(f"Кампани {campaign_id} не найден для чата {chat_id}")
+                logger.warning(f"Кампания {campaign_id} не найдена для чата {chat_id}")
                 error_count += 1
                 continue
 
@@ -10843,10 +10863,10 @@ async def check_expired_chats_command(update: Update, context: ContextTypes.DEFA
             # 1. Снижаем рейтинг блогера (добавляем негативную оценку 1.0 из 5.0)
             db.update_user_rating(blogger_user_id, 1.0, "blogger")
 
-            # 2. Возвращаем кампани в статус "open" (клиент может выбрать другого блогера)
+            # 2. Возвращаем кампанию в статус "open" (клиент может выбрать другого блогера)
             db.update_order_status(campaign_id, "open")
 
-            # 3. Отмечаем предложени как отклоненный (чтобы не показывался как выбранный)
+            # 3. Отмечаем предложение как отклоненное (чтобы не показывалось как выбранное)
             # Но НЕ удаляем его - клиент может увидеть, что этот блогер не ответил
             db.update_bid_status(offer_id, "rejected")
 
@@ -10856,8 +10876,8 @@ async def check_expired_chats_command(update: Update, context: ContextTypes.DEFA
                     chat_id=advertiser['telegram_id'],
                     text=(
                         f"⚠️ <b>Блогер не ответил в течение 24 часов</b>\n\n"
-                        f"📋 Кампани: {campaign['title']}\n\n"
-                        f"Ваш кампани снова открыт для выбора другого блогера.\n"
+                        f"📋 Кампания: {campaign['title']}\n\n"
+                        f"Ваша кампания снова открыта для выбора другого блогера.\n"
                         f"💰 Дополнительная оплата НЕ требуется - ваша предыдущая оплата остается активной.\n\n"
                         f"Просто выберите другого блогера из списка откликов."
                     ),
@@ -10875,8 +10895,8 @@ async def check_expired_chats_command(update: Update, context: ContextTypes.DEFA
                     chat_id=worker_user['telegram_id'],
                     text=(
                         f"⚠️ <b>Ваш рейтинг снижен!</b>\n\n"
-                        f"📋 Кампани: {campaign['title']}\n\n"
-                        f"Вы не ответили клиенту в течение 24 часов после того, как ваш предложени был выбран.\n"
+                        f"📋 Кампания: {campaign['title']}\n\n"
+                        f"Вы не ответили клиенту в течение 24 часов после того, как ваше предложение было выбрано.\n"
                         f"📉 Ваш рейтинг был снижен.\n\n"
                         f"⚡ <b>Совет:</b> Отвечайте клиентам быстрее, чтобы поддерживать высокий рейтинг!"
                     ),
@@ -10886,7 +10906,7 @@ async def check_expired_chats_command(update: Update, context: ContextTypes.DEFA
                 logger.warning(f"Не удалось отправить уведомление блогеру {worker_user['telegram_id']}: {e}")
 
             processed_count += 1
-            logger.info(f"Обработан просроченный чат {chat_id} (кампани {campaign_id})")
+            logger.info(f"Обработан просроченный чат {chat_id} (кампания {campaign_id})")
 
         except Exception as e:
             logger.error(f"Ошибка при обработке чата {chat.get('id', 'unknown')}: {e}")
@@ -11352,7 +11372,7 @@ async def admin_broadcast_select_audience(update: Update, context: ContextTypes.
         f"• Сделать <b>жирный текст</b> - напишите &lt;b&gt;ваш текст&lt;/b&gt;\n"
         f"• Сделать <i>курсивный текст</i> - напишите &lt;i&gt;ваш текст&lt;/i&gt;\n\n"
         f"Пример:\n"
-        f"<code>⚠️ Завтра с 10:00 до 12:00 технические контенты.\n"
+        f"<code>⚠️ Завтра с 10:00 до 12:00 технические работы.\n"
         f"Бот может быть временно недоступен.\n"
         f"Подробнее: https://example.com</code>",
         parse_mode="HTML",
@@ -12641,7 +12661,7 @@ async def admin_export_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         elif export_type == "bids":
             bids = db.get_all_bids_for_export()
-            writer.writerow(["ID предложениа", "Кампани ID", "Блогер ID", "Цена", "Валюта", "Дней до готовности", "Статус", "Дата создания"])
+            writer.writerow(["ID предложения", "Кампания ID", "Блогер ID", "Цена", "Валюта", "Дней до готовности", "Статус", "Дата создания"])
             for offer in bids:
                 bid_dict = dict(offer)
                 created_at = bid_dict.get('created_at', '')
@@ -12662,7 +12682,7 @@ async def admin_export_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         elif export_type == "reviews":
             reviews = db.get_all_reviews_for_export()
-            writer.writerow(["ID отзыва", "Кампани ID", "От пользователя", "К пользователю", "Рейтинг", "Комментарий", "Дата"])
+            writer.writerow(["ID отзыва", "Кампания ID", "От пользователя", "К пользователю", "Рейтинг", "Комментарий", "Дата"])
             for review in reviews:
                 review_dict = dict(review)
                 created_at = review_dict.get('created_at', '')

@@ -25,3 +25,7 @@ venv/
 
 # Logs
 *.log
+
+# Sensitive files (tokens, credentials)
+InfluenceMarket.txt
+*token*.txt
