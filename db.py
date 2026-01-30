@@ -1871,6 +1871,101 @@ def update_client_field(user_id, field_name, new_value):
         return cursor.rowcount > 0
 
 
+def can_change_advertiser_name(user_id):
+    """
+    Проверяет, может ли рекламодатель изменить название страницы.
+    Ограничение: 1 раз в месяц.
+
+    Args:
+        user_id: ID пользователя
+
+    Returns:
+        tuple: (can_change: bool, days_remaining: int or None)
+    """
+    from datetime import datetime, timedelta
+
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        cursor.execute("""
+            SELECT last_name_change
+            FROM advertisers
+            WHERE user_id = ?
+        """, (user_id,))
+
+        row = cursor.fetchone()
+        if not row:
+            return (False, None)  # Профиль не найден
+
+        last_change = row['last_name_change'] if isinstance(row, dict) else row[0]
+
+        # Если ещё не менял - можно менять
+        if not last_change:
+            return (True, None)
+
+        # Парсим дату последнего изменения
+        if isinstance(last_change, str):
+            last_change_date = datetime.fromisoformat(last_change)
+        else:
+            last_change_date = last_change
+
+        # Проверяем прошёл ли месяц (30 дней)
+        now = datetime.now()
+        days_since_change = (now - last_change_date).days
+
+        if days_since_change >= 30:
+            return (True, None)
+        else:
+            days_remaining = 30 - days_since_change
+            return (False, days_remaining)
+
+
+def update_advertiser_name(user_id, new_name):
+    """
+    Обновляет название страницы рекламодателя с проверкой ограничения (1 раз в месяц).
+
+    Args:
+        user_id: ID пользователя
+        new_name: Новое название
+
+    Returns:
+        tuple: (success: bool, message: str)
+    """
+    from datetime import datetime
+
+    # Проверяем возможность изменения
+    can_change, days_remaining = can_change_advertiser_name(user_id)
+
+    if not can_change:
+        if days_remaining is not None:
+            return (False, f"Вы сможете изменить название через {days_remaining} дн.")
+        else:
+            return (False, "Профиль не найден.")
+
+    # Валидируем новое имя
+    try:
+        new_name = validate_string_length(new_name, MAX_NAME_LENGTH, "name")
+    except ValueError as e:
+        return (False, str(e))
+
+    # Обновляем имя и дату последнего изменения
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        now = datetime.now().isoformat()
+
+        cursor.execute("""
+            UPDATE advertisers
+            SET name = ?, last_name_change = ?
+            WHERE user_id = ?
+        """, (new_name, now, user_id))
+
+        conn.commit()
+
+        if cursor.rowcount > 0:
+            return (True, "Название страницы успешно изменено!")
+        else:
+            return (False, "Не удалось обновить название.")
+
+
 # --- Поиск мастеров ---
 
 def get_all_workers(city=None, category=None):
@@ -3004,6 +3099,43 @@ def migrate_add_videos_to_orders():
 
         except Exception as e:
             print(f"⚠️  Ошибка при добавлении поля videos в campaigns: {e}")
+            import traceback
+            traceback.print_exc()
+
+
+def migrate_add_name_change_tracking():
+    """
+    Добавляет поле last_name_change в таблицу advertisers для отслеживания
+    даты последнего изменения названия страницы (ограничение 1 раз в месяц).
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+
+        try:
+            if USE_POSTGRES:
+                cursor.execute("""
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM information_schema.columns
+                            WHERE table_name = 'advertisers' AND column_name = 'last_name_change'
+                        ) THEN
+                            ALTER TABLE advertisers ADD COLUMN last_name_change TIMESTAMP;
+                        END IF;
+                    END $$;
+                """)
+            else:
+                cursor.execute("PRAGMA table_info(advertisers)")
+                columns = [column[1] for column in cursor.fetchall()]
+
+                if 'last_name_change' not in columns:
+                    cursor.execute("ALTER TABLE advertisers ADD COLUMN last_name_change TEXT")
+
+            conn.commit()
+            print("✅ Name change tracking field migration for advertisers completed successfully!")
+
+        except Exception as e:
+            print(f"⚠️  Ошибка при добавлении поля last_name_change в advertisers: {e}")
             import traceback
             traceback.print_exc()
 

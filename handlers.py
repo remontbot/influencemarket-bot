@@ -331,7 +331,9 @@ def _get_bids_word(count):
     BROADCAST_ENTER_MESSAGE,
     ADMIN_BAN_REASON,
     ADMIN_SEARCH,
-) = range(46)
+    # Состояния для изменения названия страницы рекламодателя
+    EDIT_ADVERTISER_NAME,
+) = range(47)
 
 
 def is_valid_name(name: str) -> bool:
@@ -2483,6 +2485,7 @@ async def show_advertiser_menu(update: Update, context: ContextTypes.DEFAULT_TYP
         [InlineKeyboardButton("📝 Создать рекламную кампанию", callback_data="client_create_order")],
         [InlineKeyboardButton(orders_button_text, callback_data="client_my_orders")],
         # [InlineKeyboardButton("💳 Мои платежи", callback_data="client_my_payments")],  # Скрыто до внедрения платной версии
+        [InlineKeyboardButton("✏️ Изменить название страницы", callback_data="edit_advertiser_name")],
         [InlineKeyboardButton(f"{notification_status} Уведомления", callback_data="toggle_client_notifications")],
         [InlineKeyboardButton("💡 Предложения", callback_data="send_suggestion")],
         [InlineKeyboardButton(news_button_text, callback_data="show_news_and_ads")],  # НОВОЕ: Постоянная кнопка для рекламы с индикатором
@@ -2507,6 +2510,97 @@ async def show_advertiser_menu(update: Update, context: ContextTypes.DEFAULT_TYP
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
+
+
+async def start_edit_advertiser_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Начинает процесс изменения названия страницы рекламодателя"""
+    query = update.callback_query
+    await query.answer()
+
+    user = db.get_user_by_telegram_id(update.effective_user.id)
+    if not user:
+        await query.edit_message_text("❌ Пользователь не найден.")
+        return ConversationHandler.END
+
+    # Проверяем возможность изменения названия
+    can_change, days_remaining = db.can_change_advertiser_name(user['id'])
+
+    if not can_change:
+        keyboard = [[InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_client_menu")]]
+
+        if days_remaining is not None:
+            await query.edit_message_text(
+                f"⏳ <b>Изменение названия страницы</b>\n\n"
+                f"Вы уже меняли название страницы недавно.\n\n"
+                f"Вы сможете изменить название через <b>{days_remaining} дн.</b>\n\n"
+                f"Ограничение: 1 раз в месяц.",
+                parse_mode="HTML",
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+        else:
+            await query.edit_message_text(
+                "❌ Профиль не найден.",
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+        return ConversationHandler.END
+
+    # Получаем текущее название
+    client_profile = db.get_client_profile(user['id'])
+    current_name = client_profile.get('name', 'Не указано') if client_profile else 'Не указано'
+
+    keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="cancel")]]
+
+    await query.edit_message_text(
+        f"✏️ <b>Изменение названия страницы</b>\n\n"
+        f"Текущее название: <b>{current_name}</b>\n\n"
+        f"Введите новое название для вашей страницы.\n\n"
+        f"⚠️ Внимание: После изменения вы сможете изменить название снова только через 30 дней.",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+    return EDIT_ADVERTISER_NAME
+
+
+async def handle_new_advertiser_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обрабатывает новое название страницы рекламодателя"""
+    new_name = update.message.text.strip()
+
+    # Валидация имени
+    if not is_valid_name(new_name):
+        await update.message.reply_text(
+            "❌ Пожалуйста, укажите корректное название без ссылок и рекламы.\n"
+            "Пример: «Александр», «Иван Петров», «Компания XYZ».\n\n"
+            "Попробуйте снова или введите /cancel для отмены."
+        )
+        return EDIT_ADVERTISER_NAME
+
+    user = db.get_user_by_telegram_id(update.effective_user.id)
+    if not user:
+        await update.message.reply_text("❌ Пользователь не найден.")
+        return ConversationHandler.END
+
+    # Обновляем название
+    success, message = db.update_advertiser_name(user['id'], new_name)
+
+    keyboard = [[InlineKeyboardButton("💼 Вернуться в меню", callback_data="show_client_menu")]]
+
+    if success:
+        await update.message.reply_text(
+            f"✅ <b>{message}</b>\n\n"
+            f"Новое название: <b>{new_name}</b>\n\n"
+            f"Следующее изменение будет доступно через 30 дней.",
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+    else:
+        await update.message.reply_text(
+            f"❌ <b>Ошибка</b>\n\n{message}",
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+
+    return ConversationHandler.END
 
 
 async def advertiser_my_payments(update: Update, context: ContextTypes.DEFAULT_TYPE):

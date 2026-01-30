@@ -86,6 +86,7 @@ def main():
     db.migrate_add_moderation()  # Добавляем поля для модерации и банов
     db.migrate_add_regions_to_clients()  # Добавляем поле regions в таблицу clients (advertisers)
     db.migrate_add_videos_to_orders()  # Добавляем поле videos в таблицу orders (campaigns)
+    db.migrate_add_name_change_tracking()  # Добавляем отслеживание изменения имени рекламодателя (1 раз в месяц)
     db.migrate_add_chat_system()  # Создаём таблицы для чата между рекламодателем и блогером
     db.migrate_add_transactions()  # Создаём таблицу для истории транзакций
     db.migrate_add_notification_settings()  # Добавляем настройки уведомлений для блогеров
@@ -402,6 +403,26 @@ def main():
     )
 
     application.add_handler(offer_conv_handler)
+
+    # --- ConversationHandler для изменения названия рекламодателя ---
+
+    edit_advertiser_name_handler = ConversationHandler(
+        entry_points=[
+            CallbackQueryHandler(handlers.start_edit_advertiser_name, pattern="^edit_advertiser_name$")
+        ],
+        states={
+            handlers.EDIT_ADVERTISER_NAME: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.handle_new_advertiser_name),
+            ],
+        },
+        fallbacks=[
+            CallbackQueryHandler(handlers.cancel_from_callback, pattern="^cancel$"),
+            CommandHandler("cancel", handlers.cancel_from_command),
+        ],
+        allow_reentry=True,
+    )
+
+    application.add_handler(edit_advertiser_name_handler)
 
     # --- Обработчик "Мои кампании" (НЕ в ConversationHandler) ---
     application.add_handler(
