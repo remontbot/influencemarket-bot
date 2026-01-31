@@ -945,7 +945,7 @@ def main():
     application.add_handler(
         CallbackQueryHandler(
             handlers.offer_navigate,
-            pattern="^offer_(prev|next)$"
+            pattern="^bid_(prev|next)$"
         )
     )
 
