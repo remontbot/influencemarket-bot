@@ -1936,7 +1936,8 @@ async def blogger_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE
         # Показываем первые 5 кампаний
         keyboard = []
         for i, campaign in enumerate(all_orders[:5], 1):
-            orders_text += f"🟢 <b>Кампания #{campaign['id']}</b>\n"
+            advertiser_name = campaign.get('advertiser_name', 'Неизвестно')
+            orders_text += f"🟢 <b>{advertiser_name}</b>\n"
             orders_text += f"📍 Город: {campaign.get('city', 'Не указан')}\n"
             orders_text += f"📱 Категория: {campaign.get('category', 'Не указана')}\n"
 
@@ -1986,7 +1987,7 @@ async def blogger_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE
 
             # Добавляем кнопку для просмотра деталей
             keyboard.append([InlineKeyboardButton(
-                f"👁 Кампания #{campaign['id']} - Подробнее",
+                f"👁 {advertiser_name} - Подробнее",
                 callback_data=f"view_order_{campaign['id']}"
             )])
 
@@ -2147,17 +2148,18 @@ async def blogger_my_offers(update: Update, context: ContextTypes.DEFAULT_TYPE):
             campaign_dict = dict(campaign)
             category = campaign_dict.get('category', 'Без категории')
             description = campaign_dict.get('description', '')
+            advertiser_name = campaign_dict.get('advertiser_name', 'Неизвестно')
             if len(description) > 40:
                 description = description[:40] + "..."
 
-            text += f"{i}. <b>Кампания #{campaign_id}</b>\n"
+            text += f"{i}. <b>{advertiser_name}</b>\n"
             text += f"📱 {category}\n"
             text += f"📝 {description}\n"
             text += f"💰 Ваша цена: {offer['proposed_price']} {offer['currency']}\n"
 
             # Добавляем кнопку для просмотра кампания
             keyboard.append([InlineKeyboardButton(
-                f"📋 Кампания #{campaign_id}",
+                f"📋 {advertiser_name}",
                 callback_data=f"view_order_{campaign_id}"
             )])
 
@@ -7795,7 +7797,8 @@ async def blogger_view_campaign_details(update: Update, context: ContextTypes.DE
             is_own_order = (client_dict['user_id'] == user["id"])
 
         # Формируем текст
-        text = f"📋 <b>Кампания #{campaign_id}</b>\n\n"
+        advertiser_name = campaign_dict.get('advertiser_name', 'Неизвестно')
+        text = f"📋 <b>{advertiser_name}</b>\n\n"
         text += f"📍 <b>Город:</b> {campaign_dict.get('city', 'Не указан')}\n"
         text += f"📱 <b>Категория:</b> {campaign_dict.get('category', 'Не указана')}\n"
 
@@ -7945,11 +7948,12 @@ async def blogger_decline_campaign_confirm(update: Update, context: ContextTypes
             return
 
         campaign_dict = dict(campaign)
+        advertiser_name = campaign_dict.get('advertiser_name', 'Неизвестно')
 
         # Спрашиваем подтверждение
         text = (
             f"🚫 <b>Отказаться от кампания?</b>\n\n"
-            f"Кампания #{campaign_id} больше не будет отображаться в списке доступных заказов.\n\n"
+            f"Кампания от «{advertiser_name}» больше не будет отображаться в списке доступных заказов.\n\n"
             f"📍 <b>Город:</b> {campaign_dict.get('city', 'Не указан')}\n"
             f"📱 <b>Категория:</b> {campaign_dict.get('category', 'Не указана')}\n\n"
             f"Вы уверены, что хотите отказаться от этого кампания?"
@@ -7995,13 +7999,17 @@ async def blogger_decline_campaign_yes(update: Update, context: ContextTypes.DEF
 
         blogger_user_id = user["id"]
 
+        # Получаем информацию о кампании для отображения
+        campaign = db.get_order_by_id(campaign_id)
+        advertiser_name = dict(campaign).get('advertiser_name', 'Неизвестно') if campaign else 'Неизвестно'
+
         # Сохраняем отказ в БД
         success = db.decline_order(blogger_user_id, campaign_id)
 
         if success:
             text = (
                 f"✅ <b>Кампания скрыта</b>\n\n"
-                f"Кампания #{campaign_id} больше не будет отображаться в списке доступных заказов.\n\n"
+                f"Кампания от «{advertiser_name}» больше не будет отображаться в списке доступных заказов.\n\n"
                 f"Вы можете продолжить просмотр других заказов."
             )
         else:
@@ -8090,7 +8098,8 @@ async def blogger_campaign_photo_nav(update: Update, context: ContextTypes.DEFAU
             is_own_order = (client_dict['user_id'] == user["id"])
 
         # Формируем текст
-        text = f"📋 <b>Кампания #{campaign_id}</b>\n\n"
+        advertiser_name = campaign_dict.get('advertiser_name', 'Неизвестно')
+        text = f"📋 <b>{advertiser_name}</b>\n\n"
         text += f"📍 <b>Город:</b> {campaign_dict.get('city', 'Не указан')}\n"
         text += f"📱 <b>Категория:</b> {campaign_dict.get('category', 'Не указана')}\n"
 
@@ -8441,12 +8450,13 @@ async def blogger_offer_on_campaign(update: Update, context: ContextTypes.DEFAUL
     payment_type = campaign_dict.get('payment_type', 'paid')
     budget_type = campaign_dict.get('budget_type', 'none')
     budget_value = campaign_dict.get('budget_value', 0)
+    advertiser_name = campaign_dict.get('advertiser_name', 'Неизвестно')
 
     # НОВОЕ: Если выбраны оба варианта (оплата + бартер), блогер выбирает
     if payment_type == "both":
         text = (
             "💰🤝 <b>Выберите вариант оплаты</b>\n\n"
-            f"📋 <b>Кампания #{campaign_id}</b>\n\n"
+            f"📋 <b>{advertiser_name}</b>\n\n"
             "Рекламодатель готов рассмотреть два варианта:\n\n"
             f"💰 <b>Денежная оплата:</b> {int(budget_value)} BYN\n"
             "🤝 <b>Бартер:</b> взаимовыгодное сотрудничество\n\n"
@@ -8474,7 +8484,7 @@ async def blogger_offer_on_campaign(update: Update, context: ContextTypes.DEFAUL
 
         text = (
             "🤝 <b>Отклик на бартер</b>\n\n"
-            f"📋 <b>Кампания #{campaign_id}</b>\n"
+            f"📋 <b>{advertiser_name}</b>\n"
             f"💼 Бартерное сотрудничество\n\n"
             "📝 Хотите добавить комментарий к вашему отклику?\n\n"
             "💡 Расскажите о себе:\n"
@@ -8504,7 +8514,7 @@ async def blogger_offer_on_campaign(update: Update, context: ContextTypes.DEFAUL
 
         text = (
             "💰 <b>Отклик на кампанию</b>\n\n"
-            f"📋 <b>Кампания #{campaign_id}</b>\n"
+            f"📋 <b>{advertiser_name}</b>\n"
             f"💵 Бюджет: <b>{budget_value} BYN</b>\n\n"
             "✅ Вы соглашаетесь работать за указанную сумму.\n\n"
             "📝 Хотите добавить комментарий к вашему отклику?\n\n"
@@ -8531,7 +8541,7 @@ async def blogger_offer_on_campaign(update: Update, context: ContextTypes.DEFAUL
     else:  # payment_type == "blogger_offer"
         text = (
             "💰 <b>Ваше предложение по цене</b>\n\n"
-            f"📋 <b>Кампания #{campaign_id}</b>\n\n"
+            f"📋 <b>{advertiser_name}</b>\n\n"
             "Заказчик хочет, чтобы вы предложили свою цену за выполнение кампании.\n\n"
             "⚠️ <b>ВНИМАНИЕ:</b> Цену изменить будет НЕЛЬЗЯ!\n\n"
             "💵 Сначала выберите валюту, в которой будете указывать цену:"
@@ -8583,6 +8593,7 @@ async def blogger_offer_select_paid(update: Update, context: ContextTypes.DEFAUL
 
     campaign_dict = dict(campaign)
     budget_value = campaign_dict.get('budget_value', 0)
+    advertiser_name = campaign_dict.get('advertiser_name', 'Неизвестно')
 
     # Сохраняем параметры для создания отклика
     context.user_data['bid_price'] = budget_value
@@ -8592,7 +8603,7 @@ async def blogger_offer_select_paid(update: Update, context: ContextTypes.DEFAUL
 
     text = (
         "💰 <b>Отклик на кампанию</b>\n\n"
-        f"📋 <b>Кампания #{campaign_id}</b>\n"
+        f"📋 <b>{advertiser_name}</b>\n"
         f"💵 Оплата: <b>{int(budget_value)} BYN</b>\n\n"
         "✅ Вы выбрали работать за денежную оплату.\n\n"
         "📝 Хотите добавить комментарий к вашему отклику?\n\n"
@@ -8624,6 +8635,10 @@ async def blogger_offer_select_barter(update: Update, context: ContextTypes.DEFA
     # Извлекаем campaign_id из callback_data
     campaign_id = int(query.data.replace("offer_barter_", ""))
 
+    # Получаем информацию о кампании для отображения названия рекламодателя
+    campaign = db.get_order_by_id(campaign_id)
+    advertiser_name = dict(campaign).get('advertiser_name', 'Неизвестно') if campaign else 'Неизвестно'
+
     # Сохраняем параметры для создания отклика (бартер = цена 0)
     context.user_data['bid_price'] = 0
     context.user_data['bid_currency'] = 'BYN'
@@ -8632,7 +8647,7 @@ async def blogger_offer_select_barter(update: Update, context: ContextTypes.DEFA
 
     text = (
         "🤝 <b>Отклик на бартер</b>\n\n"
-        f"📋 <b>Кампания #{campaign_id}</b>\n"
+        f"📋 <b>{advertiser_name}</b>\n"
         "💼 Бартерное сотрудничество\n\n"
         "✅ Вы выбрали работать за бартер.\n\n"
         "📝 Хотите добавить комментарий к вашему отклику?\n\n"
