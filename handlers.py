@@ -6617,13 +6617,14 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
 
         photo_to_show = profile_photo if profile_photo else (portfolio_photos_list[0] if portfolio_photos_list else None)
 
-        if photo_to_show:
-            # Удаляем старое сообщение и отправляем новое с фото
-            try:
-                await query.message.delete()
-            except:
-                pass
+        # Всегда удаляем старое сообщение и отправляем новое
+        # (чтобы избежать ошибки при переключении между сообщениями с фото и без)
+        try:
+            await query.message.delete()
+        except:
+            pass
 
+        if photo_to_show:
             try:
                 await context.bot.send_photo(
                     chat_id=query.from_user.id,
@@ -6642,9 +6643,10 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
                     reply_markup=InlineKeyboardMarkup(keyboard)
                 )
         else:
-            # Нет фото - просто редактируем текст
-            await query.edit_message_text(
-                text,
+            # Нет фото - отправляем текстовое сообщение
+            await context.bot.send_message(
+                chat_id=query.from_user.id,
+                text=text,
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
