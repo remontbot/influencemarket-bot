@@ -712,6 +712,23 @@ def create_user(telegram_id, role):
         return user_id
 
 
+def update_user_role(user_id, new_role):
+    """
+    Обновляет роль пользователя.
+    Используется когда рекламодатель регистрируется как блогер (role -> 'both')
+    или блогер регистрируется как рекламодатель (role -> 'both').
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+        cursor.execute(
+            "UPDATE users SET role = ? WHERE id = ?",
+            (new_role, user_id),
+        )
+        conn.commit()
+        logger.info(f"✅ Роль пользователя {user_id} обновлена на '{new_role}'")
+        return True
+
+
 def delete_user_profile(telegram_id):
     """
     КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Удаляет ВСЕ профили пользователя (и мастер, и клиент).
