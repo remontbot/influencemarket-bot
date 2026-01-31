@@ -1936,7 +1936,8 @@ async def blogger_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE
         # Показываем первые 5 кампаний
         keyboard = []
         for i, campaign in enumerate(all_orders[:5], 1):
-            orders_text += f"🟢 <b>Кампания #{campaign['id']}</b>\n"
+            advertiser_name = campaign.get('advertiser_name', 'Неизвестно')
+            orders_text += f"🟢 <b>{advertiser_name}</b>\n"
             orders_text += f"📍 Город: {campaign.get('city', 'Не указан')}\n"
             orders_text += f"📱 Категория: {campaign.get('category', 'Не указана')}\n"
 
@@ -1986,7 +1987,7 @@ async def blogger_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE
 
             # Добавляем кнопку для просмотра деталей
             keyboard.append([InlineKeyboardButton(
-                f"👁 Кампания #{campaign['id']} - Подробнее",
+                f"👁 {advertiser_name} - Подробнее",
                 callback_data=f"view_order_{campaign['id']}"
             )])
 
@@ -2146,18 +2147,19 @@ async def blogger_my_offers(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if campaign:
             campaign_dict = dict(campaign)
             category = campaign_dict.get('category', 'Без категории')
+            advertiser_name = campaign_dict.get('advertiser_name', 'Неизвестно')
             description = campaign_dict.get('description', '')
             if len(description) > 40:
                 description = description[:40] + "..."
 
-            text += f"{i}. <b>Кампания #{campaign_id}</b>\n"
+            text += f"{i}. <b>{advertiser_name}</b>\n"
             text += f"📱 {category}\n"
             text += f"📝 {description}\n"
             text += f"💰 Ваша цена: {offer['proposed_price']} {offer['currency']}\n"
 
             # Добавляем кнопку для просмотра кампания
             keyboard.append([InlineKeyboardButton(
-                f"📋 Кампания #{campaign_id}",
+                f"📋 {advertiser_name}",
                 callback_data=f"view_order_{campaign_id}"
             )])
 
@@ -2303,6 +2305,7 @@ async def blogger_active_campaigns(update: Update, context: ContextTypes.DEFAULT
                         bid_dict['order_city'] = campaign_dict.get('city', 'Не указан')
                         bid_dict['order_category'] = campaign_dict.get('category', 'Без категории')
                         bid_dict['order_description'] = campaign_dict.get('description', '')
+                        bid_dict['advertiser_name'] = campaign_dict.get('advertiser_name', 'Неизвестно')
                         active_orders.append(bid_dict)
 
         if not active_orders:
@@ -2320,7 +2323,8 @@ async def blogger_active_campaigns(update: Update, context: ContextTypes.DEFAULT
         keyboard = []
 
         for i, campaign in enumerate(active_orders[:10], 1):
-            text += f"{i}. <b>Кампания #{campaign['campaign_id']}</b>\n"
+            advertiser_name = campaign.get('advertiser_name', 'Неизвестно')
+            text += f"{i}. <b>{advertiser_name}</b>\n"
             text += f"📱 {campaign.get('order_category', 'Без категории')}\n"
 
             description = campaign.get('order_description', '')
@@ -2334,13 +2338,13 @@ async def blogger_active_campaigns(update: Update, context: ContextTypes.DEFAULT
             if chat:
                 chat_dict = dict(chat)
                 keyboard.append([InlineKeyboardButton(
-                    f"💬 Чат (кампания #{campaign['campaign_id']})",
+                    f"💬 Чат ({advertiser_name})",
                     callback_data=f"open_chat_{chat_dict['id']}"
                 )])
 
             # Кнопка завершения
             keyboard.append([InlineKeyboardButton(
-                f"✅ Завершить кампаниюя #{campaign['campaign_id']}",
+                f"✅ Завершить ({advertiser_name})",
                 callback_data=f"complete_campaign_{campaign['campaign_id']}"
             )])
 
@@ -2389,6 +2393,7 @@ async def blogger_completed_campaigns(update: Update, context: ContextTypes.DEFA
                         bid_dict['order_city'] = campaign_dict.get('city', 'Не указан')
                         bid_dict['order_category'] = campaign_dict.get('category', 'Без категории')
                         bid_dict['order_description'] = campaign_dict.get('description', '')
+                        bid_dict['advertiser_name'] = campaign_dict.get('advertiser_name', 'Неизвестно')
                         completed_orders.append(bid_dict)
 
         if not completed_orders:
@@ -2408,8 +2413,9 @@ async def blogger_completed_campaigns(update: Update, context: ContextTypes.DEFA
         for i, campaign in enumerate(completed_orders[:10], 1):
             status_emoji = {"done": "✅", "completed": "✅", "canceled": "❌"}
             emoji = status_emoji.get(campaign.get('order_status', 'done'), "✅")
+            advertiser_name = campaign.get('advertiser_name', 'Неизвестно')
 
-            text += f"{i}. {emoji} <b>Кампания #{campaign['campaign_id']}</b>\n"
+            text += f"{i}. {emoji} <b>{advertiser_name}</b>\n"
             text += f"📱 {campaign.get('order_category', 'Без категории')}\n"
 
             description = campaign.get('order_description', '')
@@ -2423,7 +2429,7 @@ async def blogger_completed_campaigns(update: Update, context: ContextTypes.DEFA
             if chat:
                 chat_dict = dict(chat)
                 keyboard.append([InlineKeyboardButton(
-                    f"💬 Посмотреть чат (кампания #{campaign['campaign_id']})",
+                    f"💬 Посмотреть чат ({advertiser_name})",
                     callback_data=f"open_chat_{chat_dict['id']}"
                 )])
 
@@ -7692,7 +7698,8 @@ async def blogger_view_campaigns(update: Update, context: ContextTypes.DEFAULT_T
         # Показываем первые 5 заказов
         keyboard = []
         for i, campaign in enumerate(all_orders[:5], 1):
-            orders_text += f"🟢 <b>Кампания #{campaign['id']}</b>\n"
+            advertiser_name = campaign.get('advertiser_name', 'Неизвестно')
+            orders_text += f"🟢 <b>{advertiser_name}</b>\n"
             orders_text += f"📍 Город: {campaign.get('city', 'Не указан')}\n"
 
             # ИСПРАВЛЕНО: Показываем payment_type и budget для корректного отображения оплаты
@@ -7736,7 +7743,7 @@ async def blogger_view_campaigns(update: Update, context: ContextTypes.DEFAULT_T
             
             # Добавляем кнопку для просмотра деталей
             keyboard.append([InlineKeyboardButton(
-                f"👁 Кампания #{campaign['id']} - Подробнее", 
+                f"👁 {advertiser_name} - Подробнее",
                 callback_data=f"view_order_{campaign['id']}"
             )])
         
@@ -7795,7 +7802,8 @@ async def blogger_view_campaign_details(update: Update, context: ContextTypes.DE
             is_own_order = (client_dict['user_id'] == user["id"])
 
         # Формируем текст
-        text = f"📋 <b>Кампания #{campaign_id}</b>\n\n"
+        advertiser_name = campaign_dict.get('advertiser_name', 'Неизвестно')
+        text = f"📋 <b>{advertiser_name}</b>\n\n"
         text += f"📍 <b>Город:</b> {campaign_dict.get('city', 'Не указан')}\n"
         text += f"📱 <b>Категория:</b> {campaign_dict.get('category', 'Не указана')}\n"
 
@@ -8090,7 +8098,8 @@ async def blogger_campaign_photo_nav(update: Update, context: ContextTypes.DEFAU
             is_own_order = (client_dict['user_id'] == user["id"])
 
         # Формируем текст
-        text = f"📋 <b>Кампания #{campaign_id}</b>\n\n"
+        advertiser_name = campaign_dict.get('advertiser_name', 'Неизвестно')
+        text = f"📋 <b>{advertiser_name}</b>\n\n"
         text += f"📍 <b>Город:</b> {campaign_dict.get('city', 'Не указан')}\n"
         text += f"📱 <b>Категория:</b> {campaign_dict.get('category', 'Не указана')}\n"
 
