@@ -949,6 +949,13 @@ def main():
         )
     )
 
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.view_blogger_profile_from_offer,
+            pattern="^view_blogger_profile_"
+        )
+    )
+
     # --- Обработчики выбора блогера и оплаты ---
     application.add_handler(
         CallbackQueryHandler(
