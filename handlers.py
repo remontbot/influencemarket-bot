@@ -1264,7 +1264,17 @@ async def finalize_simple_blogger_registration(update: Update, context: ContextT
         existing_user = db.get_user(telegram_id)
         if existing_user:
             user_id = existing_user['id']
-            logger.info(f"Пользователь {telegram_id} уже существует")
+            current_role = existing_user.get('role', 'blogger')
+            logger.info(f"Пользователь {telegram_id} уже существует с ролью {current_role}")
+
+            # Если пользователь был рекламодателем - обновляем роль на 'both'
+            if current_role == 'advertiser':
+                db.update_user_role(user_id, 'both')
+                logger.info(f"Роль пользователя {telegram_id} обновлена на 'both'")
+            elif current_role == 'blogger':
+                # Уже блогер - ничего не делаем
+                pass
+            # Если 'both' - тоже ничего не делаем
         else:
             user_id = db.create_user(telegram_id, "blogger")
             logger.info(f"Создан новый пользователь {telegram_id} с ID: {user_id}")
@@ -1330,7 +1340,17 @@ async def finalize_simple_advertiser_registration(update: Update, context: Conte
         existing_user = db.get_user(telegram_id)
         if existing_user:
             user_id = existing_user['id']
-            logger.info(f"Пользователь {telegram_id} уже существует")
+            current_role = existing_user.get('role', 'advertiser')
+            logger.info(f"Пользователь {telegram_id} уже существует с ролью {current_role}")
+
+            # Если пользователь был блогером - обновляем роль на 'both'
+            if current_role == 'blogger':
+                db.update_user_role(user_id, 'both')
+                logger.info(f"Роль пользователя {telegram_id} обновлена на 'both'")
+            elif current_role == 'advertiser':
+                # Уже рекламодатель - ничего не делаем
+                pass
+            # Если 'both' - тоже ничего не делаем
         else:
             user_id = db.create_user(telegram_id, "advertiser")
             logger.info(f"Создан новый пользователь {telegram_id} с ID: {user_id}")
