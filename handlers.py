@@ -2731,8 +2731,8 @@ async def show_blogger_profile(update: Update, context: ContextTypes.DEFAULT_TYP
         role = user_dict.get("role")
         
         logger.info(f"Найден пользователь: id={user_id}, role={role}")
-        
-        if role != "blogger":
+
+        if role not in ["blogger", "both"]:
             logger.error(f"Пользователь не является мастером: role={role}")
             await query.edit_message_text(
                 "❌ Вы не зарегистрированы как блогер.\n\n"
@@ -10538,10 +10538,10 @@ async def show_reviews(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Определяем callback для кнопки "Назад"
             if is_own_profile:
                 # Если смотрим свой профиль - возврат в меню
-                back_callback = "show_worker_menu" if role == "blogger" else "show_client_menu"
+                back_callback = "show_worker_menu" if role in ["blogger", "both"] else "show_client_menu"
             else:
                 # Если смотрим чужой профиль - возврат в профиль
-                back_callback = "worker_profile" if role == "blogger" else "show_client_menu"
+                back_callback = "worker_profile" if role in ["blogger", "both"] else "show_client_menu"
 
             await safe_edit_message(
                 query,
@@ -10579,10 +10579,10 @@ async def show_reviews(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Определяем callback для кнопки "Назад"
         if is_own_profile:
             # Если смотрим свой профиль - возврат в меню
-            back_callback = "show_worker_menu" if role == "blogger" else "show_client_menu"
+            back_callback = "show_worker_menu" if role in ["blogger", "both"] else "show_client_menu"
         else:
             # Если смотрим чужой профиль - возврат в профиль
-            back_callback = "worker_profile" if role == "blogger" else "show_client_menu"
+            back_callback = "worker_profile" if role in ["blogger", "both"] else "show_client_menu"
 
         await safe_edit_message(
             query,
@@ -11357,8 +11357,8 @@ async def show_news_and_ads(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Определяем роль пользователя для правильной кнопки "Назад"
     role = user_dict.get('role', 'advertiser')
-    back_callback = "show_worker_menu" if role == 'blogger' else "show_client_menu"
-    back_text = "🔙 Назад в меню блогера" if role == 'blogger' else "🔙 Назад в меню"
+    back_callback = "show_worker_menu" if role in ['blogger', 'both'] else "show_client_menu"
+    back_text = "🔙 Назад в меню блогера" if role in ['blogger', 'both'] else "🔙 Назад в меню"
 
     # Получаем ВСЕ активные рекламы для баннера в меню с фильтрацией по роли
     ads = db.get_active_ads('menu_banner', user_id=user_dict['id'], user_role=role)

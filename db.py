@@ -774,8 +774,8 @@ def delete_user_profile(telegram_id):
                 cursor.execute("DELETE FROM offers WHERE blogger_id = ?", (blogger_id,))
                 logger.info(f"✅ Удалены отклики мастера")
 
-                # 5. Удаляем настройки уведомлений
-                cursor.execute("DELETE FROM blogger_notifications WHERE blogger_id = ?", (blogger_id,))
+                # 5. Удаляем настройки уведомлений (используется user_id, не blogger_id)
+                cursor.execute("DELETE FROM blogger_notifications WHERE user_id = ?", (user_id,))
                 logger.info(f"✅ Удалены настройки уведомлений")
 
                 # 6. Удаляем профиль мастера
