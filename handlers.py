@@ -6595,6 +6595,12 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
             callback_data=f"select_blogger_{offer['id']}"
         )])
 
+        # Кнопка просмотра профиля блогера
+        keyboard.append([InlineKeyboardButton(
+            "👤 Посмотреть профиль блогера",
+            callback_data=f"view_blogger_profile_{offer['worker_id']}"
+        )])
+
         # Кнопка просмотра всех контент (если есть фото)
         portfolio_photos = offer.get('worker_portfolio_photos', '')
         if portfolio_photos:
@@ -6684,6 +6690,101 @@ async def offer_navigate(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     except Exception as e:
         logger.error(f"Ошибка в bid_navigate: {e}", exc_info=True)
+
+
+async def view_blogger_profile_from_offer(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Просмотр профиля блогера из карточки отклика"""
+    query = update.callback_query
+    await query.answer()
+
+    try:
+        # Извлекаем blogger_id из callback_data
+        blogger_id = int(query.data.replace("view_blogger_profile_", ""))
+
+        # Получаем профиль блогера
+        blogger = db.get_worker_by_id(blogger_id)
+        if not blogger:
+            await query.answer("❌ Профиль блогера не найден", show_alert=True)
+            return
+
+        blogger_dict = dict(blogger)
+
+        # Формируем текст профиля
+        name = blogger_dict.get("name", "—")
+        city = blogger_dict.get("city", "—")
+        categories = blogger_dict.get("categories", "—")
+        experience = blogger_dict.get("experience", "—")
+        description = blogger_dict.get("description", "—")
+        rating = blogger_dict.get("rating", 0)
+        rating_count = blogger_dict.get("rating_count", 0)
+
+        text = f"👤 <b>Профиль блогера</b>\n\n"
+        text += f"<b>{name}</b>\n\n"
+
+        # Рейтинг
+        if rating > 0:
+            stars = "⭐" * int(rating)
+            text += f"{stars} {rating:.1f} ({rating_count} отзывов)\n\n"
+        else:
+            text += "⭐ Новый блогер (пока нет отзывов)\n\n"
+
+        if city and city != "—":
+            text += f"📍 <b>Город:</b> {city}\n"
+        if categories and categories != "—":
+            text += f"📱 <b>Тематика:</b> {categories}\n"
+        if experience and experience != "—":
+            text += f"📅 <b>Опыт:</b> {experience}\n"
+
+        text += "\n"
+
+        if description and description != "—":
+            text += f"📝 <b>О себе:</b>\n{description}\n\n"
+
+        # Социальные сети
+        social_links = []
+        if blogger_dict.get("instagram_link"):
+            social_links.append(f"📸 Instagram: {blogger_dict['instagram_link']}")
+        if blogger_dict.get("youtube_link"):
+            social_links.append(f"🎬 YouTube: {blogger_dict['youtube_link']}")
+        if blogger_dict.get("tiktok_link"):
+            social_links.append(f"🎵 TikTok: {blogger_dict['tiktok_link']}")
+        if blogger_dict.get("telegram_link"):
+            social_links.append(f"✈️ Telegram: {blogger_dict['telegram_link']}")
+
+        if social_links:
+            text += "<b>Социальные сети:</b>\n"
+            text += "\n".join(social_links) + "\n"
+
+        # Кнопки
+        keyboard = [
+            [InlineKeyboardButton("⬅️ Назад к отклику", callback_data="back_to_offer_card")]
+        ]
+
+        # Показываем с фото профиля, если есть
+        profile_photo = blogger_dict.get("profile_photo", "")
+
+        if profile_photo:
+            try:
+                await query.message.delete()
+            except:
+                pass
+            await context.bot.send_photo(
+                chat_id=query.from_user.id,
+                photo=profile_photo,
+                caption=text,
+                parse_mode="HTML",
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+        else:
+            await query.edit_message_text(
+                text,
+                parse_mode="HTML",
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+
+    except Exception as e:
+        logger.error(f"Ошибка в view_blogger_profile_from_offer: {e}", exc_info=True)
+        await query.answer("❌ Ошибка при загрузке профиля", show_alert=True)
 
 
 async def back_to_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
