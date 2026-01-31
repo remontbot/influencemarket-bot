@@ -6393,7 +6393,7 @@ async def view_campaign_offers(update: Update, context: ContextTypes.DEFAULT_TYP
         elif sort_order == 'price_high':
             bids_list.sort(key=lambda x: x.get('proposed_price', 0), reverse=True)
         elif sort_order == 'rating':
-            bids_list.sort(key=lambda x: x.get('worker_rating', 0), reverse=True)
+            bids_list.sort(key=lambda x: x.get('blogger_rating', 0), reverse=True)
         elif sort_order == 'timeline':
             bids_list.sort(key=lambda x: x.get('ready_in_days', 999))
 
@@ -6467,8 +6467,8 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
         text += f"👤 <b>{offer['blogger_name']}</b>\n"
 
         # Рейтинг
-        rating = offer.get('worker_rating', 0)
-        rating_count = offer.get('worker_rating_count', 0)
+        rating = offer.get('blogger_rating', 0)
+        rating_count = offer.get('blogger_rating_count', 0)
         if rating > 0:
             stars = "⭐" * int(rating)
             text += f"{stars} {rating:.1f} ({rating_count} отзывов)\n"
@@ -6476,22 +6476,22 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
             text += "⭐ Новый блогер (пока нет отзывов)\n"
 
         # Проверенные отзывы
-        verified_reviews = offer.get('worker_verified_reviews', 0)
+        verified_reviews = offer.get('blogger_verified_reviews', 0)
         if verified_reviews > 0:
             text += f"✅ {verified_reviews} проверенных отзывов\n"
 
         # Опыт
-        experience = offer.get('worker_experience', '')
+        experience = offer.get('blogger_experience', '')
         if experience:
             text += f"📅 Опыт: {experience}\n"
 
         # Город
-        city = offer.get('worker_city', '')
+        city = offer.get('blogger_city', '')
         if city:
             text += f"📍 Город: {city}\n"
 
         # Категории
-        categories = offer.get('worker_categories', '')
+        categories = offer.get('blogger_categories', '')
         if categories:
             text += f"📱 Услуги: {categories}\n"
 
@@ -6538,7 +6538,7 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
             text += f"💬 <b>Комментарий блогера:</b>\n{comment}\n\n"
 
         # Описание блогера
-        description = offer.get('worker_description', '')
+        description = offer.get('blogger_description', '')
         if description:
             if len(description) > 200:
                 description = description[:200] + "..."
@@ -6598,21 +6598,21 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
         # Кнопка просмотра профиля блогера
         keyboard.append([InlineKeyboardButton(
             "👤 Посмотреть профиль блогера",
-            callback_data=f"view_blogger_profile_{offer['worker_id']}"
+            callback_data=f"view_blogger_profile_{offer['blogger_id']}"
         )])
 
         # Кнопка просмотра всех контент (если есть фото)
-        portfolio_photos = offer.get('worker_portfolio_photos', '')
+        portfolio_photos = offer.get('blogger_portfolio_photos', '')
         if portfolio_photos:
             keyboard.append([InlineKeyboardButton(
                 "📸 Посмотреть портфолио блогера",
-                callback_data=f"view_blogger_portfolio_{offer['worker_id']}"
+                callback_data=f"view_blogger_portfolio_{offer['blogger_id']}"
             )])
 
         keyboard.append([InlineKeyboardButton("⬅️ К моим заказам", callback_data="client_my_orders")])
 
         # Отправляем с фото профиля блогера, если есть
-        profile_photo = offer.get('worker_profile_photo', '')
+        profile_photo = offer.get('blogger_profile_photo', '')
         portfolio_photos_list = [p.strip() for p in portfolio_photos.split(',') if p.strip()] if portfolio_photos else []
 
         photo_to_show = profile_photo if profile_photo else (portfolio_photos_list[0] if portfolio_photos_list else None)
