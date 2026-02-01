@@ -1785,7 +1785,11 @@ def update_worker_field(user_id, field_name, new_value):
         "youtube_link": "youtube_link",
         "tiktok_link": "tiktok_link",
         "telegram_link": "telegram_link",
-        "threads_link": "threads_link"
+        "threads_link": "threads_link",
+        "instagram_followers": "instagram_followers",
+        "tiktok_followers": "tiktok_followers",
+        "youtube_followers": "youtube_followers",
+        "telegram_followers": "telegram_followers"
     }
 
     if field_name not in allowed_fields:
