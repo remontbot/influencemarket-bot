@@ -305,6 +305,8 @@ def _get_bids_word(count):
     EDIT_CATEGORIES_SELECT,
     EDIT_SOCIAL_MEDIA,
     EDIT_SOCIAL_MEDIA_INPUT,
+    EDIT_FOLLOWERS,
+    EDIT_FOLLOWERS_INPUT,
     EDIT_DESCRIPTION,
     ADD_PHOTOS_MENU,
     ADD_PHOTOS_UPLOAD,
@@ -333,7 +335,7 @@ def _get_bids_word(count):
     ADMIN_SEARCH,
     # Состояния для изменения названия страницы рекламодателя
     EDIT_ADVERTISER_NAME,
-) = range(47)
+) = range(49)
 
 
 def is_valid_name(name: str) -> bool:
@@ -2775,6 +2777,12 @@ async def show_blogger_profile(update: Update, context: ContextTypes.DEFAULT_TYP
         telegram = profile_dict.get("telegram_link") or ""
         threads = profile_dict.get("threads_link") or ""
 
+        # Подписчики
+        instagram_followers = profile_dict.get("instagram_followers") or 0
+        tiktok_followers = profile_dict.get("tiktok_followers") or 0
+        youtube_followers = profile_dict.get("youtube_followers") or 0
+        telegram_followers = profile_dict.get("telegram_followers") or 0
+
         # Подсчёт фотографий
         photos_count = len(portfolio_photos.split(",")) if portfolio_photos else 0
 
@@ -2799,16 +2807,20 @@ async def show_blogger_profile(update: Update, context: ContextTypes.DEFAULT_TYP
         else:
             status_banner = "✅ <b>Ваш профиль активен</b>\n\n"
 
-        # Формируем список социальных сетей
+        # Формируем список социальных сетей с подписчиками
         social_media_list = []
         if instagram:
-            social_media_list.append(f"📸 Instagram: {instagram}")
+            followers_str = f" ({format_followers_count(instagram_followers)})" if instagram_followers else ""
+            social_media_list.append(f"📸 Instagram{followers_str}: {instagram}")
         if youtube:
-            social_media_list.append(f"📺 YouTube: {youtube}")
+            followers_str = f" ({format_followers_count(youtube_followers)})" if youtube_followers else ""
+            social_media_list.append(f"📺 YouTube{followers_str}: {youtube}")
         if tiktok:
-            social_media_list.append(f"🎵 TikTok: {tiktok}")
+            followers_str = f" ({format_followers_count(tiktok_followers)})" if tiktok_followers else ""
+            social_media_list.append(f"🎵 TikTok{followers_str}: {tiktok}")
         if telegram:
-            social_media_list.append(f"✈️ Telegram: {telegram}")
+            followers_str = f" ({format_followers_count(telegram_followers)})" if telegram_followers else ""
+            social_media_list.append(f"✈️ Telegram{followers_str}: {telegram}")
         if threads:
             social_media_list.append(f"🧵 Threads: {threads}")
 
@@ -3908,6 +3920,7 @@ async def show_edit_profile_menu(update: Update, context: ContextTypes.DEFAULT_T
         [InlineKeyboardButton("🏙 Изменить город", callback_data="edit_city")],
         [InlineKeyboardButton("📱 Изменить виды контент", callback_data="edit_categories")],
         [InlineKeyboardButton("🌐 Социальные сети", callback_data="edit_social_media")],
+        [InlineKeyboardButton("📊 Подписчики", callback_data="edit_followers")],
         [InlineKeyboardButton("📝 Изменить описание", callback_data="edit_description")],
         [InlineKeyboardButton("⬅️ Назад к профилю", callback_data="worker_profile")],
     ]
@@ -4674,6 +4687,129 @@ async def edit_social_media_save(update: Update, context: ContextTypes.DEFAULT_T
 
     await update.message.reply_text(
         f"✅ Ссылка успешно сохранена!",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+        parse_mode="HTML",
+    )
+    return ConversationHandler.END
+
+
+def format_followers_count(count: int) -> str:
+    """Форматирует количество подписчиков для отображения"""
+    if count == 0:
+        return "Не указано"
+    elif count >= 1000000:
+        return f"{count / 1000000:.1f}M"
+    elif count >= 1000:
+        return f"{count / 1000:.1f}K"
+    else:
+        return str(count)
+
+
+async def edit_followers_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Показывает меню редактирования количества подписчиков"""
+    query = update.callback_query
+    await query.answer()
+
+    telegram_id = query.from_user.id
+    user = db.get_user(telegram_id)
+    user_dict = dict(user)
+    user_id = user_dict.get("id")
+
+    worker_profile = db.get_worker_profile(user_id)
+    profile_dict = dict(worker_profile)
+
+    instagram_followers = profile_dict.get("instagram_followers") or 0
+    tiktok_followers = profile_dict.get("tiktok_followers") or 0
+    youtube_followers = profile_dict.get("youtube_followers") or 0
+    telegram_followers = profile_dict.get("telegram_followers") or 0
+
+    keyboard = [
+        [InlineKeyboardButton(f"📸 Instagram: {format_followers_count(instagram_followers)}", callback_data="edit_fl_instagram")],
+        [InlineKeyboardButton(f"🎵 TikTok: {format_followers_count(tiktok_followers)}", callback_data="edit_fl_tiktok")],
+        [InlineKeyboardButton(f"📺 YouTube: {format_followers_count(youtube_followers)}", callback_data="edit_fl_youtube")],
+        [InlineKeyboardButton(f"✈️ Telegram: {format_followers_count(telegram_followers)}", callback_data="edit_fl_telegram")],
+        [InlineKeyboardButton("⬅️ Назад", callback_data="edit_profile_menu")],
+    ]
+
+    await query.edit_message_text(
+        "📊 <b>Подписчики</b>\n\n"
+        "Укажите количество подписчиков по каждой социальной сети.\n"
+        "Это поможет рекламодателям оценить ваш охват.\n\n"
+        "Выберите платформу для редактирования:",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+    )
+    return EDIT_FOLLOWERS
+
+
+async def edit_followers_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка выбора платформы для редактирования подписчиков"""
+    query = update.callback_query
+    await query.answer()
+
+    platform_map = {
+        "edit_fl_instagram": ("instagram_followers", "Instagram", "📸"),
+        "edit_fl_tiktok": ("tiktok_followers", "TikTok", "🎵"),
+        "edit_fl_youtube": ("youtube_followers", "YouTube", "📺"),
+        "edit_fl_telegram": ("telegram_followers", "Telegram", "✈️"),
+    }
+
+    if query.data not in platform_map:
+        return EDIT_FOLLOWERS
+
+    field_name, platform_name, emoji = platform_map[query.data]
+    context.user_data["editing_followers_platform"] = field_name
+    context.user_data["editing_followers_platform_name"] = platform_name
+
+    await query.edit_message_text(
+        f"{emoji} <b>Подписчики в {platform_name}</b>\n\n"
+        f"Введите количество подписчиков (только число):\n"
+        f"Например: 15000, 1500000\n\n"
+        f"Или отправьте /cancel для отмены",
+        parse_mode="HTML",
+    )
+    return EDIT_FOLLOWERS_INPUT
+
+
+async def edit_followers_save(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Сохранение количества подписчиков"""
+    text = update.message.text.strip()
+
+    # Убираем возможные пробелы и разделители тысяч
+    text = text.replace(" ", "").replace(",", "").replace(".", "")
+
+    try:
+        followers_count = int(text)
+        if followers_count < 0:
+            raise ValueError("Negative number")
+    except ValueError:
+        await update.message.reply_text(
+            "❌ Введите корректное число (без букв и символов).\n"
+            "Например: 15000\n\n"
+            "Попробуйте ещё раз или /cancel для отмены"
+        )
+        return EDIT_FOLLOWERS_INPUT
+
+    telegram_id = update.effective_user.id
+    user = db.get_user(telegram_id)
+    user_dict = dict(user)
+    user_id = user_dict.get("id")
+
+    field_name = context.user_data.get("editing_followers_platform")
+    platform_name = context.user_data.get("editing_followers_platform_name", "")
+
+    if not field_name:
+        await update.message.reply_text("❌ Ошибка: не выбрана платформа")
+        return ConversationHandler.END
+
+    # Сохраняем количество подписчиков
+    db.update_worker_field(user_id, field_name, followers_count)
+
+    keyboard = [[InlineKeyboardButton("📊 К списку подписчиков", callback_data="edit_followers")],
+                [InlineKeyboardButton("👤 Вернуться к профилю", callback_data="worker_profile")]]
+
+    await update.message.reply_text(
+        f"✅ Количество подписчиков в {platform_name} обновлено: <b>{format_followers_count(followers_count)}</b>",
         reply_markup=InlineKeyboardMarkup(keyboard),
         parse_mode="HTML",
     )
@@ -6462,40 +6598,37 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
         offer = bids[current_index]
 
         # Формируем текст карточки блогера
-        text = f"💼 <b>Предложени {current_index + 1} из {len(bids)}</b>\n\n"
+        text = f"💼 <b>Предложение {current_index + 1} из {len(bids)}</b>\n\n"
 
         text += f"👤 <b>{offer['blogger_name']}</b>\n"
-
-        # Рейтинг
-        rating = offer.get('blogger_rating', 0)
-        rating_count = offer.get('blogger_rating_count', 0)
-        if rating > 0:
-            stars = "⭐" * int(rating)
-            text += f"{stars} {rating:.1f} ({rating_count} отзывов)\n"
-        else:
-            text += "⭐ Новый блогер (пока нет отзывов)\n"
-
-        # Проверенные отзывы
-        verified_reviews = offer.get('blogger_verified_reviews', 0)
-        if verified_reviews > 0:
-            text += f"✅ {verified_reviews} проверенных отзывов\n"
-
-        # Опыт
-        experience = offer.get('blogger_experience', '')
-        if experience:
-            text += f"📅 Опыт: {experience}\n"
 
         # Город
         city = offer.get('blogger_city', '')
         if city:
-            text += f"📍 Город: {city}\n"
-
-        # Категории
-        categories = offer.get('blogger_categories', '')
-        if categories:
-            text += f"📱 Услуги: {categories}\n"
+            text += f"📍 {city}\n"
 
         text += "\n"
+
+        # Подписчики по соцсетям
+        instagram_followers = offer.get('blogger_instagram_followers', 0) or 0
+        tiktok_followers = offer.get('blogger_tiktok_followers', 0) or 0
+        youtube_followers = offer.get('blogger_youtube_followers', 0) or 0
+        telegram_followers = offer.get('blogger_telegram_followers', 0) or 0
+
+        followers_list = []
+        if instagram_followers > 0:
+            followers_list.append(f"📸 Instagram: {format_followers_count(instagram_followers)}")
+        if tiktok_followers > 0:
+            followers_list.append(f"🎵 TikTok: {format_followers_count(tiktok_followers)}")
+        if youtube_followers > 0:
+            followers_list.append(f"📺 YouTube: {format_followers_count(youtube_followers)}")
+        if telegram_followers > 0:
+            followers_list.append(f"✈️ Telegram: {format_followers_count(telegram_followers)}")
+
+        if followers_list:
+            text += "<b>Подписчики:</b>\n"
+            text += "\n".join(followers_list)
+            text += "\n\n"
 
         # Предложенная цена (с учетом типа бюджета кампании)
         price = offer.get('proposed_price', 0)
@@ -6504,47 +6637,19 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
         campaign_budget_value = offer.get('campaign_budget_value', 0)
 
         if campaign_budget_type == 'barter':
-            text += f"💰 <b>Блогер согласился работать за бартер</b>\n"
+            text += f"💰 <b>Согласился работать за бартер</b>\n"
         elif campaign_budget_type == 'fixed' and campaign_budget_value:
-            text += f"💰 <b>Блогер согласился работать за фиксированную сумму {int(campaign_budget_value)} {currency}</b>\n"
+            text += f"💰 <b>Согласился работать за {int(campaign_budget_value)} {currency}</b>\n"
         else:
             # Блогер сам предлагает цену (flexible или без типа)
-            text += f"💰 <b>Блогер предложил {int(price)} {currency}</b>\n"
+            text += f"💰 <b>Предложил {int(price)} {currency}</b>\n"
 
-        # Срок готовности (больше не используется)
-        # ready_in_days = offer.get('ready_in_days', None)
-        # if ready_in_days is not None:
-        #     if ready_in_days == 0:
-        #         ready_text = "Сегодня"
-        #     elif ready_in_days == 1:
-        #         ready_text = "Завтра"
-        #     elif ready_in_days == 3:
-        #         ready_text = "Через 3 дня"
-        #     elif ready_in_days == 7:
-        #         ready_text = "Через неделю"
-        #     elif ready_in_days == 14:
-        #         ready_text = "Через 2 недели"
-        #     elif ready_in_days == 30:
-        #         ready_text = "Через месяц"
-        #     else:
-        #         ready_text = f"Через {ready_in_days} дн."
-        #     text += f"⏱ <b>Готов приступить:</b> {ready_text}\n"
-
-        text += "\n"
-
-        # Комментарий к предложениу
+        # Комментарий к предложению
         comment = offer.get('comment', '')
         if comment:
-            text += f"💬 <b>Комментарий блогера:</b>\n{comment}\n\n"
+            text += f"\n💬 <b>Комментарий:</b>\n{comment}\n"
 
-        # Описание блогера
-        description = offer.get('blogger_description', '')
-        if description:
-            if len(description) > 200:
-                description = description[:200] + "..."
-            text += f"📝 <b>О блогере:</b>\n{description}\n\n"
-
-        text += "💡 <i>Выберите этого блогера, чтобы получить доступ к его контактам</i>"
+        text += "\n💡 <i>Выберите этого блогера, чтобы получить доступ к его контактам</i>"
 
         # Кнопки навигации и действий
         keyboard = []
