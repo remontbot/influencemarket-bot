@@ -356,6 +356,7 @@ def main():
             ],
             handlers.EDIT_FOLLOWERS: [
                 CallbackQueryHandler(handlers.edit_followers_select, pattern="^edit_fl_"),
+                CallbackQueryHandler(handlers.show_edit_profile_menu, pattern="^edit_profile_menu$"),
             ],
             handlers.EDIT_FOLLOWERS_INPUT: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.edit_followers_save),
