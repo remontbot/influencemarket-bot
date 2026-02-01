@@ -103,6 +103,7 @@ def main():
     db.migrate_add_blogger_stats()  # Создаём таблицу статистики блогеров
     db.migrate_add_campaign_reports()  # Создаём таблицу отчётов о кампаниях
     db.migrate_add_campaign_fields()  # Добавляем поля для кампаний (бюджет, требования)
+    db.migrate_add_blogger_followers()  # Добавляем поля подписчиков блогеров по соцсетям
 
     db.create_indexes()  # Создаем индексы для оптимизации производительности
 
@@ -331,6 +332,7 @@ def main():
                 CallbackQueryHandler(handlers.edit_city_start, pattern="^edit_city$"),
                 CallbackQueryHandler(handlers.edit_categories_start, pattern="^edit_categories$"),
                 CallbackQueryHandler(handlers.edit_social_media_start, pattern="^edit_social_media$"),
+                CallbackQueryHandler(handlers.edit_followers_start, pattern="^edit_followers$"),
                 CallbackQueryHandler(handlers.edit_description_start, pattern="^edit_description$"),
             ],
             handlers.EDIT_NAME: [
@@ -351,6 +353,12 @@ def main():
             ],
             handlers.EDIT_SOCIAL_MEDIA_INPUT: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.edit_social_media_save),
+            ],
+            handlers.EDIT_FOLLOWERS: [
+                CallbackQueryHandler(handlers.edit_followers_select, pattern="^edit_fl_"),
+            ],
+            handlers.EDIT_FOLLOWERS_INPUT: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.edit_followers_save),
             ],
             handlers.EDIT_DESCRIPTION: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.edit_description_save),

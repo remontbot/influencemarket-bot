@@ -4558,6 +4558,10 @@ def get_bids_for_order(campaign_id):
                 w.city as blogger_city,
                 w.categories as blogger_categories,
                 w.verified_reviews as blogger_verified_reviews,
+                w.instagram_followers as blogger_instagram_followers,
+                w.tiktok_followers as blogger_tiktok_followers,
+                w.youtube_followers as blogger_youtube_followers,
+                w.telegram_followers as blogger_telegram_followers,
                 u.telegram_id as blogger_telegram_id,
                 c.budget_type as campaign_budget_type,
                 c.budget_value as campaign_budget_value
@@ -7177,6 +7181,68 @@ def migrate_add_campaign_fields():
 
         except Exception as e:
             logger.error(f"⚠️ Error in migrate_add_campaign_fields: {e}")
+            conn.rollback()
+
+
+def migrate_add_blogger_followers():
+    """
+    Добавляет поля для количества подписчиков блогеров по соцсетям.
+    Новые поля:
+    - instagram_followers, tiktok_followers, youtube_followers, telegram_followers
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+
+        try:
+            if USE_POSTGRES:
+                logger.info("📝 Добавление полей подписчиков для PostgreSQL...")
+
+                fields = [
+                    ("instagram_followers", "INTEGER DEFAULT 0"),
+                    ("tiktok_followers", "INTEGER DEFAULT 0"),
+                    ("youtube_followers", "INTEGER DEFAULT 0"),
+                    ("telegram_followers", "INTEGER DEFAULT 0"),
+                ]
+
+                for field_name, field_type in fields:
+                    cursor.execute(f"""
+                        DO $$
+                        BEGIN
+                            IF NOT EXISTS (
+                                SELECT 1 FROM information_schema.columns
+                                WHERE table_name = 'bloggers' AND column_name = '{field_name}'
+                            ) THEN
+                                ALTER TABLE bloggers ADD COLUMN {field_name} {field_type};
+                            END IF;
+                        END $$;
+                    """)
+
+                conn.commit()
+                logger.info("✅ Поля подписчиков успешно добавлены!")
+
+            else:
+                # Для SQLite
+                cursor.execute("PRAGMA table_info(bloggers)")
+                existing_columns = [column[1] for column in cursor.fetchall()]
+
+                fields = [
+                    ("instagram_followers", "INTEGER DEFAULT 0"),
+                    ("tiktok_followers", "INTEGER DEFAULT 0"),
+                    ("youtube_followers", "INTEGER DEFAULT 0"),
+                    ("telegram_followers", "INTEGER DEFAULT 0"),
+                ]
+
+                added_count = 0
+                for field_name, field_type in fields:
+                    if field_name not in existing_columns:
+                        cursor.execute(f"ALTER TABLE bloggers ADD COLUMN {field_name} {field_type}")
+                        added_count += 1
+
+                conn.commit()
+                logger.info(f"✅ Добавлено {added_count} полей подписчиков!")
+
+        except Exception as e:
+            logger.error(f"⚠️ Error in migrate_add_blogger_followers: {e}")
             conn.rollback()
 
 
