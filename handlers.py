@@ -6609,25 +6609,38 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
 
         text += "\n"
 
-        # Подписчики по соцсетям
+        # Подписчики и ссылки на соцсети
         instagram_followers = offer.get('blogger_instagram_followers', 0) or 0
         tiktok_followers = offer.get('blogger_tiktok_followers', 0) or 0
         youtube_followers = offer.get('blogger_youtube_followers', 0) or 0
         telegram_followers = offer.get('blogger_telegram_followers', 0) or 0
 
-        followers_list = []
-        if instagram_followers > 0:
-            followers_list.append(f"📸 Instagram: {format_followers_count(instagram_followers)}")
-        if tiktok_followers > 0:
-            followers_list.append(f"🎵 TikTok: {format_followers_count(tiktok_followers)}")
-        if youtube_followers > 0:
-            followers_list.append(f"📺 YouTube: {format_followers_count(youtube_followers)}")
-        if telegram_followers > 0:
-            followers_list.append(f"✈️ Telegram: {format_followers_count(telegram_followers)}")
+        instagram_link = offer.get('blogger_instagram_link', '') or ''
+        tiktok_link = offer.get('blogger_tiktok_link', '') or ''
+        youtube_link = offer.get('blogger_youtube_link', '') or ''
+        telegram_link = offer.get('blogger_telegram_link', '') or ''
 
-        if followers_list:
-            text += "<b>Подписчики:</b>\n"
-            text += "\n".join(followers_list)
+        social_list = []
+        if instagram_link or instagram_followers > 0:
+            followers_str = f" ({format_followers_count(instagram_followers)})" if instagram_followers > 0 else ""
+            link_str = f": {instagram_link}" if instagram_link else ""
+            social_list.append(f"📸 Instagram{followers_str}{link_str}")
+        if tiktok_link or tiktok_followers > 0:
+            followers_str = f" ({format_followers_count(tiktok_followers)})" if tiktok_followers > 0 else ""
+            link_str = f": {tiktok_link}" if tiktok_link else ""
+            social_list.append(f"🎵 TikTok{followers_str}{link_str}")
+        if youtube_link or youtube_followers > 0:
+            followers_str = f" ({format_followers_count(youtube_followers)})" if youtube_followers > 0 else ""
+            link_str = f": {youtube_link}" if youtube_link else ""
+            social_list.append(f"📺 YouTube{followers_str}{link_str}")
+        if telegram_link or telegram_followers > 0:
+            followers_str = f" ({format_followers_count(telegram_followers)})" if telegram_followers > 0 else ""
+            link_str = f": {telegram_link}" if telegram_link else ""
+            social_list.append(f"✈️ Telegram{followers_str}{link_str}")
+
+        if social_list:
+            text += "<b>Соцсети:</b>\n"
+            text += "\n".join(social_list)
             text += "\n\n"
 
         # Предложенная цена (с учетом типа бюджета кампании)

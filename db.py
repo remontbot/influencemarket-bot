@@ -4562,6 +4562,10 @@ def get_bids_for_order(campaign_id):
                 w.tiktok_followers as blogger_tiktok_followers,
                 w.youtube_followers as blogger_youtube_followers,
                 w.telegram_followers as blogger_telegram_followers,
+                w.instagram_link as blogger_instagram_link,
+                w.tiktok_link as blogger_tiktok_link,
+                w.youtube_link as blogger_youtube_link,
+                w.telegram_link as blogger_telegram_link,
                 u.telegram_id as blogger_telegram_id,
                 c.budget_type as campaign_budget_type,
                 c.budget_value as campaign_budget_value
