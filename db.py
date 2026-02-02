@@ -4051,6 +4051,62 @@ def get_analytics_stats():
         return stats
 
 
+def get_followers_stats():
+    """
+    Получает статистику по количеству подписчиков блогеров.
+    Возвращает количество блогеров в каждой категории по максимальному числу подписчиков.
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+
+        stats = {
+            'under_1k': 0,
+            '1k_5k': 0,
+            '5k_20k': 0,
+            '20k_50k': 0,
+            '50k_100k': 0,
+            'over_100k': 0
+        }
+
+        # Получаем максимальное количество подписчиков для каждого блогера
+        cursor.execute("""
+            SELECT
+                COALESCE(instagram_followers, 0) as instagram,
+                COALESCE(tiktok_followers, 0) as tiktok,
+                COALESCE(youtube_followers, 0) as youtube,
+                COALESCE(telegram_followers, 0) as telegram
+            FROM bloggers
+        """)
+
+        rows = cursor.fetchall()
+
+        for row in rows:
+            if isinstance(row, dict):
+                max_followers = max(
+                    row.get('instagram', 0) or 0,
+                    row.get('tiktok', 0) or 0,
+                    row.get('youtube', 0) or 0,
+                    row.get('telegram', 0) or 0
+                )
+            else:
+                max_followers = max(row[0] or 0, row[1] or 0, row[2] or 0, row[3] or 0)
+
+            if max_followers >= 100000:
+                stats['over_100k'] += 1
+            elif max_followers >= 50000:
+                stats['50k_100k'] += 1
+            elif max_followers >= 20000:
+                stats['20k_50k'] += 1
+            elif max_followers >= 5000:
+                stats['5k_20k'] += 1
+            elif max_followers >= 1000:
+                stats['1k_5k'] += 1
+            else:
+                stats['under_1k'] += 1
+
+        return stats
+
+
 def create_indexes():
     """
     Создает индексы для оптимизации производительности запросов.
