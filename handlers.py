@@ -13134,8 +13134,8 @@ async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Пользователи
     text += "👥 <b>ПОЛЬЗОВАТЕЛИ:</b>\n"
     text += f"• Всего: {stats['total_users']}\n"
-    text += f"• Мастеров: {stats['total_workers']}\n"
-    text += f"• Клиентов: {stats['total_clients']}\n"
+    text += f"• Блогеров: {stats['total_workers']}\n"
+    text += f"• Рекламодателей: {stats['total_clients']}\n"
     text += f"• С двумя профилями: {stats['dual_profile_users']}\n"
     text += f"• Забанено: {stats['banned_users']}\n\n"
 
@@ -13154,17 +13154,25 @@ async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text += f"• Приняты: {stats['selected_bids']}\n"
     text += f"• Отклонены: {stats['rejected_bids']}\n\n"
 
-    # Чаты и отзывы
-    text += "💬 <b>ЧАТЫ И ОТЗЫВЫ:</b>\n"
-    text += f"• Активных чатов: {stats['total_chats']}\n"
-    text += f"• Всего сообщений: {stats['total_messages']}\n"
+    # Отзывы
+    text += "⭐ <b>ОТЗЫВЫ:</b>\n"
     text += f"• Оставлено отзывов: {stats['total_reviews']}\n"
     text += f"• Средний рейтинг: {stats['average_rating']:.1f} ⭐\n\n"
 
     # Активность
     text += "📈 <b>АКТИВНОСТЬ:</b>\n"
     text += f"• Заказов за последние 24ч: {stats['orders_last_24h']}\n"
-    text += f"• Новых пользователей за 7 дней: {stats['users_last_7days']}"
+    text += f"• Новых пользователей за 7 дней: {stats['users_last_7days']}\n\n"
+
+    # Статистика по подписчикам
+    followers_stats = db.get_followers_stats()
+    text += "📊 <b>АУДИТОРИЯ БЛОГЕРОВ:</b>\n"
+    text += f"• До 1K: {followers_stats['under_1k']}\n"
+    text += f"• 1K - 5K: {followers_stats['1k_5k']}\n"
+    text += f"• 5K - 20K: {followers_stats['5k_20k']}\n"
+    text += f"• 20K - 50K: {followers_stats['20k_50k']}\n"
+    text += f"• 50K - 100K: {followers_stats['50k_100k']}\n"
+    text += f"• 100K+: {followers_stats['over_100k']}"
 
     keyboard = [
         [InlineKeyboardButton("📥 Экспорт данных", callback_data="admin_export_menu")],
