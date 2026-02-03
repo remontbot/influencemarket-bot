@@ -975,6 +975,13 @@ def main():
 
     application.add_handler(
         CallbackQueryHandler(
+            handlers.reject_blogger_from_offer,
+            pattern="^reject_blogger_"
+        )
+    )
+
+    application.add_handler(
+        CallbackQueryHandler(
             handlers.pay_with_stars,
             pattern="^pay_stars_"
         )
