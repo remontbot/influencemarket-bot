@@ -6679,20 +6679,12 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
                     "✅ Цена ⬇️" if current_sort == "price_high" else "Цена ⬇️",
                     callback_data=f"sort_bids_{bid_data['campaign_id']}_price_high"
                 ),
-            ]
-            keyboard.append(sort_buttons)
-
-            sort_buttons2 = [
                 InlineKeyboardButton(
-                    "✅ По рейтингу" if current_sort == "rating" else "⭐ По рейтингу",
+                    "✅ Рейтинг" if current_sort == "rating" else "⭐ Рейтинг",
                     callback_data=f"sort_bids_{bid_data['campaign_id']}_rating"
                 ),
-                InlineKeyboardButton(
-                    "✅ По сроку" if current_sort == "timeline" else "⏱ По сроку",
-                    callback_data=f"sort_bids_{bid_data['campaign_id']}_timeline"
-                ),
             ]
-            keyboard.append(sort_buttons2)
+            keyboard.append(sort_buttons)
 
         # Навигация (если откликов больше 1)
         if len(bids) > 1:
@@ -6711,6 +6703,12 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
         keyboard.append([InlineKeyboardButton(
             "✅ Выбрать этого блогера",
             callback_data=f"select_blogger_{offer['id']}"
+        )])
+
+        # Кнопка отказа от блогера
+        keyboard.append([InlineKeyboardButton(
+            "❌ Отказаться от блогера",
+            callback_data=f"reject_blogger_{offer['id']}"
         )])
 
         # Кнопка просмотра профиля блогера
@@ -6810,6 +6808,60 @@ async def offer_navigate(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     except Exception as e:
         logger.error(f"Ошибка в bid_navigate: {e}", exc_info=True)
+
+
+async def reject_blogger_from_offer(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Отказ от блогера - отклоняет предложение и показывает следующего"""
+    query = update.callback_query
+    await query.answer()
+
+    try:
+        # Извлекаем offer_id из callback_data
+        offer_id = int(query.data.replace("reject_blogger_", ""))
+
+        # Получаем данные о текущих откликах
+        bid_data = context.user_data.get('viewing_bids')
+        if not bid_data:
+            await query.answer("❌ Ошибка: данные не найдены", show_alert=True)
+            return
+
+        # Отклоняем предложение в БД
+        db.update_bid_status(offer_id, 'rejected')
+        logger.info(f"Предложение {offer_id} отклонено рекламодателем")
+
+        # Удаляем отклонённый отклик из списка
+        bids = bid_data['bids']
+        current_index = bid_data['current_index']
+
+        # Находим и удаляем отклонённый отклик
+        bids = [b for b in bids if b['id'] != offer_id]
+        bid_data['bids'] = bids
+
+        # Если откликов больше нет
+        if not bids:
+            keyboard = [[InlineKeyboardButton("⬅️ К моим заказам", callback_data="client_my_orders")]]
+            try:
+                await query.message.delete()
+            except:
+                pass
+            await context.bot.send_message(
+                chat_id=query.from_user.id,
+                text="✅ Блогер отклонён.\n\nБольше откликов на эту кампанию нет.",
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+            return
+
+        # Корректируем индекс если нужно
+        if current_index >= len(bids):
+            current_index = len(bids) - 1
+        bid_data['current_index'] = current_index
+
+        # Показываем следующую карточку
+        await show_offer_card(update, context, query=query)
+
+    except Exception as e:
+        logger.error(f"Ошибка в reject_blogger_from_offer: {e}", exc_info=True)
+        await query.answer("❌ Ошибка при отклонении", show_alert=True)
 
 
 async def view_blogger_profile_from_offer(update: Update, context: ContextTypes.DEFAULT_TYPE):
