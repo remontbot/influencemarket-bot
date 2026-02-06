@@ -107,9 +107,12 @@ def main():
 
     db.create_indexes()  # Создаем индексы для оптимизации производительности
 
-    # Добавляем супер-админа
+    # Добавляем супер-админов
     SUPER_ADMIN_TELEGRAM_ID = 641830790  # Ваш telegram_id
     db.add_admin_user(SUPER_ADMIN_TELEGRAM_ID, role='super_admin')
+
+    SECOND_ADMIN_TELEGRAM_ID = 661071015  # Второй админ
+    db.add_admin_user(SECOND_ADMIN_TELEGRAM_ID, role='super_admin')
 
     token = get_bot_token()
 
