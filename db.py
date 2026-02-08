@@ -7299,6 +7299,69 @@ def migrate_add_blogger_followers():
             conn.rollback()
 
 
+def migrate_fix_old_campaigns_for_multiple_bloggers():
+    """
+    Исправляет старые кампании, чтобы рекламодатель мог выбрать нескольких блогеров.
+
+    1. Возвращает статус 'open' для кампаний в статусе 'waiting_master_confirmation' или 'master_selected'
+    2. Возвращает статус 'active' для откликов со статусом 'rejected' (если кампания не завершена)
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+
+        try:
+            logger.info("🔄 Исправление старых кампаний для выбора нескольких блогеров...")
+
+            # 1. Возвращаем статус 'open' для незавершенных кампаний
+            statuses_to_fix = ('waiting_master_confirmation', 'master_selected')
+
+            if USE_POSTGRES:
+                cursor.execute("""
+                    UPDATE campaigns
+                    SET status = 'open'
+                    WHERE status IN %s
+                """, (statuses_to_fix,))
+            else:
+                cursor.execute("""
+                    UPDATE campaigns
+                    SET status = 'open'
+                    WHERE status IN (?, ?)
+                """, statuses_to_fix)
+
+            campaigns_fixed = cursor.rowcount
+            logger.info(f"✅ Обновлено {campaigns_fixed} кампаний (статус -> 'open')")
+
+            # 2. Возвращаем статус 'active' для отклоненных откликов в открытых кампаниях
+            if USE_POSTGRES:
+                cursor.execute("""
+                    UPDATE offers
+                    SET status = 'active'
+                    WHERE status = 'rejected'
+                    AND campaign_id IN (
+                        SELECT id FROM campaigns WHERE status = 'open'
+                    )
+                """)
+            else:
+                cursor.execute("""
+                    UPDATE offers
+                    SET status = 'active'
+                    WHERE status = 'rejected'
+                    AND campaign_id IN (
+                        SELECT id FROM campaigns WHERE status = 'open'
+                    )
+                """)
+
+            offers_fixed = cursor.rowcount
+            logger.info(f"✅ Обновлено {offers_fixed} откликов (статус -> 'active')")
+
+            conn.commit()
+            logger.info(f"✅ Миграция завершена: {campaigns_fixed} кампаний, {offers_fixed} откликов исправлено")
+
+        except Exception as e:
+            logger.error(f"⚠️ Error in migrate_fix_old_campaigns_for_multiple_bloggers: {e}")
+            conn.rollback()
+
+
 def create_indexes():
     """
     Создаёт индексы для оптимизации производительности БД.

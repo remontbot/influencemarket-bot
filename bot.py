@@ -104,6 +104,7 @@ def main():
     db.migrate_add_campaign_reports()  # Создаём таблицу отчётов о кампаниях
     db.migrate_add_campaign_fields()  # Добавляем поля для кампаний (бюджет, требования)
     db.migrate_add_blogger_followers()  # Добавляем поля подписчиков блогеров по соцсетям
+    db.migrate_fix_old_campaigns_for_multiple_bloggers()  # Исправляем старые кампании для выбора нескольких блогеров
 
     db.create_indexes()  # Создаем индексы для оптимизации производительности
 
