@@ -5000,24 +5000,16 @@ async def advertiser_my_campaigns(update: Update, context: ContextTypes.DEFAULT_
             return
         
         # Подсчитываем кампании по трем категориям
-        # 1. В ожидании блогеров (кампания открыта, но блогер еще не выбран)
+        # 1. В ожидании блогеров (кампания открыта)
         waiting_statuses = ['open']
-        # 2. В работе (блогер выбран и работает)
-        in_progress_statuses = ['master_selected', 'contact_shared', 'waiting_master_confirmation', 'master_confirmed', 'in_progress']
+        # 2. В работе - кампании с выбранными блогерами
+        campaigns_in_progress = db.get_campaigns_with_selected_bloggers(client_profile["id"])
+        in_progress_count = len(campaigns_in_progress) if campaigns_in_progress else 0
         # 3. Завершенные
         completed_statuses = ['done', 'completed', 'canceled', 'cancelled']
 
-        # DEBUG: Логируем все кампании
-        logger.info(f"🔍 DEBUG client_my_orders: Всего заказов: {len(all_orders)}")
-        for o in all_orders:
-            campaign_dict = dict(o)
-            logger.info(f"🔍 DEBUG: Кампания #{campaign_dict.get('id')} - статус: '{campaign_dict.get('status')}'")
-
         waiting_count = sum(1 for o in all_orders if dict(o).get('status', 'open') in waiting_statuses)
-        in_progress_count = sum(1 for o in all_orders if dict(o).get('status', 'open') in in_progress_statuses)
         completed_count = sum(1 for o in all_orders if dict(o).get('status', 'open') in completed_statuses)
-
-        logger.info(f"🔍 DEBUG: Подсчет - Ожидание: {waiting_count}, В работе: {in_progress_count}, Завершено: {completed_count}")
 
         # Показываем меню выбора категории
         text = "📂 <b>Мои кампании</b>\n\n"
