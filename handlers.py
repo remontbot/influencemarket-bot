@@ -7339,8 +7339,8 @@ async def process_offer_selection(update: Update, context: ContextTypes.DEFAULT_
             )
             logger.info(f"✅ Чат #{chat_id} создан между рекламодателем {user['id']} и блогером {blogger_user_id}")
 
-        # 3. Отмечаем предложение как выбранное, НО кампания в статусе "waiting_blogger_confirmation"
-        db.update_order_status(campaign_id, "waiting_master_confirmation")
+        # 3. Отмечаем предложение как выбранное
+        # Кампания остается открытой - рекламодатель может выбрать нескольких блогеров
         db.select_bid(offer_id)
 
         # 4. Уведомляем блогера что его выбрали и открыт чат
