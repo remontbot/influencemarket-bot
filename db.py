@@ -4769,15 +4769,16 @@ def get_bids_for_worker(blogger_id):
 
 def select_bid(offer_id):
     """
-    ИСПРАВЛЕНО: Отмечает отклик как выбранный с защитой от race conditions.
-    Проверяет что заказ еще не был выбран другим пользователем.
+    Отмечает отклик как выбранный.
+    Кампания остается открытой для выбора других блогеров.
+    Рекламодатель может выбрать несколько блогеров для одной кампании.
     """
     with get_db_connection() as conn:
         cursor = get_cursor(conn)
 
-        # КРИТИЧНО: Получаем campaign_id, blogger_id и проверяем статус заказа одним запросом
+        # Получаем информацию об отклике
         cursor.execute("""
-            SELECT b.campaign_id, b.blogger_id, o.status
+            SELECT b.campaign_id, b.blogger_id, b.status as bid_status, o.status as campaign_status
             FROM offers b
             JOIN campaigns o ON b.campaign_id = o.id
             WHERE b.id = ?
@@ -4791,45 +4792,33 @@ def select_bid(offer_id):
         if isinstance(result, dict):
             campaign_id = result['campaign_id']
             blogger_id = result['blogger_id']
-            campaign_status = result['status']
+            bid_status = result['bid_status']
+            campaign_status = result['campaign_status']
         else:
-            campaign_id, blogger_id, campaign_status = result[0], result[1], result[2]
+            campaign_id, blogger_id, bid_status, campaign_status = result[0], result[1], result[2], result[3]
 
-        # ЗАЩИТА ОТ RACE CONDITION: проверяем что заказ еще не был выбран
-        if campaign_status not in ('open', 'waiting_master_confirmation'):
-            logger.warning(f"Заказ {campaign_id} уже в статусе '{campaign_status}', нельзя выбрать мастера")
+        # Проверяем что отклик еще не был выбран
+        if bid_status == 'selected':
+            logger.warning(f"Отклик {offer_id} уже выбран")
             return False
 
-        # Обновляем статус выбранного отклика
+        # Проверяем что кампания открыта или в работе
+        if campaign_status not in ('open', 'waiting_master_confirmation', 'in_progress'):
+            logger.warning(f"Кампания {campaign_id} в статусе '{campaign_status}', нельзя выбрать блогера")
+            return False
+
+        # Обновляем статус ТОЛЬКО выбранного отклика
         cursor.execute("""
             UPDATE offers
             SET status = 'selected'
             WHERE id = ?
         """, (offer_id,))
 
-        # Остальные отклики отмечаем как rejected
-        cursor.execute("""
-            UPDATE offers
-            SET status = 'rejected'
-            WHERE campaign_id = ? AND id != ?
-        """, (campaign_id, offer_id))
-
-        # КРИТИЧНО: Обновляем статус заказа И устанавливаем selected_worker_id
-        # Это необходимо для показа кнопок чата и завершения заказа
-        cursor.execute("""
-            UPDATE campaigns
-            SET status = 'master_selected', selected_worker_id = ?
-            WHERE id = ? AND status IN ('open', 'waiting_master_confirmation')
-        """, (blogger_id, campaign_id))
-
-        # Проверяем что UPDATE действительно произошел
-        if cursor.rowcount == 0:
-            logger.warning(f"Не удалось обновить заказ {campaign_id} - возможно race condition")
-            conn.rollback()
-            return False
+        # НЕ отклоняем остальные отклики - рекламодатель может выбрать несколько блогеров
+        # НЕ меняем статус кампании - она остается открытой
 
         conn.commit()
-        logger.info(f"✅ Заказ {campaign_id}: выбран мастер {blogger_id}, установлен selected_worker_id")
+        logger.info(f"✅ Кампания {campaign_id}: выбран блогер {blogger_id} (отклик {offer_id}), кампания остается открытой")
         return True
 
 
