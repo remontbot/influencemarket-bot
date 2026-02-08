@@ -7346,18 +7346,41 @@ async def process_offer_selection(update: Update, context: ContextTypes.DEFAULT_
         # 4. Уведомляем блогера что его выбрали и открыт чат
         if blogger_telegram_id:
             try:
-                keyboard_for_blogger = [
-                    [InlineKeyboardButton("💬 Открыть чат", callback_data=f"open_chat_{chat_id}")],
-                ]
+                # Получаем данные рекламодателя для показа контактов
+                advertiser_name = client_profile.get('name', 'Рекламодатель') if client_profile else 'Рекламодатель'
+                advertiser_phone = client_profile.get('phone', '') if client_profile else ''
+                advertiser_telegram_id = query.from_user.id
+
+                # Формируем текст с контактами
+                advertiser_contacts = ""
+                if advertiser_telegram_id:
+                    advertiser_contacts += f"• Telegram: <a href='tg://user?id={advertiser_telegram_id}'>Открыть профиль</a>\n"
+                if advertiser_phone:
+                    advertiser_contacts += f"• Телефон: {advertiser_phone}\n"
+
+                if not advertiser_contacts:
+                    advertiser_contacts = "• Контакты не указаны\n"
+
+                keyboard_for_blogger = []
+                # Кнопка для связи в Telegram
+                if advertiser_telegram_id:
+                    keyboard_for_blogger.append([InlineKeyboardButton(
+                        "📱 Написать в Telegram",
+                        url=f"tg://user?id={advertiser_telegram_id}"
+                    )])
+                keyboard_for_blogger.append([InlineKeyboardButton("💬 Писать в боте", callback_data=f"open_chat_{chat_id}")])
 
                 await context.bot.send_message(
                     chat_id=blogger_telegram_id,
                     text=(
                         f"🎉 <b>Ваш отклик выбран!</b>\n\n"
-                        f"Рекламодатель выбрал вас для выполнения кампании #{campaign_id}\n\n"
-                        f"💬 Открыт чат для обсуждения деталей.\n"
-                        f"⚠️ <b>ВАЖНО:</b> Ответьте рекламодателю в течение 24 часов, иначе ваш рейтинг снизится!\n\n"
-                        f"Обсудите детали кампании и подтвердите готовность выполнить контент."
+                        f"Рекламодатель <b>{advertiser_name}</b> выбрал вас для кампании #{campaign_id}\n\n"
+                        f"📱 <b>Контакты рекламодателя:</b>\n"
+                        f"{advertiser_contacts}\n"
+                        f"💬 <b>Выберите способ связи:</b>\n"
+                        f"• <b>Написать в Telegram</b> — откроется личный чат с рекламодателем\n"
+                        f"• <b>Писать в боте</b> — общение через нашу платформу\n\n"
+                        f"⚠️ <b>ВАЖНО:</b> Ответьте в течение 24 часов!"
                     ),
                     parse_mode="HTML",
                     reply_markup=InlineKeyboardMarkup(keyboard_for_blogger)
@@ -7365,29 +7388,59 @@ async def process_offer_selection(update: Update, context: ContextTypes.DEFAULT_
             except Exception as e:
                 logger.error(f"Ошибка при отправке уведомления блогеру: {e}")
 
-        # 5. Показываем рекламодателю рекомендации и контакт блогера
+        # 5. Показываем рекламодателю экран выбора способа связи
+        # Получаем контактные данные блогера
+        blogger_phone = selected_bid.get('blogger_phone', '')
+        blogger_telegram_link = selected_bid.get('blogger_telegram_link', '')
+
+        # Формируем блок с контактами
+        contacts_text = ""
+        if blogger_telegram_id:
+            contacts_text += f"• Telegram: <a href='tg://user?id={blogger_telegram_id}'>Открыть профиль</a>\n"
+        if blogger_telegram_link:
+            contacts_text += f"• Telegram канал: {blogger_telegram_link}\n"
+        if blogger_phone:
+            contacts_text += f"• Телефон: {blogger_phone}\n"
+
+        # Добавляем ссылки на соцсети
+        instagram_link = selected_bid.get('blogger_instagram_link', '')
+        tiktok_link = selected_bid.get('blogger_tiktok_link', '')
+        youtube_link = selected_bid.get('blogger_youtube_link', '')
+
+        if instagram_link:
+            contacts_text += f"• Instagram: {instagram_link}\n"
+        if tiktok_link:
+            contacts_text += f"• TikTok: {tiktok_link}\n"
+        if youtube_link:
+            contacts_text += f"• YouTube: {youtube_link}\n"
+
+        if not contacts_text:
+            contacts_text = "• Контакты не указаны\n"
+
         text = (
             f"✅ <b>Блогер выбран!</b>\n\n"
-            f"👤 <b>Выбран блогер:</b> {blogger_name}\n\n"
-            f"💬 <b>Открыт чат для обсуждения</b>\n\n"
-            f"📋 <b>Рекомендации по общению:</b>\n"
-            f"• Четко опишите что именно нужно сделать\n"
-            f"• Согласуйте сроки публикации контента\n"
-            f"• Обсудите формат контента (пост/Stories/Reels)\n"
-            f"• Уточните требования к съемке и монтажу\n\n"
-            f"🎯 <b>Преимущества нашей платформы:</b>\n"
-            f"• Безопасная сделка через чат\n"
-            f"• Рейтинговая система - видите опыт блогера\n"
-            f"• История отзывов помогает выбрать лучших\n\n"
-            f"⚠️ <b>ВАЖНО:</b> После завершения работы обязательно оцените блогера - это поможет другим рекламодателям!\n\n"
-            f"Удачного сотрудничества! 🤝"
+            f"👤 <b>{blogger_name}</b>\n\n"
+            f"📱 <b>Контакты для связи:</b>\n"
+            f"{contacts_text}\n"
+            f"💬 <b>Выберите способ связи:</b>\n"
+            f"• <b>Написать в Telegram</b> — откроется личный чат с блогером\n"
+            f"• <b>Писать в боте</b> — общение через нашу платформу\n\n"
+            f"⚠️ <i>Сделка уже открыта! Любой способ связи засчитывается как начало работы.</i>"
         )
 
-        keyboard = [
-            [InlineKeyboardButton("💬 Открыть чат", callback_data=f"open_chat_{chat_id}")],
-            [InlineKeyboardButton("📂 Мои кампании", callback_data="client_my_orders")],
-            [InlineKeyboardButton("💼 Главное меню", callback_data="show_client_menu")],
-        ]
+        keyboard = []
+
+        # Кнопка "Написать в Telegram" - URL кнопка
+        if blogger_telegram_id:
+            keyboard.append([InlineKeyboardButton(
+                "📱 Написать в Telegram",
+                url=f"tg://user?id={blogger_telegram_id}"
+            )])
+
+        # Кнопка "Писать в боте" - внутренний чат
+        keyboard.append([InlineKeyboardButton("💬 Писать в боте", callback_data=f"open_chat_{chat_id}")])
+        keyboard.append([InlineKeyboardButton("📂 Мои кампании", callback_data="client_my_orders")])
+        keyboard.append([InlineKeyboardButton("💼 Главное меню", callback_data="show_client_menu")])
 
         await safe_edit_message(
             query,
