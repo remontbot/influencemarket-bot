@@ -5155,7 +5155,7 @@ async def advertiser_waiting_campaigns(update: Update, context: ContextTypes.DEF
 
 
 async def advertiser_in_progress_campaigns(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Показывает кампании в работе (блогер выбран и работает)"""
+    """Показывает кампании в работе (есть выбранные блогеры)"""
     query = update.callback_query
     await query.answer()
 
@@ -5170,18 +5170,8 @@ async def advertiser_in_progress_campaigns(update: Update, context: ContextTypes
             await safe_edit_message(query, "❌ Профиль клиента не найден.")
             return
 
-        # Получаем кампании в работе (блогер выбран)
-        all_orders, _, _ = db.get_client_orders(client_profile["id"], page=1, per_page=1000)
-        in_progress_statuses = ['master_selected', 'contact_shared', 'waiting_master_confirmation', 'master_confirmed', 'in_progress']
-
-        # DEBUG: Логируем все кампании и их статусы
-        logger.info(f"🔍 DEBUG client_in_progress_orders: Всего заказов клиента: {len(all_orders)}")
-        for o in all_orders:
-            campaign_dict = dict(o)
-            logger.info(f"🔍 DEBUG: Кампания #{campaign_dict.get('id')} - статус: '{campaign_dict.get('status')}' (тип: {type(o).__name__})")
-
-        orders = [o for o in all_orders if dict(o).get('status', 'open') in in_progress_statuses]
-        logger.info(f"🔍 DEBUG: Отфильтровано заказов 'в работе': {len(orders)}")
+        # Получаем кампании где есть выбранные блогеры
+        orders = db.get_campaigns_with_selected_bloggers(client_profile["id"])
 
         if not orders:
             keyboard = [
@@ -5190,7 +5180,7 @@ async def advertiser_in_progress_campaigns(update: Update, context: ContextTypes
             ]
             await safe_edit_message(
                 query,
-                "📱 <b>В работе</b>\n\nУ вас нет заказов в работе.",
+                "📱 <b>В работе</b>\n\nУ вас нет кампаний с выбранными блогерами.",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
@@ -5203,30 +5193,11 @@ async def advertiser_in_progress_campaigns(update: Update, context: ContextTypes
         for campaign in orders[:10]:
             campaign_dict = dict(campaign)
             campaign_id = campaign_dict['id']
-            order_status = campaign_dict.get('status', '')
 
-            status_emoji = {
-                "master_selected": "👤",
-                "contact_shared": "📞",
-                "waiting_master_confirmation": "⏳",
-                "master_confirmed": "💬",
-                "in_progress": "📱"
-            }
-            status_text = {
-                "master_selected": "Блогер выбран",
-                "contact_shared": "Контакт передан",
-                "waiting_master_confirmation": "Ожидает подтверждения",
-                "master_confirmed": "Подтверждено",
-                "in_progress": "В работе"
-            }
+            text += f"📱 <b>Кампания #{campaign_id}</b>\n"
+            text += f"📂 {campaign_dict.get('category', 'Не указана')}\n"
 
-            emoji = status_emoji.get(order_status, "⚪")
-            status = status_text.get(order_status, "В работе")
-
-            text += f"{emoji} <b>Кампания #{campaign_id}</b> - {status}\n"
-            text += f"📱 {campaign_dict.get('category', 'Не указана')}\n"
-
-            # ИСПРАВЛЕНО: Тип оплаты с поддержкой комбинированного варианта
+            # Тип оплаты
             payment_type = campaign_dict.get('payment_type', 'paid')
             budget_type = campaign_dict.get('budget_type', 'none')
             budget_value = campaign_dict.get('budget_value', 0)
@@ -5247,25 +5218,26 @@ async def advertiser_in_progress_campaigns(update: Update, context: ContextTypes
 
             if payment_parts:
                 text += f"{' + '.join(payment_parts)}\n"
-            else:
-                text += f"По договорённости\n"
 
-            description = campaign_dict.get('description', '')
-            if len(description) > 50:
-                description = description[:50] + "..."
-            text += f"📝 {description}\n"
+            # Получаем выбранных блогеров для этой кампании
+            selected_bloggers = db.get_selected_bloggers_for_campaign(campaign_id)
+            if selected_bloggers:
+                text += f"👥 <b>Выбрано блогеров:</b> {len(selected_bloggers)}\n"
+                for blogger in selected_bloggers:
+                    blogger_dict = dict(blogger)
+                    blogger_name = blogger_dict.get('blogger_name', 'Блогер')
+                    chat_id = blogger_dict.get('chat_id')
+                    text += f"  • {blogger_name}\n"
 
-            # Кнопки чата и завершения
-            chat = db.get_chat_by_order(campaign_id)
-            if chat:
-                chat_dict = dict(chat)
-                keyboard.append([InlineKeyboardButton(
-                    f"💬 Чат (кампания #{campaign_id})",
-                    callback_data=f"open_chat_{chat_dict['id']}"
-                )])
+                    # Кнопка чата для каждого блогера
+                    if chat_id:
+                        keyboard.append([InlineKeyboardButton(
+                            f"💬 Чат с {blogger_name}",
+                            callback_data=f"open_chat_{chat_id}"
+                        )])
 
             keyboard.append([InlineKeyboardButton(
-                f"✅ Завершить кампаниюя #{campaign_id}",
+                f"✅ Завершить кампанию #{campaign_id}",
                 callback_data=f"complete_campaign_{campaign_id}"
             )])
 
@@ -5276,7 +5248,7 @@ async def advertiser_in_progress_campaigns(update: Update, context: ContextTypes
         await safe_edit_message(query, text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(keyboard))
 
     except Exception as e:
-        logger.error(f"Ошибка в client_in_progress_orders: {e}", exc_info=True)
+        logger.error(f"Ошибка в advertiser_in_progress_campaigns: {e}", exc_info=True)
         await safe_edit_message(query, f"❌ Ошибка: {str(e)}")
 
 

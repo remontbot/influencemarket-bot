@@ -4390,6 +4390,61 @@ def get_client_orders(advertiser_id, page=1, per_page=10):
         return campaigns, total_count, has_next_page
 
 
+def get_campaigns_with_selected_bloggers(advertiser_id):
+    """
+    Получает кампании рекламодателя, где есть выбранные блогеры.
+    Кампания показывается в "В работе" если есть хотя бы один отклик со статусом 'selected'.
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+
+        cursor.execute("""
+            SELECT DISTINCT c.*
+            FROM campaigns c
+            INNER JOIN offers o ON c.id = o.campaign_id
+            WHERE c.advertiser_id = ?
+            AND o.status = 'selected'
+            ORDER BY c.created_at DESC
+        """, (advertiser_id,))
+
+        return cursor.fetchall()
+
+
+def get_selected_bloggers_for_campaign(campaign_id):
+    """
+    Получает список выбранных блогеров для кампании.
+    Возвращает информацию о блогерах и их чатах.
+    """
+    with get_db_connection() as conn:
+        cursor = get_cursor(conn)
+
+        cursor.execute("""
+            SELECT
+                o.id as offer_id,
+                o.blogger_id,
+                o.proposed_price,
+                o.comment as offer_comment,
+                b.name as blogger_name,
+                b.phone as blogger_phone,
+                b.city as blogger_city,
+                b.instagram_link,
+                b.tiktok_link,
+                b.youtube_link,
+                b.telegram_link,
+                u.telegram_id as blogger_telegram_id,
+                ch.id as chat_id
+            FROM offers o
+            JOIN bloggers b ON o.blogger_id = b.id
+            JOIN users u ON b.user_id = u.id
+            LEFT JOIN chats ch ON ch.offer_id = o.id
+            WHERE o.campaign_id = ?
+            AND o.status = 'selected'
+            ORDER BY o.created_at ASC
+        """, (campaign_id,))
+
+        return cursor.fetchall()
+
+
 
 
 def cancel_order(campaign_id, cancelled_by_user_id, reason=""):
