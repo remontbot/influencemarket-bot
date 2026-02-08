@@ -1886,6 +1886,9 @@ async def blogger_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE
     query = update.callback_query
     await query.answer()
 
+    # Сбрасываем страницу при входе в список
+    context.user_data['campaigns_page'] = 0
+
     user = db.get_user_by_telegram_id(update.effective_user.id)
     if not user:
         await query.edit_message_text("❌ Пользователь не найден.")
@@ -1955,9 +1958,21 @@ async def blogger_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE
         orders_text += f"📱 Ваши категории: <i>{worker_dict.get('categories', 'Не указаны')}</i>\n\n"
         orders_text += f"Найдено предложений: <b>{len(all_orders)}</b>\n\n"
 
-        # Показываем первые 5 кампаний
+        # Пагинация - показываем по 5 кампаний
+        page = context.user_data.get('campaigns_page', 0)
+        per_page = 5
+        total_pages = (len(all_orders) + per_page - 1) // per_page
+
+        # Сохраняем данные для навигации
+        context.user_data['all_campaigns'] = all_orders
+        context.user_data['campaigns_page'] = page
+
+        start_idx = page * per_page
+        end_idx = min(start_idx + per_page, len(all_orders))
+        current_campaigns = all_orders[start_idx:end_idx]
+
         keyboard = []
-        for i, campaign in enumerate(all_orders[:5], 1):
+        for i, campaign in enumerate(current_campaigns, start_idx + 1):
             advertiser_name = campaign.get('advertiser_name', 'Неизвестно')
             orders_text += f"🟢 <b>{advertiser_name}</b>\n"
             orders_text += f"📍 Город: {campaign.get('city', 'Не указан')}\n"
@@ -2013,8 +2028,15 @@ async def blogger_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE
                 callback_data=f"view_order_{campaign['id']}"
             )])
 
-        if len(all_orders) > 5:
-            orders_text += f"<i>... и ещё {len(all_orders) - 5} предложений</i>\n\n"
+        # Кнопки навигации по страницам
+        if total_pages > 1:
+            nav_buttons = []
+            if page > 0:
+                nav_buttons.append(InlineKeyboardButton("◀️ Назад", callback_data="campaigns_prev_page"))
+            nav_buttons.append(InlineKeyboardButton(f"{page + 1}/{total_pages}", callback_data="noop"))
+            if page < total_pages - 1:
+                nav_buttons.append(InlineKeyboardButton("Вперёд ▶️", callback_data="campaigns_next_page"))
+            keyboard.append(nav_buttons)
 
         keyboard.append([InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_worker_menu")])
 
@@ -2035,6 +2057,111 @@ async def blogger_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE
                 [InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_worker_menu")]
             ])
         )
+
+
+async def navigate_campaigns_page(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Навигация по страницам списка кампаний для блогера"""
+    query = update.callback_query
+    await query.answer()
+
+    # Получаем текущую страницу
+    page = context.user_data.get('campaigns_page', 0)
+    all_campaigns = context.user_data.get('all_campaigns', [])
+
+    if not all_campaigns:
+        await query.answer("❌ Данные не найдены, обновите список", show_alert=True)
+        return
+
+    per_page = 5
+    total_pages = (len(all_campaigns) + per_page - 1) // per_page
+
+    # Определяем направление
+    if query.data == "campaigns_next_page":
+        page = min(page + 1, total_pages - 1)
+    elif query.data == "campaigns_prev_page":
+        page = max(page - 1, 0)
+
+    context.user_data['campaigns_page'] = page
+
+    # Перестраиваем сообщение
+    user = db.get_user_by_telegram_id(update.effective_user.id)
+    worker_profile = db.get_worker_profile(user['id'])
+    worker_dict = dict(worker_profile)
+
+    orders_text = "📋 <b>Рекламные предложения</b>\n\n"
+    orders_text += f"📱 Ваши категории: <i>{worker_dict.get('categories', 'Не указаны')}</i>\n\n"
+    orders_text += f"Найдено предложений: <b>{len(all_campaigns)}</b>\n\n"
+
+    start_idx = page * per_page
+    end_idx = min(start_idx + per_page, len(all_campaigns))
+    current_campaigns = all_campaigns[start_idx:end_idx]
+
+    keyboard = []
+    for i, campaign in enumerate(current_campaigns, start_idx + 1):
+        advertiser_name = campaign.get('advertiser_name', 'Неизвестно')
+        orders_text += f"🟢 <b>{advertiser_name}</b>\n"
+        orders_text += f"📍 Город: {campaign.get('city', 'Не указан')}\n"
+        orders_text += f"📱 Категория: {campaign.get('category', 'Не указана')}\n"
+
+        payment_type = campaign.get('payment_type', 'paid')
+        budget_type = campaign.get('budget_type', 'none')
+        budget_value = campaign.get('budget_value', 0)
+        payment_parts = []
+
+        if payment_type in ['paid', 'both']:
+            if budget_value and budget_value > 0:
+                if budget_type == 'fixed':
+                    payment_parts.append(f"💰 {int(budget_value)} BYN (фиксированная)")
+                elif budget_type == 'flexible':
+                    payment_parts.append(f"💰 {int(budget_value)} BYN (гибкая)")
+                else:
+                    payment_parts.append(f"💰 {int(budget_value)} BYN")
+            elif budget_type == 'flexible':
+                payment_parts.append("💬 Блогеры предложат цену")
+
+        if payment_type in ['barter', 'both']:
+            payment_parts.append("🤝 Бартер")
+
+        if payment_parts:
+            orders_text += f"💵 {' + '.join(payment_parts)}\n"
+        else:
+            orders_text += f"💵 По договорённости\n"
+
+        description = campaign.get('description', '')
+        if len(description) > 80:
+            description = description[:80] + "..."
+        orders_text += f"📝 {description}\n"
+
+        photos = campaign.get('photos', '')
+        photos_count = len([p for p in photos.split(',') if p]) if photos else 0
+        if photos_count > 0:
+            orders_text += f"📸 {photos_count} фото\n"
+
+        orders_text += f"📅 {campaign.get('created_at', '')}\n\n"
+
+        keyboard.append([InlineKeyboardButton(
+            f"👁 {advertiser_name} - Подробнее",
+            callback_data=f"view_order_{campaign['id']}"
+        )])
+
+    # Кнопки навигации
+    if total_pages > 1:
+        nav_buttons = []
+        if page > 0:
+            nav_buttons.append(InlineKeyboardButton("◀️ Назад", callback_data="campaigns_prev_page"))
+        nav_buttons.append(InlineKeyboardButton(f"{page + 1}/{total_pages}", callback_data="noop"))
+        if page < total_pages - 1:
+            nav_buttons.append(InlineKeyboardButton("Вперёд ▶️", callback_data="campaigns_next_page"))
+        keyboard.append(nav_buttons)
+
+    keyboard.append([InlineKeyboardButton("⬅️ Назад в меню", callback_data="show_worker_menu")])
+
+    await safe_edit_message(
+        query,
+        orders_text,
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 
 
 async def toggle_notifications(update: Update, context: ContextTypes.DEFAULT_TYPE):

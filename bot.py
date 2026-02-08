@@ -744,6 +744,14 @@ def main():
         )
     )
 
+    # Навигация по страницам кампаний для блогера
+    application.add_handler(
+        CallbackQueryHandler(
+            handlers.navigate_campaigns_page,
+            pattern="^campaigns_(prev|next)_page$",
+        )
+    )
+
     # Алиасы для обратной совместимости (worker_* → blogger_*)
     application.add_handler(
         CallbackQueryHandler(
