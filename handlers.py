@@ -373,10 +373,10 @@ def is_profile_complete(user_id: int, role: str) -> bool:
             return False
 
         profile_dict = dict(profile)
-        city = profile_dict.get("city", "").strip()
-        regions = profile_dict.get("regions", "").strip()
-        categories = profile_dict.get("categories", "").strip()
-        description = profile_dict.get("description", "").strip()
+        city = (profile_dict.get("city") or "").strip()
+        regions = (profile_dict.get("regions") or "").strip()
+        categories = (profile_dict.get("categories") or "").strip()
+        description = (profile_dict.get("description") or "").strip()
 
         # Проверяем социальные сети (обрабатываем None)
         instagram = (profile_dict.get("instagram_link") or "").strip()
@@ -399,8 +399,8 @@ def is_profile_complete(user_id: int, role: str) -> bool:
             return False
 
         profile_dict = dict(profile)
-        city = profile_dict.get("city", "").strip()
-        description = profile_dict.get("description", "").strip()
+        city = (profile_dict.get("city") or "").strip()
+        description = (profile_dict.get("description") or "").strip()
 
         return bool(city and description)
 
@@ -1927,7 +1927,7 @@ async def blogger_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE
 
         worker_dict = dict(worker_profile)
         worker_id = worker_dict['id']
-        categories = worker_dict.get("categories", "").split(", ")
+        categories = (worker_dict.get("categories") or "").split(", ")
 
         # Получаем кампании по категориям блогера
         all_orders = db.get_orders_by_categories(categories, per_page=30, blogger_id=worker_id)
@@ -8092,7 +8092,7 @@ async def blogger_view_campaigns(update: Update, context: ContextTypes.DEFAULT_T
         
         worker_dict = dict(worker_profile)
         worker_id = worker_dict['id']
-        categories = worker_dict.get("categories", "").split(", ")
+        categories = (worker_dict.get("categories") or "").split(", ")
 
         # ИСПРАВЛЕНО: Один запрос для всех категорий вместо N запросов
         # ИСПРАВЛЕНО: Фильтрация по городам блогера (worker_id)
@@ -8823,7 +8823,7 @@ async def browse_photo_next(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if worker_index < len(workers_list):
         blogger = workers_list[worker_index]
-        photos_list = [p for p in blogger.get("portfolio_photos", "").split(",") if p]
+        photos_list = [p for p in (blogger.get("portfolio_photos") or "").split(",") if p]
         
         current_photo_index = context.user_data.get("current_photo_index", 0)
         context.user_data["current_photo_index"] = min(len(photos_list) - 1, current_photo_index + 1)
