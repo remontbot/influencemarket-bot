@@ -1945,7 +1945,6 @@ async def blogger_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE
 
             await query.edit_message_text(
                 "📋 <b>Рекламные предложения</b>\n\n"
-                f"📱 Ваши категории: <i>{worker_dict.get('categories', 'Не указаны')}</i>\n\n"
                 "Пока нет открытых кампаний по вашим категориям.\n\n"
                 "Как только появятся новые рекламные предложения, вы их увидите здесь!",
                 parse_mode="HTML",
@@ -8112,7 +8111,6 @@ async def blogger_view_campaigns(update: Update, context: ContextTypes.DEFAULT_T
             
             await query.edit_message_text(
                 "📋 <b>Доступные кампании</b>\n\n"
-                f"📱 Ваши категории: <i>{worker_dict.get('categories', 'Не указаны')}</i>\n\n"
                 "Пока нет открытых заказов по вашим категориям.\n\n"
                 "Как только появятся новые кампании, вы их увидите здесь!",
                 parse_mode="HTML",
@@ -8122,7 +8120,6 @@ async def blogger_view_campaigns(update: Update, context: ContextTypes.DEFAULT_T
         
         # Показываем список заказов
         orders_text = "📋 <b>Доступные кампании</b>\n\n"
-        orders_text += f"📱 Ваши категории: <i>{worker_dict.get('categories', 'Не указаны')}</i>\n\n"
         orders_text += f"Найдено заказов: <b>{len(all_orders)}</b>\n\n"
         
         # Показываем первые 5 заказов
