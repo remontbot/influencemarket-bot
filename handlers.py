@@ -6808,31 +6808,31 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
 
         # Кнопка выбора блогера
         keyboard.append([InlineKeyboardButton(
-            "✅ Выбрать этого блогера",
+            "✅ Выбрать",
             callback_data=f"select_blogger_{offer['id']}"
         )])
 
         # Кнопка отказа от блогера
         keyboard.append([InlineKeyboardButton(
-            "❌ Отказаться от блогера",
+            "❌ Отказаться",
             callback_data=f"reject_blogger_{offer['id']}"
         )])
 
         # Кнопка просмотра профиля блогера
         keyboard.append([InlineKeyboardButton(
-            "👤 Посмотреть профиль блогера",
+            "👤 Профиль",
             callback_data=f"view_blogger_profile_{offer['blogger_id']}"
         )])
 
-        # Кнопка просмотра всех контент (если есть фото)
+        # Кнопка просмотра портфолио (если есть фото)
         portfolio_photos = offer.get('blogger_portfolio_photos', '')
         if portfolio_photos:
             keyboard.append([InlineKeyboardButton(
-                "📸 Посмотреть портфолио блогера",
+                "📸 Портфолио",
                 callback_data=f"view_blogger_portfolio_{offer['blogger_id']}"
             )])
 
-        keyboard.append([InlineKeyboardButton("⬅️ К моим заказам", callback_data="client_my_orders")])
+        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="client_my_orders")])
 
         # Отправляем с фото профиля блогера, если есть
         profile_photo = offer.get('blogger_profile_photo', '')
