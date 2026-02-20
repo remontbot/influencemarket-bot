@@ -1930,7 +1930,7 @@ async def blogger_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE
         categories = (worker_dict.get("categories") or "").split(", ")
 
         # Получаем кампании по категориям блогера
-        all_orders = db.get_orders_by_categories(categories, per_page=30, blogger_id=worker_id)
+        all_orders = db.get_orders_by_categories(categories, per_page=10000, blogger_id=worker_id)
         all_orders = [dict(campaign) for campaign in all_orders]
 
         # Фильтруем кампании - не показываем те, на которые блогер уже откликнулся или отказался
@@ -8094,7 +8094,7 @@ async def blogger_view_campaigns(update: Update, context: ContextTypes.DEFAULT_T
         # ИСПРАВЛЕНО: Фильтрация по городам блогера (worker_id)
         # Раньше: 5 категорий = 5 SQL запросов, блогер видел кампании из ВСЕХ городов
         # Теперь: 5 категорий = 1 SQL запрос, блогер видит кампании ТОЛЬКО из своих городов
-        all_orders = db.get_orders_by_categories(categories, per_page=30, worker_id=worker_id)
+        all_orders = db.get_orders_by_categories(categories, per_page=10000, worker_id=worker_id)
         all_orders = [dict(campaign) for campaign in all_orders]
 
         # Фильтруем кампании - не показываем те, на которые блогер уже откликнулся
