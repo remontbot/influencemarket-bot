@@ -4683,7 +4683,8 @@ def get_bids_for_order(campaign_id):
                 w.telegram_link as blogger_telegram_link,
                 u.telegram_id as blogger_telegram_id,
                 c.budget_type as campaign_budget_type,
-                c.budget_value as campaign_budget_value
+                c.budget_value as campaign_budget_value,
+                c.payment_type as campaign_payment_type
             FROM offers b
             JOIN bloggers w ON b.blogger_id = w.id
             JOIN users u ON w.user_id = u.id

@@ -6700,53 +6700,54 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
 
         text += "\n"
 
-        # Подписчики и ссылки на соцсети
+        # Подписчики (без длинных ссылок - ссылки будут в кнопках)
         instagram_followers = offer.get('blogger_instagram_followers', 0) or 0
         tiktok_followers = offer.get('blogger_tiktok_followers', 0) or 0
         youtube_followers = offer.get('blogger_youtube_followers', 0) or 0
         telegram_followers = offer.get('blogger_telegram_followers', 0) or 0
 
+        # Сохраняем ссылки для кнопок
         instagram_link = offer.get('blogger_instagram_link', '') or ''
         tiktok_link = offer.get('blogger_tiktok_link', '') or ''
         youtube_link = offer.get('blogger_youtube_link', '') or ''
         telegram_link = offer.get('blogger_telegram_link', '') or ''
 
+        # Показываем только подписчиков в тексте (ссылки в кнопках)
         social_list = []
-        if instagram_link or instagram_followers > 0:
-            followers_str = f" ({format_followers_count(instagram_followers)})" if instagram_followers > 0 else ""
-            link_str = f": {instagram_link}" if instagram_link else ""
-            social_list.append(f"📸 Instagram{followers_str}{link_str}")
-        if tiktok_link or tiktok_followers > 0:
-            followers_str = f" ({format_followers_count(tiktok_followers)})" if tiktok_followers > 0 else ""
-            link_str = f": {tiktok_link}" if tiktok_link else ""
-            social_list.append(f"🎵 TikTok{followers_str}{link_str}")
-        if youtube_link or youtube_followers > 0:
-            followers_str = f" ({format_followers_count(youtube_followers)})" if youtube_followers > 0 else ""
-            link_str = f": {youtube_link}" if youtube_link else ""
-            social_list.append(f"📺 YouTube{followers_str}{link_str}")
-        if telegram_link or telegram_followers > 0:
-            followers_str = f" ({format_followers_count(telegram_followers)})" if telegram_followers > 0 else ""
-            link_str = f": {telegram_link}" if telegram_link else ""
-            social_list.append(f"✈️ Telegram{followers_str}{link_str}")
+        if instagram_followers > 0:
+            social_list.append(f"📸 Instagram: {format_followers_count(instagram_followers)}")
+        if tiktok_followers > 0:
+            social_list.append(f"🎵 TikTok: {format_followers_count(tiktok_followers)}")
+        if youtube_followers > 0:
+            social_list.append(f"📺 YouTube: {format_followers_count(youtube_followers)}")
+        if telegram_followers > 0:
+            social_list.append(f"✈️ Telegram: {format_followers_count(telegram_followers)}")
 
         if social_list:
-            text += "<b>Соцсети:</b>\n"
+            text += "<b>Подписчики:</b>\n"
             text += "\n".join(social_list)
             text += "\n\n"
 
-        # Предложенная цена (с учетом типа бюджета кампании)
-        price = offer.get('proposed_price', 0)
+        # Предложенная цена (с учетом типа оплаты кампании)
+        price = offer.get('proposed_price', 0) or 0
         currency = offer.get('currency', 'BYN')
+        campaign_payment_type = offer.get('campaign_payment_type', 'paid')
         campaign_budget_type = offer.get('campaign_budget_type', '')
-        campaign_budget_value = offer.get('campaign_budget_value', 0)
+        campaign_budget_value = offer.get('campaign_budget_value', 0) or 0
 
-        if campaign_budget_type == 'barter':
-            text += f"💰 <b>Согласился работать за бартер</b>\n"
-        elif campaign_budget_type == 'fixed' and campaign_budget_value:
+        # Определяем что показывать
+        if campaign_payment_type == 'barter' or (price == 0 and campaign_payment_type in ['barter', 'both']):
+            # Бартер
+            text += f"🤝 <b>Согласился работать по бартеру</b>\n"
+        elif campaign_budget_type == 'fixed' and campaign_budget_value > 0 and price == 0:
+            # Фиксированная цена - блогер согласился
             text += f"💰 <b>Согласился работать за {int(campaign_budget_value)} {currency}</b>\n"
-        else:
-            # Блогер сам предлагает цену (flexible или без типа)
+        elif price > 0:
+            # Блогер предложил свою цену
             text += f"💰 <b>Предложил {int(price)} {currency}</b>\n"
+        else:
+            # По бартеру (если цена 0)
+            text += f"🤝 <b>Согласился работать по бартеру</b>\n"
 
         # Комментарий к предложению
         comment = offer.get('comment', '')
@@ -6789,6 +6790,21 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
             if current_index < len(bids) - 1:
                 nav_buttons.append(InlineKeyboardButton("Следующий ▶️", callback_data="bid_next"))
             keyboard.append(nav_buttons)
+
+        # Кнопки соцсетей (URL-кнопки)
+        social_buttons = []
+        if instagram_link:
+            social_buttons.append(InlineKeyboardButton("📸 Instagram", url=instagram_link))
+        if tiktok_link:
+            social_buttons.append(InlineKeyboardButton("🎵 TikTok", url=tiktok_link))
+        if youtube_link:
+            social_buttons.append(InlineKeyboardButton("📺 YouTube", url=youtube_link))
+        if telegram_link:
+            social_buttons.append(InlineKeyboardButton("✈️ Telegram", url=telegram_link))
+
+        # Добавляем кнопки соцсетей по 2 в ряд
+        for i in range(0, len(social_buttons), 2):
+            keyboard.append(social_buttons[i:i+2])
 
         # Кнопка выбора блогера
         keyboard.append([InlineKeyboardButton(
