@@ -2079,7 +2079,6 @@ async def navigate_campaigns_page(update: Update, context: ContextTypes.DEFAULT_
     worker_dict = dict(worker_profile)
 
     orders_text = "📋 <b>Рекламные предложения</b>\n\n"
-    orders_text += f"📱 Ваши категории: <i>{worker_dict.get('categories', 'Не указаны')}</i>\n\n"
     orders_text += f"Найдено предложений: <b>{len(all_campaigns)}</b>\n\n"
 
     start_idx = page * per_page
@@ -2091,7 +2090,6 @@ async def navigate_campaigns_page(update: Update, context: ContextTypes.DEFAULT_
         advertiser_name = campaign.get('advertiser_name', 'Неизвестно')
         orders_text += f"🟢 <b>{advertiser_name}</b>\n"
         orders_text += f"📍 Город: {campaign.get('city', 'Не указан')}\n"
-        orders_text += f"📱 Категория: {campaign.get('category', 'Не указана')}\n"
 
         payment_type = campaign.get('payment_type', 'paid')
         budget_type = campaign.get('budget_type', 'none')
@@ -2120,14 +2118,7 @@ async def navigate_campaigns_page(update: Update, context: ContextTypes.DEFAULT_
         description = campaign.get('description', '')
         if len(description) > 80:
             description = description[:80] + "..."
-        orders_text += f"📝 {description}\n"
-
-        photos = campaign.get('photos', '')
-        photos_count = len([p for p in photos.split(',') if p]) if photos else 0
-        if photos_count > 0:
-            orders_text += f"📸 {photos_count} фото\n"
-
-        orders_text += f"📅 {campaign.get('created_at', '')}\n\n"
+        orders_text += f"📝 {description}\n\n"
 
         keyboard.append([InlineKeyboardButton(
             f"👁 {advertiser_name} - Подробнее",
