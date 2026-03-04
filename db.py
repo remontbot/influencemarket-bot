@@ -4310,8 +4310,6 @@ def get_orders_by_categories(categories_list, per_page=30, blogger_id=None):
 
         # Создаем IN clause для точного поиска по категориям
         # Используем нормализованную таблицу campaign_categories
-        placeholders = ', '.join(['?' for _ in categories_list])
-
         # ИСПРАВЛЕНО: Добавлена фильтрация по городам мастера
         # Заказы из "Вся Беларусь" видны всем блогерам
         city_filter = ""
@@ -4323,6 +4321,14 @@ def get_orders_by_categories(categories_list, per_page=30, blogger_id=None):
                     OR o.city = (SELECT city FROM bloggers WHERE id = ?)
                 )
             """
+
+        # Фильтруем пустые категории ДО создания плейсхолдеров,
+        # чтобы количество ? совпадало с количеством значений в params
+        clean_categories = [cat.strip() for cat in categories_list if cat and cat.strip()]
+        if not clean_categories:
+            return []
+
+        placeholders = ', '.join(['?' for _ in clean_categories])
 
         query = f"""
             SELECT DISTINCT
@@ -4340,7 +4346,7 @@ def get_orders_by_categories(categories_list, per_page=30, blogger_id=None):
             LIMIT ?
         """
 
-        params = [cat.strip() for cat in categories_list if cat and cat.strip()]
+        params = list(clean_categories)
 
         # Добавляем blogger_id дважды для фильтрации по городам
         if blogger_id:
