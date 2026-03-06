@@ -11063,10 +11063,18 @@ async def notify_blogger_new_campaign(context, blogger_telegram_id, blogger_user
         # Подсчитываем все доступные кампании для этого блогера
         available_orders_count = db.count_available_orders_for_worker(blogger_user_id)
 
+        advertiser_name = campaign_dict.get('advertiser_name', 'Не указан')
+        budget_value = campaign_dict.get('budget_value')
+        budget_str = f"{budget_value} BYN" if budget_value else "По договорённости"
+        description = campaign_dict.get('description', '') or ''
+        description_preview = (description[:80] + '…') if len(description) > 80 else description
+
         text = (
             f"🔔 <b>У вас {available_orders_count} {declension_orders(available_orders_count)}!</b>\n\n"
-            f"📍 Последний: {campaign_dict.get('city', 'Не указан')} · {campaign_dict.get('category', 'Не указана')}\n\n"
-            f"👇 Нажмите кнопку чтобы посмотреть все доступные кампании"
+            f"👤 Рекламодатель: <b>{advertiser_name}</b>\n"
+            f"💰 Бюджет: <b>{budget_str}</b>\n"
+            + (f"📝 {description_preview}\n" if description_preview else "")
+            + f"\n👇 Нажмите кнопку чтобы посмотреть все доступные кампании"
         )
 
         keyboard = [[InlineKeyboardButton("📋 Посмотреть кампании", callback_data="worker_view_orders")]]
