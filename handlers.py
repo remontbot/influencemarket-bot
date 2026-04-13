@@ -335,7 +335,10 @@ def _get_bids_word(count):
     ADMIN_SEARCH,
     # Состояния для изменения названия страницы рекламодателя
     EDIT_ADVERTISER_NAME,
-) = range(49)
+    # Состояния для выбора опыта при регистрации и редактировании
+    REGISTER_BLOGGER_EXPERIENCE,
+    EDIT_EXPERIENCE,
+) = range(51)
 
 
 def is_valid_name(name: str) -> bool:
@@ -3929,7 +3932,7 @@ async def view_blogger_portfolio(update: Update, context: ContextTypes.DEFAULT_T
             query,
             "📸 У этого блогера пока нет фото контент.",
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("⬅️ Назад", callback_data="back_to_bid_card")
+                InlineKeyboardButton("⬅️ Назад", callback_data="back_to_offer_card")
             ]])
         )
         return
@@ -3953,7 +3956,7 @@ async def view_blogger_portfolio(update: Update, context: ContextTypes.DEFAULT_T
         ]
         keyboard.append(nav_buttons)
 
-    keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="back_to_bid_card")])
+    keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="back_to_offer_card")])
 
     try:
         await query.message.delete()
@@ -4000,7 +4003,7 @@ async def blogger_portfolio_view_navigate(update: Update, context: ContextTypes.
         ]
         keyboard.append(nav_buttons)
 
-    keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="back_to_bid_card")])
+    keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="back_to_offer_card")])
 
     try:
         await query.message.delete()
@@ -4029,6 +4032,7 @@ async def show_edit_profile_menu(update: Update, context: ContextTypes.DEFAULT_T
         [InlineKeyboardButton("🌐 Социальные сети", callback_data="edit_social_media")],
         [InlineKeyboardButton("📊 Подписчики", callback_data="edit_followers")],
         [InlineKeyboardButton("📝 Изменить описание", callback_data="edit_description")],
+        [InlineKeyboardButton("📊 Уровень опыта", callback_data="edit_experience")],
         [InlineKeyboardButton("⬅️ Назад к профилю", callback_data="worker_profile")],
     ]
 
@@ -6548,8 +6552,11 @@ async def view_campaign_offers(update: Update, context: ContextTypes.DEFAULT_TYP
     await query.answer()
 
     try:
-        # Извлекаем campaign_id из callback_data
-        campaign_id = int(query.data.replace("view_offers_", ""))
+        # Извлекаем campaign_id из callback_data или из user_data (если вызвано из sort_offers_handler)
+        if '_view_offers_campaign_id' in context.user_data:
+            campaign_id = context.user_data.pop('_view_offers_campaign_id')
+        else:
+            campaign_id = int(query.data.replace("view_offers_", ""))
 
         # Проверяем что кампания принадлежит текущему пользователю
         user = db.get_user(query.from_user.id)
@@ -6636,13 +6643,12 @@ async def sort_offers_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
         campaign_id = int(parts[0])
         sort_type = "_".join(parts[1:])  # price_low, price_high, rating, timeline
 
-        # Сохраняем выбранную сортировку
+        # Сохраняем выбранную сортировку и campaign_id для view_campaign_offers
         context.user_data['bids_sort_order'] = sort_type
+        context.user_data['_view_offers_campaign_id'] = campaign_id
 
         # Перезагружаем отклики с новой сортировкой
-        # Используем фейковый callback_data для повторного вызова view_order_bids
-        query.data = f"view_bids_{campaign_id}"
-        await view_order_bids(update, context)
+        await view_campaign_offers(update, context)
 
     except Exception as e:
         logger.error(f"Ошибка в sort_bids_handler: {e}", exc_info=True)
@@ -7215,8 +7221,7 @@ async def confirm_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await asyncio.sleep(1)
 
         # Вызываем основную функцию успешной оплаты
-        # Подменяем callback_data чтобы test_payment_success правильно обработал
-        query.data = f"test_payment_success_{offer_id}"
+        context.user_data['_payment_offer_id'] = offer_id
         await test_payment_success(update, context)
 
     except Exception as e:
@@ -7456,7 +7461,10 @@ async def test_payment_success(update: Update, context: ContextTypes.DEFAULT_TYP
         await query.answer()
 
     try:
-        offer_id = int(query.data.replace("test_payment_success_", ""))
+        if '_payment_offer_id' in context.user_data:
+            offer_id = context.user_data.pop('_payment_offer_id')
+        else:
+            offer_id = int(query.data.replace("test_payment_success_", ""))
         # ИСПРАВЛЕНО: Вызываем общую функцию process_offer_selection
         await process_offer_selection(update, context, offer_id)
 
@@ -8742,7 +8750,7 @@ async def show_blogger_card(query_or_message, context: ContextTypes.DEFAULT_TYPE
     # Навигация по мастерам
     nav_buttons = []
     if worker_index < len(workers_list) - 1:
-        nav_buttons.append(InlineKeyboardButton("➡️ Следующий блогер", callback_data="browse_next_worker"))
+        nav_buttons.append(InlineKeyboardButton("➡️ Следующий блогер", callback_data="browse_next_blogger"))
     
     if nav_buttons:
         keyboard.append(nav_buttons)
@@ -13835,8 +13843,11 @@ async def admin_users_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    # Парсим фильтр из callback_data
-    filter_type = query.data.replace("admin_users_list_", "")
+    # Парсим фильтр из callback_data или из user_data (если вызвано из admin_users_page)
+    if 'admin_users_filter' in context.user_data and not query.data.startswith("admin_users_list_"):
+        filter_type = context.user_data['admin_users_filter']
+    else:
+        filter_type = query.data.replace("admin_users_list_", "")
     page = context.user_data.get('admin_users_page', 1)
 
     users = db.get_users_filtered(filter_type, page=page, per_page=10)
@@ -13917,13 +13928,9 @@ async def admin_users_page(update: Update, context: ContextTypes.DEFAULT_TYPE):
     filter_type = parts[3]
     page = int(parts[4])
 
-    # Сохраняем страницу в контекст
+    # Сохраняем страницу и фильтр в контекст для admin_users_list
     context.user_data['admin_users_page'] = page
     context.user_data['admin_users_filter'] = filter_type
-
-    # Создаём фейковый callback для переиспользования admin_users_list
-    # Меняем query.data чтобы он думал что это обычный запрос списка
-    query.data = f"admin_users_list_{filter_type}"
 
     # Вызываем основной обработчик списка пользователей
     return await admin_users_list(update, context)
