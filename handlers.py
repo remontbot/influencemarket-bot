@@ -14274,6 +14274,7 @@ async def admin_suggestions_filter(update: Update, context: ContextTypes.DEFAULT
         f"📝 Список предложений:\n\n"
     )
 
+    suggestion_buttons = []
     for i, suggestion in enumerate(suggestions[:20], 1):
         suggestion_dict = dict(suggestion)
         role_emoji = {"blogger": "📱", "advertiser": "👤", "both": "📱👤"}.get(suggestion_dict['user_role'], "")
@@ -14292,9 +14293,73 @@ async def admin_suggestions_filter(update: Update, context: ContextTypes.DEFAULT
             f"📅 {suggestion_dict['created_at']}\n\n"
         )
 
-    keyboard = [
+        suggestion_buttons.append([
+            InlineKeyboardButton(
+                f"📖 Читать #{suggestion_dict['id']}",
+                callback_data=f"admin_suggestion_view_{suggestion_dict['id']}_{status}"
+            )
+        ])
+
+    keyboard = suggestion_buttons + [
         [InlineKeyboardButton("⬅️ Назад к предложениям", callback_data="admin_suggestions")],
         [InlineKeyboardButton("⬅️ Админ меню", callback_data="admin_back")],
+    ]
+
+    await query.edit_message_text(
+        text,
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+    return ADMIN_MENU
+
+
+async def admin_suggestion_view(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Просмотр полного текста предложения"""
+    query = update.callback_query
+    await query.answer()
+
+    # callback_data: admin_suggestion_view_{id}_{status}
+    parts = query.data.split("_")
+    # parts: ['admin', 'suggestion', 'view', '{id}', '{status}']
+    suggestion_id = int(parts[3])
+    back_status = parts[4] if len(parts) > 4 else "new"
+
+    suggestions = db.get_all_suggestions()
+    suggestion_dict = None
+    for s in suggestions:
+        sd = dict(s)
+        if sd['id'] == suggestion_id:
+            suggestion_dict = sd
+            break
+
+    if not suggestion_dict:
+        await query.edit_message_text(
+            "Предложение не найдено.",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("⬅️ Назад", callback_data=f"admin_suggestions_{back_status}")
+            ]])
+        )
+        return ADMIN_MENU
+
+    status_emoji = {"new": "🆕", "viewed": "👁", "resolved": "✅"}.get(suggestion_dict['status'], "")
+    role_emoji = {"blogger": "📱", "advertiser": "👤", "both": "📱👤"}.get(suggestion_dict['user_role'], "")
+    status_name = {"new": "Новое", "viewed": "Просмотрено", "resolved": "Решено"}.get(suggestion_dict['status'], suggestion_dict['status'])
+
+    message_text = html.escape(suggestion_dict["message"])
+
+    text = (
+        f"💡 <b>Предложение #{suggestion_dict['id']}</b>\n\n"
+        f"{status_emoji} Статус: {status_name}\n"
+        f"{role_emoji} Роль: {suggestion_dict['user_role']}\n"
+        f"📅 Дата: {suggestion_dict['created_at']}\n\n"
+        f"📝 <b>Текст:</b>\n"
+        f"{message_text}"
+    )
+
+    keyboard = [
+        [InlineKeyboardButton("⬅️ Назад к списку", callback_data=f"admin_suggestions_{back_status}")],
+        [InlineKeyboardButton("⬅️ Предложения", callback_data="admin_suggestions")],
     ]
 
     await query.edit_message_text(

@@ -1132,6 +1132,7 @@ def main():
                 CallbackQueryHandler(handlers.admin_user_search_start, pattern="^admin_user_search_start$"),
                 CallbackQueryHandler(handlers.admin_suggestions, pattern="^admin_suggestions$"),
                 CallbackQueryHandler(handlers.admin_suggestions_filter, pattern="^admin_suggestions_(new|viewed|resolved)$"),
+                CallbackQueryHandler(handlers.admin_suggestion_view, pattern="^admin_suggestion_view_"),
                 # КРИТИЧНО: Обработчики для рекламы (работают из ADMIN_MENU когда ad_data есть)
                 CallbackQueryHandler(handlers.admin_ad_placement, pattern="^ad_placement_"),
                 CallbackQueryHandler(handlers.admin_ad_confirm, pattern="^ad_confirm_"),
