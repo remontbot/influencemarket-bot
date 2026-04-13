@@ -8200,11 +8200,17 @@ async def blogger_view_campaigns(update: Update, context: ContextTypes.DEFAULT_T
 async def blogger_view_campaign_details(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Детальный просмотр кампания мастером"""
     query = update.callback_query
-    await query.answer()
-    
     try:
-        # Извлекаем campaign_id из callback_data
-        campaign_id = int(query.data.replace("view_order_", ""))
+        await query.answer()
+    except Exception:
+        pass  # query уже отвечен если вызвано из другого handler-а
+
+    try:
+        # Извлекаем campaign_id из callback_data или из user_data (если вызвано из decline_no)
+        if '_view_campaign_id' in context.user_data:
+            campaign_id = context.user_data.pop('_view_campaign_id')
+        else:
+            campaign_id = int(query.data.replace("view_order_", ""))
 
         # Получаем кампанию
         campaign = db.get_order_by_id(campaign_id)
@@ -8476,9 +8482,8 @@ async def blogger_decline_campaign_no(update: Update, context: ContextTypes.DEFA
         # Извлекаем campaign_id из callback_data: "decline_campaign_no_123"
         campaign_id = int(query.data.replace("decline_campaign_no_", ""))
 
-        # Возвращаемся к просмотру кампания (симулируем callback)
-        # Создаем новый query с правильным callback_data
-        query.data = f"view_order_{campaign_id}"
+        # Передаём campaign_id через user_data — query.data нельзя изменить в PTB 21
+        context.user_data['_view_campaign_id'] = campaign_id
         await blogger_view_campaign_details(update, context)
 
     except Exception as e:
@@ -14191,6 +14196,7 @@ async def admin_suggestions(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"📝 Последние 10 предложений:\n\n"
     )
 
+    read_buttons = []
     for i, suggestion in enumerate(suggestions[:10], 1):
         suggestion_dict = dict(suggestion)
         status_emoji = {"new": "🆕", "viewed": "👁", "resolved": "✅"}.get(suggestion_dict['status'], "")
@@ -14210,7 +14216,15 @@ async def admin_suggestions(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"📅 {suggestion_dict['created_at']}\n\n"
         )
 
-    keyboard = [
+        back_status = suggestion_dict.get('status', 'new')
+        read_buttons.append([
+            InlineKeyboardButton(
+                f"📖 Читать #{suggestion_dict['id']}",
+                callback_data=f"admin_suggestion_view_{suggestion_dict['id']}_{back_status}"
+            )
+        ])
+
+    keyboard = read_buttons + [
         [InlineKeyboardButton("🆕 Новые", callback_data="admin_suggestions_new")],
         [InlineKeyboardButton("👁 Просмотренные", callback_data="admin_suggestions_viewed")],
         [InlineKeyboardButton("✅ Решенные", callback_data="admin_suggestions_resolved")],
