@@ -1002,34 +1002,6 @@ def main():
         )
     )
 
-    application.add_handler(
-        CallbackQueryHandler(
-            handlers.pay_with_stars,
-            pattern="^pay_stars_"
-        )
-    )
-
-    application.add_handler(
-        CallbackQueryHandler(
-            handlers.pay_with_card,
-            pattern="^pay_card_"
-        )
-    )
-
-    application.add_handler(
-        CallbackQueryHandler(
-            handlers.confirm_payment,
-            pattern="^confirm_payment_"
-        )
-    )
-
-    # --- Обработчик кнопки "Сказать спасибо платформе" ---
-    application.add_handler(
-        CallbackQueryHandler(
-            handlers.thank_platform,
-            pattern="^thank_platform_"
-        )
-    )
 
     application.add_handler(
         CallbackQueryHandler(

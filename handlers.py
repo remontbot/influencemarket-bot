@@ -795,7 +795,7 @@ async def register_blogger_cities_confirm(update: Update, context: ContextTypes.
 
         await query.edit_message_text(
             f"🏙 Города: {cities_text}\n\n"
-            "📱 <b>Шаг 4/7:</b> Выберите категории контента:\n\n"
+            "📱 <b>Шаг 4/6:</b> Выберите категории контента:\n\n"
             "Нажимайте подходящие кнопки (можно несколько).\n"
             "Когда закончите — нажмите «✅ Завершить выбор».",
             parse_mode="HTML",
@@ -818,22 +818,23 @@ async def register_blogger_categories_select(update: Update, context: ContextTyp
 
         await query.answer()
 
-        # Переходим к выбору уровня опыта
-        keyboard = [
-            [InlineKeyboardButton("🌱 Начинающий блогер", callback_data="exp_Начинающий блогер")],
-            [InlineKeyboardButton("⚡ Опытный блогер", callback_data="exp_Опытный блогер")],
-            [InlineKeyboardButton("⭐ Профессионал", callback_data="exp_Профессионал")],
-        ]
-
+        # Пропускаем выбор опыта — переходим сразу к описанию
         categories_text = ", ".join(context.user_data["categories"])
 
         await query.edit_message_text(
             f"✅ <b>Выбранные категории:</b>\n{categories_text}\n\n"
-            "<b>Шаг 5/7:</b> Выберите ваш уровень опыта:",
-            parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup(keyboard),
+            "📝 <b>Шаг 4/6:</b> Расскажите о себе рекламодателям\n\n"
+            "💡 Укажите:\n"
+            "✓ Сколько лет создаёте контент и какие проекты выполняли\n"
+            "✓ Специализация: в чём вы особенно сильны\n"
+            "✓ Аудитория, охваты, стиль работы\n\n"
+            "<b>Пример:</b>\n"
+            "«Веду блог про семейные путешествия 3 года. Аудитория 25-40 лет, 70% женщин. "
+            "Средний охват Stories 15 000. Специализируюсь на отзывах об отелях и семейных "
+            "развлечениях. Готова предоставить статистику и примеры прошлых интеграций.»",
+            parse_mode="HTML"
         )
-        return REGISTER_BLOGGER_EXPERIENCE
+        return REGISTER_BLOGGER_DESCRIPTION
 
     else:
         # Переключаем выбор категории
@@ -871,7 +872,7 @@ async def register_blogger_categories_select(update: Update, context: ContextTyp
 
         await query.edit_message_text(
             f"🏙 Города: {cities_text}\n\n"
-            "📱 <b>Шаг 4/7:</b> Выберите категории контента:\n\n"
+            "📱 <b>Шаг 4/6:</b> Выберите категории контента:\n\n"
             "Нажимайте подходящие кнопки (можно несколько).\n"
             "Когда закончите — нажмите «✅ Завершить выбор».",
             parse_mode="HTML",
@@ -7104,137 +7105,6 @@ async def select_blogger(update: Update, context: ContextTypes.DEFAULT_TYPE):
             query,
             f"❌ Ошибка при выборе блогера:\n{str(e)}",
             parse_mode="HTML"
-        )
-
-
-async def pay_with_stars(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Оплата через Telegram Stars"""
-    query = update.callback_query
-    await query.answer()
-
-    try:
-        offer_id = int(query.data.replace("pay_stars_", ""))
-
-        # TODO: Интеграция с Telegram Stars Payment API
-        # Здесь должна быть реальная интеграция с платежной системой Telegram Stars
-        # На данный момент - заглушка для демонстрации
-
-        text = (
-            "⭐ <b>Оплата Telegram Stars</b>\n\n"
-            "🚧 Функция оплаты через Telegram Stars находится в разработке.\n\n"
-            "Для тестирования используйте кнопку ниже для имитации оплаты:"
-        )
-
-        keyboard = [
-            [InlineKeyboardButton("✅ Имитировать успешную оплату (тест)", callback_data=f"test_payment_success_{offer_id}")],
-            [InlineKeyboardButton("⬅️ Назад", callback_data=f"select_blogger_{offer_id}")],
-        ]
-
-        await query.edit_message_text(
-            text,
-            parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
-
-    except Exception as e:
-        logger.error(f"Ошибка в pay_with_stars: {e}", exc_info=True)
-
-
-async def pay_with_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Оплата картой через внешний платежный сервис (MOCK для демонстрации)"""
-    query = update.callback_query
-    await query.answer()
-
-    try:
-        offer_id = int(query.data.replace("pay_card_", ""))
-
-        # MOCK: В реальной системе здесь будет интеграция с BePaid/Stripe
-        # Для демонстрации показываем реквизиты и кнопку подтверждения
-
-        text = (
-            "💳 <b>Оплата банковской картой</b>\n\n"
-            "💰 <b>Сумма к оплате: 1.00 BYN</b>\n\n"
-            "📋 <b>Реквизиты для оплаты:</b>\n"
-            "━━━━━━━━━━━━━━━━━━━━━━\n"
-            "💳 Карта: <code>4242 4242 4242 4242</code>\n"
-            "👤 Получатель: <b>gde.reklama Belarus</b>\n"
-            "📝 Назначение: <i>Доступ к контакту блогера</i>\n"
-            "━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            "⚠️ <b>ДЕМО-РЕЖИМ:</b> Это тестовая заглушка.\n"
-            "В продакшн будет интеграция с:\n"
-            "• <b>BePaid</b> (для клиентов из Беларуси)\n"
-            "• <b>Stripe</b> (международные платежи)\n\n"
-            "💡 Нажмите кнопку ниже для имитации оплаты:"
-        )
-
-        keyboard = [
-            [InlineKeyboardButton("✅ Я оплатил", callback_data=f"confirm_payment_{offer_id}")],
-            [InlineKeyboardButton("⬅️ Назад", callback_data=f"select_blogger_{offer_id}")],
-        ]
-
-        await query.edit_message_text(
-            text,
-            parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
-
-    except Exception as e:
-        logger.error(f"Ошибка в pay_with_card: {e}", exc_info=True)
-
-
-async def confirm_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """
-    Подтверждение оплаты клиентом (MOCK для демонстрации).
-    В реальной системе здесь будет проверка статуса платежа через API платежного провайдера.
-    """
-    query = update.callback_query
-    await query.answer("Проверяем оплату...")
-
-    try:
-        offer_id = int(query.data.replace("confirm_payment_", ""))
-
-        # MOCK: Показываем процесс проверки
-        await query.edit_message_text(
-            "⏳ <b>Проверяем оплату...</b>\n\n"
-            "Подождите, идет проверка платежа...",
-            parse_mode="HTML"
-        )
-
-        # MOCK: В реальной системе здесь был бы запрос к платежному API
-        # Например: payment_status = await check_payment_status(transaction_id)
-        # Для демонстрации просто имитируем успешную оплату
-
-        # Небольшая задержка для реалистичности (опционально)
-        import asyncio
-        await asyncio.sleep(1)
-
-        # Показываем успешную оплату
-        await query.edit_message_text(
-            "✅ <b>Оплата подтверждена!</b>\n\n"
-            "💳 Списано: <b>1.00 BYN</b>\n"
-            "📄 ID транзакции: <code>MOCK-" + str(offer_id).zfill(6) + "</code>\n\n"
-            "⏳ Открываем доступ к блогеру...",
-            parse_mode="HTML"
-        )
-
-        # Еще небольшая задержка
-        await asyncio.sleep(1)
-
-        # Вызываем основную функцию успешной оплаты
-        context.user_data['_payment_offer_id'] = offer_id
-        await test_payment_success(update, context)
-
-    except Exception as e:
-        logger.error(f"Ошибка в confirm_payment: {e}", exc_info=True)
-        await query.edit_message_text(
-            "❌ <b>Ошибка при проверке оплаты</b>\n\n"
-            f"Произошла ошибка: {str(e)}\n\n"
-            "Попробуйте еще раз или обратитесь в поддержку.",
-            parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("🔄 Попробовать еще раз", callback_data=f"pay_card_{offer_id}"),
-                InlineKeyboardButton("💼 Главное меню", callback_data="show_client_menu")
-            ]])
         )
 
 
