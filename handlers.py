@@ -9425,10 +9425,10 @@ async def go_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Кнопка для создания второго профиля
     if not has_worker:
-        keyboard.append([InlineKeyboardButton("➕ Стать блогером", callback_data="role_worker")])
-    
+        keyboard.append([InlineKeyboardButton("➕ Стать блогером", callback_data="role_blogger")])
+
     if not has_client:
-        keyboard.append([InlineKeyboardButton("➕ Стать рекламодателем", callback_data="role_client")])
+        keyboard.append([InlineKeyboardButton("➕ Стать рекламодателем", callback_data="role_advertiser")])
     
     message = "💼 <b>Главное меню</b>\n\n"
     
