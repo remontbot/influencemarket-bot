@@ -335,7 +335,10 @@ def _get_bids_word(count):
     ADMIN_SEARCH,
     # Состояния для изменения названия страницы рекламодателя
     EDIT_ADVERTISER_NAME,
-) = range(49)
+    # Состояния для выбора опыта при регистрации и редактировании
+    REGISTER_BLOGGER_EXPERIENCE,
+    EDIT_EXPERIENCE,
+) = range(51)
 
 
 def is_valid_name(name: str) -> bool:
@@ -792,7 +795,7 @@ async def register_blogger_cities_confirm(update: Update, context: ContextTypes.
 
         await query.edit_message_text(
             f"🏙 Города: {cities_text}\n\n"
-            "📱 <b>Шаг 4/7:</b> Выберите категории контента:\n\n"
+            "📱 <b>Шаг 4/6:</b> Выберите категории контента:\n\n"
             "Нажимайте подходящие кнопки (можно несколько).\n"
             "Когда закончите — нажмите «✅ Завершить выбор».",
             parse_mode="HTML",
@@ -815,22 +818,23 @@ async def register_blogger_categories_select(update: Update, context: ContextTyp
 
         await query.answer()
 
-        # Переходим к выбору уровня опыта
-        keyboard = [
-            [InlineKeyboardButton("🌱 Начинающий блогер", callback_data="exp_Начинающий блогер")],
-            [InlineKeyboardButton("⚡ Опытный блогер", callback_data="exp_Опытный блогер")],
-            [InlineKeyboardButton("⭐ Профессионал", callback_data="exp_Профессионал")],
-        ]
-
+        # Пропускаем выбор опыта — переходим сразу к описанию
         categories_text = ", ".join(context.user_data["categories"])
 
         await query.edit_message_text(
             f"✅ <b>Выбранные категории:</b>\n{categories_text}\n\n"
-            "<b>Шаг 5/7:</b> Выберите ваш уровень опыта:",
-            parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup(keyboard),
+            "📝 <b>Шаг 4/6:</b> Расскажите о себе рекламодателям\n\n"
+            "💡 Укажите:\n"
+            "✓ Сколько лет создаёте контент и какие проекты выполняли\n"
+            "✓ Специализация: в чём вы особенно сильны\n"
+            "✓ Аудитория, охваты, стиль работы\n\n"
+            "<b>Пример:</b>\n"
+            "«Веду блог про семейные путешествия 3 года. Аудитория 25-40 лет, 70% женщин. "
+            "Средний охват Stories 15 000. Специализируюсь на отзывах об отелях и семейных "
+            "развлечениях. Готова предоставить статистику и примеры прошлых интеграций.»",
+            parse_mode="HTML"
         )
-        return REGISTER_BLOGGER_EXPERIENCE
+        return REGISTER_BLOGGER_DESCRIPTION
 
     else:
         # Переключаем выбор категории
@@ -868,7 +872,7 @@ async def register_blogger_categories_select(update: Update, context: ContextTyp
 
         await query.edit_message_text(
             f"🏙 Города: {cities_text}\n\n"
-            "📱 <b>Шаг 4/7:</b> Выберите категории контента:\n\n"
+            "📱 <b>Шаг 4/6:</b> Выберите категории контента:\n\n"
             "Нажимайте подходящие кнопки (можно несколько).\n"
             "Когда закончите — нажмите «✅ Завершить выбор».",
             parse_mode="HTML",
@@ -3929,7 +3933,7 @@ async def view_blogger_portfolio(update: Update, context: ContextTypes.DEFAULT_T
             query,
             "📸 У этого блогера пока нет фото контент.",
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("⬅️ Назад", callback_data="back_to_bid_card")
+                InlineKeyboardButton("⬅️ Назад", callback_data="back_to_offer_card")
             ]])
         )
         return
@@ -3953,7 +3957,7 @@ async def view_blogger_portfolio(update: Update, context: ContextTypes.DEFAULT_T
         ]
         keyboard.append(nav_buttons)
 
-    keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="back_to_bid_card")])
+    keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="back_to_offer_card")])
 
     try:
         await query.message.delete()
@@ -4000,7 +4004,7 @@ async def blogger_portfolio_view_navigate(update: Update, context: ContextTypes.
         ]
         keyboard.append(nav_buttons)
 
-    keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="back_to_bid_card")])
+    keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data="back_to_offer_card")])
 
     try:
         await query.message.delete()
@@ -4029,6 +4033,7 @@ async def show_edit_profile_menu(update: Update, context: ContextTypes.DEFAULT_T
         [InlineKeyboardButton("🌐 Социальные сети", callback_data="edit_social_media")],
         [InlineKeyboardButton("📊 Подписчики", callback_data="edit_followers")],
         [InlineKeyboardButton("📝 Изменить описание", callback_data="edit_description")],
+        [InlineKeyboardButton("📊 Уровень опыта", callback_data="edit_experience")],
         [InlineKeyboardButton("⬅️ Назад к профилю", callback_data="worker_profile")],
     ]
 
@@ -6548,8 +6553,11 @@ async def view_campaign_offers(update: Update, context: ContextTypes.DEFAULT_TYP
     await query.answer()
 
     try:
-        # Извлекаем campaign_id из callback_data
-        campaign_id = int(query.data.replace("view_offers_", ""))
+        # Извлекаем campaign_id из callback_data или из user_data (если вызвано из sort_offers_handler)
+        if '_view_offers_campaign_id' in context.user_data:
+            campaign_id = context.user_data.pop('_view_offers_campaign_id')
+        else:
+            campaign_id = int(query.data.replace("view_offers_", ""))
 
         # Проверяем что кампания принадлежит текущему пользователю
         user = db.get_user(query.from_user.id)
@@ -6636,13 +6644,12 @@ async def sort_offers_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
         campaign_id = int(parts[0])
         sort_type = "_".join(parts[1:])  # price_low, price_high, rating, timeline
 
-        # Сохраняем выбранную сортировку
+        # Сохраняем выбранную сортировку и campaign_id для view_campaign_offers
         context.user_data['bids_sort_order'] = sort_type
+        context.user_data['_view_offers_campaign_id'] = campaign_id
 
         # Перезагружаем отклики с новой сортировкой
-        # Используем фейковый callback_data для повторного вызова view_order_bids
-        query.data = f"view_bids_{campaign_id}"
-        await view_order_bids(update, context)
+        await view_campaign_offers(update, context)
 
     except Exception as e:
         logger.error(f"Ошибка в sort_bids_handler: {e}", exc_info=True)
@@ -7101,138 +7108,6 @@ async def select_blogger(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
-async def pay_with_stars(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Оплата через Telegram Stars"""
-    query = update.callback_query
-    await query.answer()
-
-    try:
-        offer_id = int(query.data.replace("pay_stars_", ""))
-
-        # TODO: Интеграция с Telegram Stars Payment API
-        # Здесь должна быть реальная интеграция с платежной системой Telegram Stars
-        # На данный момент - заглушка для демонстрации
-
-        text = (
-            "⭐ <b>Оплата Telegram Stars</b>\n\n"
-            "🚧 Функция оплаты через Telegram Stars находится в разработке.\n\n"
-            "Для тестирования используйте кнопку ниже для имитации оплаты:"
-        )
-
-        keyboard = [
-            [InlineKeyboardButton("✅ Имитировать успешную оплату (тест)", callback_data=f"test_payment_success_{offer_id}")],
-            [InlineKeyboardButton("⬅️ Назад", callback_data=f"select_blogger_{offer_id}")],
-        ]
-
-        await query.edit_message_text(
-            text,
-            parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
-
-    except Exception as e:
-        logger.error(f"Ошибка в pay_with_stars: {e}", exc_info=True)
-
-
-async def pay_with_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Оплата картой через внешний платежный сервис (MOCK для демонстрации)"""
-    query = update.callback_query
-    await query.answer()
-
-    try:
-        offer_id = int(query.data.replace("pay_card_", ""))
-
-        # MOCK: В реальной системе здесь будет интеграция с BePaid/Stripe
-        # Для демонстрации показываем реквизиты и кнопку подтверждения
-
-        text = (
-            "💳 <b>Оплата банковской картой</b>\n\n"
-            "💰 <b>Сумма к оплате: 1.00 BYN</b>\n\n"
-            "📋 <b>Реквизиты для оплаты:</b>\n"
-            "━━━━━━━━━━━━━━━━━━━━━━\n"
-            "💳 Карта: <code>4242 4242 4242 4242</code>\n"
-            "👤 Получатель: <b>gde.reklama Belarus</b>\n"
-            "📝 Назначение: <i>Доступ к контакту блогера</i>\n"
-            "━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            "⚠️ <b>ДЕМО-РЕЖИМ:</b> Это тестовая заглушка.\n"
-            "В продакшн будет интеграция с:\n"
-            "• <b>BePaid</b> (для клиентов из Беларуси)\n"
-            "• <b>Stripe</b> (международные платежи)\n\n"
-            "💡 Нажмите кнопку ниже для имитации оплаты:"
-        )
-
-        keyboard = [
-            [InlineKeyboardButton("✅ Я оплатил", callback_data=f"confirm_payment_{offer_id}")],
-            [InlineKeyboardButton("⬅️ Назад", callback_data=f"select_blogger_{offer_id}")],
-        ]
-
-        await query.edit_message_text(
-            text,
-            parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
-
-    except Exception as e:
-        logger.error(f"Ошибка в pay_with_card: {e}", exc_info=True)
-
-
-async def confirm_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """
-    Подтверждение оплаты клиентом (MOCK для демонстрации).
-    В реальной системе здесь будет проверка статуса платежа через API платежного провайдера.
-    """
-    query = update.callback_query
-    await query.answer("Проверяем оплату...")
-
-    try:
-        offer_id = int(query.data.replace("confirm_payment_", ""))
-
-        # MOCK: Показываем процесс проверки
-        await query.edit_message_text(
-            "⏳ <b>Проверяем оплату...</b>\n\n"
-            "Подождите, идет проверка платежа...",
-            parse_mode="HTML"
-        )
-
-        # MOCK: В реальной системе здесь был бы запрос к платежному API
-        # Например: payment_status = await check_payment_status(transaction_id)
-        # Для демонстрации просто имитируем успешную оплату
-
-        # Небольшая задержка для реалистичности (опционально)
-        import asyncio
-        await asyncio.sleep(1)
-
-        # Показываем успешную оплату
-        await query.edit_message_text(
-            "✅ <b>Оплата подтверждена!</b>\n\n"
-            "💳 Списано: <b>1.00 BYN</b>\n"
-            "📄 ID транзакции: <code>MOCK-" + str(offer_id).zfill(6) + "</code>\n\n"
-            "⏳ Открываем доступ к блогеру...",
-            parse_mode="HTML"
-        )
-
-        # Еще небольшая задержка
-        await asyncio.sleep(1)
-
-        # Вызываем основную функцию успешной оплаты
-        # Подменяем callback_data чтобы test_payment_success правильно обработал
-        query.data = f"test_payment_success_{offer_id}"
-        await test_payment_success(update, context)
-
-    except Exception as e:
-        logger.error(f"Ошибка в confirm_payment: {e}", exc_info=True)
-        await query.edit_message_text(
-            "❌ <b>Ошибка при проверке оплаты</b>\n\n"
-            f"Произошла ошибка: {str(e)}\n\n"
-            "Попробуйте еще раз или обратитесь в поддержку.",
-            parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("🔄 Попробовать еще раз", callback_data=f"pay_card_{offer_id}"),
-                InlineKeyboardButton("💼 Главное меню", callback_data="show_client_menu")
-            ]])
-        )
-
-
 async def process_offer_selection(update: Update, context: ContextTypes.DEFAULT_TYPE, offer_id: int):
     """
     Общая функция для обработки выбора блогера.
@@ -7456,7 +7331,10 @@ async def test_payment_success(update: Update, context: ContextTypes.DEFAULT_TYP
         await query.answer()
 
     try:
-        offer_id = int(query.data.replace("test_payment_success_", ""))
+        if '_payment_offer_id' in context.user_data:
+            offer_id = context.user_data.pop('_payment_offer_id')
+        else:
+            offer_id = int(query.data.replace("test_payment_success_", ""))
         # ИСПРАВЛЕНО: Вызываем общую функцию process_offer_selection
         await process_offer_selection(update, context, offer_id)
 
@@ -8742,7 +8620,7 @@ async def show_blogger_card(query_or_message, context: ContextTypes.DEFAULT_TYPE
     # Навигация по мастерам
     nav_buttons = []
     if worker_index < len(workers_list) - 1:
-        nav_buttons.append(InlineKeyboardButton("➡️ Следующий блогер", callback_data="browse_next_worker"))
+        nav_buttons.append(InlineKeyboardButton("➡️ Следующий блогер", callback_data="browse_next_blogger"))
     
     if nav_buttons:
         keyboard.append(nav_buttons)
@@ -13835,8 +13713,11 @@ async def admin_users_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    # Парсим фильтр из callback_data
-    filter_type = query.data.replace("admin_users_list_", "")
+    # Парсим фильтр из callback_data или из user_data (если вызвано из admin_users_page)
+    if 'admin_users_filter' in context.user_data and not query.data.startswith("admin_users_list_"):
+        filter_type = context.user_data['admin_users_filter']
+    else:
+        filter_type = query.data.replace("admin_users_list_", "")
     page = context.user_data.get('admin_users_page', 1)
 
     users = db.get_users_filtered(filter_type, page=page, per_page=10)
@@ -13917,13 +13798,9 @@ async def admin_users_page(update: Update, context: ContextTypes.DEFAULT_TYPE):
     filter_type = parts[3]
     page = int(parts[4])
 
-    # Сохраняем страницу в контекст
+    # Сохраняем страницу и фильтр в контекст для admin_users_list
     context.user_data['admin_users_page'] = page
     context.user_data['admin_users_filter'] = filter_type
-
-    # Создаём фейковый callback для переиспользования admin_users_list
-    # Меняем query.data чтобы он думал что это обычный запрос списка
-    query.data = f"admin_users_list_{filter_type}"
 
     # Вызываем основной обработчик списка пользователей
     return await admin_users_list(update, context)

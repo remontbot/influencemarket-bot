@@ -201,6 +201,12 @@ def main():
                     pattern="^cat_",
                 )
             ],
+            handlers.REGISTER_BLOGGER_EXPERIENCE: [
+                CallbackQueryHandler(
+                    handlers.register_blogger_experience,
+                    pattern="^exp_",
+                )
+            ],
             handlers.REGISTER_BLOGGER_DESCRIPTION: [
                 MessageHandler(
                     filters.TEXT & ~filters.COMMAND,
@@ -235,19 +241,19 @@ def main():
             handlers.REGISTER_ADVERTISER_REGION_SELECT: [
                 CallbackQueryHandler(
                     handlers.register_advertiser_region_select,
-                    pattern="^advertiserregion_",
+                    pattern="^clientregion_",
                 )
             ],
             handlers.REGISTER_ADVERTISER_CITY: [
                 CallbackQueryHandler(
                     handlers.register_advertiser_city_select,
-                    pattern="^advertisercity_",
+                    pattern="^clientcity_",
                 )
             ],
             handlers.REGISTER_ADVERTISER_CITY_SELECT: [
                 CallbackQueryHandler(
                     handlers.register_advertiser_city_select,
-                    pattern="^advertisercity_",
+                    pattern="^clientcity_",
                 )
             ],
             handlers.REGISTER_ADVERTISER_CITY_OTHER: [
@@ -338,6 +344,10 @@ def main():
                 CallbackQueryHandler(handlers.edit_social_media_start, pattern="^edit_social_media$"),
                 CallbackQueryHandler(handlers.edit_followers_start, pattern="^edit_followers$"),
                 CallbackQueryHandler(handlers.edit_description_start, pattern="^edit_description$"),
+                CallbackQueryHandler(handlers.edit_experience_start, pattern="^edit_experience$"),
+            ],
+            handlers.EDIT_EXPERIENCE: [
+                CallbackQueryHandler(handlers.edit_experience_save, pattern="^editexp_"),
             ],
             handlers.EDIT_NAME: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.edit_name_save),
@@ -959,7 +969,7 @@ def main():
     application.add_handler(
         CallbackQueryHandler(
             handlers.sort_offers_handler,
-            pattern="^sort_offers_"
+            pattern="^sort_bids_"
         )
     )
 
@@ -992,34 +1002,6 @@ def main():
         )
     )
 
-    application.add_handler(
-        CallbackQueryHandler(
-            handlers.pay_with_stars,
-            pattern="^pay_stars_"
-        )
-    )
-
-    application.add_handler(
-        CallbackQueryHandler(
-            handlers.pay_with_card,
-            pattern="^pay_card_"
-        )
-    )
-
-    application.add_handler(
-        CallbackQueryHandler(
-            handlers.confirm_payment,
-            pattern="^confirm_payment_"
-        )
-    )
-
-    # --- Обработчик кнопки "Сказать спасибо платформе" ---
-    application.add_handler(
-        CallbackQueryHandler(
-            handlers.thank_platform,
-            pattern="^thank_platform_"
-        )
-    )
 
     application.add_handler(
         CallbackQueryHandler(
