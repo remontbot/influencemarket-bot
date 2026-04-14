@@ -493,7 +493,10 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def select_role(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
     role = query.data.split("_")[-1]
     context.user_data["selected_role"] = role
 
@@ -560,7 +563,10 @@ async def register_blogger_phone(update: Update, context: ContextTypes.DEFAULT_T
 async def register_blogger_region_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора региона блогером"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     region = query.data.replace("bloggerregion_", "")
     region_data = BELARUS_REGIONS.get(region)
@@ -630,7 +636,10 @@ async def register_blogger_region_select(update: Update, context: ContextTypes.D
 async def register_blogger_city_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора города блогером после выбора региона"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     city = query.data.replace("bloggercity_", "")
 
@@ -746,7 +755,10 @@ async def show_cities_confirmation(query, context: ContextTypes.DEFAULT_TYPE):
 async def register_blogger_cities_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора: добавить еще город или завершить"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     if query.data == "add_more_cities":
         # Показываем регионы снова
@@ -816,7 +828,10 @@ async def register_blogger_categories_select(update: Update, context: ContextTyp
             await query.answer("Выберите хотя бы одну категорию!", show_alert=True)
             return REGISTER_BLOGGER_CATEGORIES_SELECT
 
-        await query.answer()
+        try:
+            await query.answer()
+        except Exception:
+            pass
 
         # Пропускаем выбор опыта — переходим сразу к описанию
         categories_text = ", ".join(context.user_data["categories"])
@@ -884,7 +899,10 @@ async def register_blogger_categories_select(update: Update, context: ContextTyp
 
 async def register_blogger_experience(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
     
     experience = query.data.replace("exp_", "")
     context.user_data["experience"] = experience
@@ -936,7 +954,10 @@ async def register_blogger_description(update: Update, context: ContextTypes.DEF
 async def register_blogger_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора: добавлять фото или нет"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
     
     if query.data == "add_photos_yes":
         context.user_data["portfolio_photos"] = []
@@ -1442,7 +1463,10 @@ async def register_advertiser_phone(update: Update, context: ContextTypes.DEFAUL
 async def register_advertiser_region_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора региона клиентом"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     region = query.data.replace("clientregion_", "")
     region_data = BELARUS_REGIONS.get(region)
@@ -1590,7 +1614,10 @@ async def register_advertiser_region_select(update: Update, context: ContextType
 async def register_advertiser_city_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора города клиентом после выбора региона"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     city = query.data.replace("clientcity_", "")
 
@@ -2061,7 +2088,10 @@ async def blogger_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def navigate_campaigns_page(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Навигация по страницам списка кампаний для блогера"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Получаем текущую страницу
     page = context.user_data.get('campaigns_page', 0)
@@ -2157,7 +2187,10 @@ async def navigate_campaigns_page(update: Update, context: ContextTypes.DEFAULT_
 async def toggle_notifications(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Переключает уведомления для блогера"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     user = db.get_user_by_telegram_id(update.effective_user.id)
     if not user:
@@ -2192,7 +2225,10 @@ async def toggle_notifications(update: Update, context: ContextTypes.DEFAULT_TYP
 async def toggle_advertiser_notifications(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Переключает уведомления для клиента"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     user = db.get_user_by_telegram_id(update.effective_user.id)
     if not user:
@@ -2226,7 +2262,10 @@ async def toggle_advertiser_notifications(update: Update, context: ContextTypes.
 async def blogger_my_offers(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает только АКТИВНЫЕ отклики блогера (где блогера ещё не выбрали)"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     user = db.get_user_by_telegram_id(update.effective_user.id)
     if not user:
@@ -2321,7 +2360,10 @@ async def blogger_my_offers(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def blogger_my_campaigns(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает выбор категории заказов блогера (в работе/завершённые)"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         # Получаем пользователя и профиль блогера
@@ -2413,7 +2455,10 @@ async def blogger_my_campaigns(update: Update, context: ContextTypes.DEFAULT_TYP
 async def blogger_active_campaigns(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает активные кампании блогера (в работе)"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         user = db.get_user(query.from_user.id)
@@ -2499,7 +2544,10 @@ async def blogger_active_campaigns(update: Update, context: ContextTypes.DEFAULT
 async def blogger_completed_campaigns(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает завершённые кампании блогера"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         user = db.get_user(query.from_user.id)
@@ -2659,7 +2707,10 @@ async def show_advertiser_menu(update: Update, context: ContextTypes.DEFAULT_TYP
 async def start_edit_advertiser_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начинает процесс изменения названия страницы рекламодателя"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     user = db.get_user_by_telegram_id(update.effective_user.id)
     if not user:
@@ -2750,7 +2801,10 @@ async def handle_new_advertiser_name(update: Update, context: ContextTypes.DEFAU
 async def advertiser_my_payments(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает историю платежей клиента"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     user = db.get_user_by_telegram_id(update.effective_user.id)
     if not user:
@@ -2828,7 +2882,10 @@ async def advertiser_my_payments(update: Update, context: ContextTypes.DEFAULT_T
 async def show_blogger_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показ профиля блогера с правильным доступом к базе данных"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Очищаем context для сброса всех активных флагов (например, uploading_profile_photo)
     context.user_data.clear()
@@ -3017,7 +3074,10 @@ async def show_blogger_profile(update: Update, context: ContextTypes.DEFAULT_TYP
 async def blogger_add_photos_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало добавления фото контент"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
     
     telegram_id = query.from_user.id
     user = db.get_user(telegram_id)
@@ -3228,7 +3288,10 @@ async def blogger_add_photos_upload(update: Update, context: ContextTypes.DEFAUL
 async def blogger_add_photos_finish_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка нажатия кнопки завершения"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     logger.info(f"Нажата кнопка завершения добавления фото. Context: {context.user_data}")
 
@@ -3419,7 +3482,10 @@ async def blogger_add_photos_finish(query, context: ContextTypes.DEFAULT_TYPE):
 async def view_portfolio(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Просмотр галереи контент блогера с навигацией"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     telegram_id = query.from_user.id
     user = db.get_user(telegram_id)
@@ -3503,7 +3569,10 @@ async def view_portfolio(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def portfolio_navigate(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Навигация по галерее контент"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     photo_ids = context.user_data.get('portfolio_photos', [])
     current_index = context.user_data.get('current_portfolio_index', 0)
@@ -3562,7 +3631,10 @@ async def portfolio_navigate(update: Update, context: ContextTypes.DEFAULT_TYPE)
 async def edit_profile_photo_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало загрузки/изменения фото профиля"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     telegram_id = query.from_user.id
     user = db.get_user(telegram_id)
@@ -3692,7 +3764,10 @@ async def upload_profile_photo(update: Update, context: ContextTypes.DEFAULT_TYP
 async def cancel_profile_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Отмена загрузки фото профиля"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     context.user_data.clear()
 
@@ -3709,7 +3784,10 @@ async def cancel_profile_photo(update: Update, context: ContextTypes.DEFAULT_TYP
 async def manage_portfolio_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает фото портфолио с возможностью удаления"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Получаем профиль блогера
     telegram_id = query.from_user.id
@@ -3835,7 +3913,10 @@ async def show_portfolio_photo(query, context, index):
 async def portfolio_photo_navigate(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Навигация по фото портфолио"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Парсим направление и текущий индекс из callback_data
     data = query.data
@@ -3855,7 +3936,10 @@ async def portfolio_photo_navigate(update: Update, context: ContextTypes.DEFAULT
 async def delete_portfolio_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Удаляет фото из портфолио"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Парсим индекс из callback_data
     index = int(query.data.split("_")[-1])
@@ -3918,7 +4002,10 @@ async def delete_portfolio_photo(update: Update, context: ContextTypes.DEFAULT_T
 async def view_blogger_portfolio(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Просмотр галереи контент другого блогера (для клиента)"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Извлекаем worker_id из callback_data
     try:
@@ -3984,7 +4071,10 @@ async def view_blogger_portfolio(update: Update, context: ContextTypes.DEFAULT_T
 async def blogger_portfolio_view_navigate(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Навигация по галерее контент другого блогера"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     photos = context.user_data.get('viewing_worker_portfolio', [])
     current_index = context.user_data.get('viewing_worker_portfolio_index', 0)
@@ -4032,7 +4122,10 @@ async def blogger_portfolio_view_navigate(update: Update, context: ContextTypes.
 async def show_edit_profile_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Меню редактирования профиля"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     keyboard = [
         [InlineKeyboardButton("👤 Изменить фото профиля", callback_data="edit_profile_photo")],
@@ -4066,7 +4159,10 @@ async def show_edit_profile_menu(update: Update, context: ContextTypes.DEFAULT_T
 async def edit_name_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало редактирования имени"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
     
     telegram_id = query.from_user.id
     user = db.get_user(telegram_id)
@@ -4120,7 +4216,10 @@ async def edit_name_save(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def edit_phone_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало редактирования телефона"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
     
     telegram_id = query.from_user.id
     user = db.get_user(telegram_id)
@@ -4174,7 +4273,10 @@ async def edit_phone_save(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def edit_city_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """ИСПРАВЛЕНО: Редактирование городов - теперь поддерживает НЕСКОЛЬКО городов"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     telegram_id = query.from_user.id
     user = db.get_user(telegram_id)
@@ -4235,7 +4337,10 @@ async def edit_city_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def edit_region_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """ИСПРАВЛЕНО: ДОБАВЛЕНИЕ города (не замена)"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     region = query.data.replace("editregion_", "")
     region_data = BELARUS_REGIONS.get(region)
@@ -4314,7 +4419,10 @@ async def edit_region_select(update: Update, context: ContextTypes.DEFAULT_TYPE)
 async def edit_city_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """ИСПРАВЛЕНО: ДОБАВЛЕНИЕ города (не замена)"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     city = query.data.replace("editcity_", "")
 
@@ -4407,7 +4515,10 @@ async def edit_city_save(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def remove_city_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает меню удаления города"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     worker_id = context.user_data.get("edit_worker_id")
     if not worker_id:
@@ -4448,7 +4559,10 @@ async def remove_city_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def remove_city_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Удаляет выбранный город"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     city_to_remove = query.data.replace("remove_city_", "")
     worker_id = context.user_data.get("edit_worker_id")
@@ -4484,7 +4598,10 @@ async def remove_city_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def edit_categories_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало редактирования категорий"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     telegram_id = query.from_user.id
     user = db.get_user(telegram_id)
@@ -4544,7 +4661,10 @@ async def edit_categories_select(update: Update, context: ContextTypes.DEFAULT_T
             await query.answer("Выберите хотя бы одну категорию!", show_alert=True)
             return EDIT_CATEGORIES_SELECT
 
-        await query.answer()
+        try:
+            await query.answer()
+        except Exception:
+            pass
 
         # Сохраняем изменения
         telegram_id = query.from_user.id
@@ -4613,7 +4733,10 @@ async def edit_categories_select(update: Update, context: ContextTypes.DEFAULT_T
 async def edit_experience_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало редактирования опыта"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
     
     telegram_id = query.from_user.id
     user = db.get_user(telegram_id)
@@ -4647,7 +4770,10 @@ async def edit_experience_start(update: Update, context: ContextTypes.DEFAULT_TY
 async def edit_experience_save(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Сохранение нового опыта"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
     
     new_exp = query.data.replace("editexp_", "")
     
@@ -4671,7 +4797,10 @@ async def edit_experience_save(update: Update, context: ContextTypes.DEFAULT_TYP
 async def edit_description_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало редактирования описания"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
     
     telegram_id = query.from_user.id
     user = db.get_user(telegram_id)
@@ -4724,7 +4853,10 @@ async def edit_description_save(update: Update, context: ContextTypes.DEFAULT_TY
 async def edit_social_media_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает меню редактирования социальных сетей"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     telegram_id = query.from_user.id
     user = db.get_user(telegram_id)
@@ -4761,7 +4893,10 @@ async def edit_social_media_start(update: Update, context: ContextTypes.DEFAULT_
 async def edit_social_media_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора платформы для редактирования"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     platform_map = {
         "edit_sm_instagram": ("instagram_link", "Instagram", "📸"),
@@ -4829,7 +4964,10 @@ def format_followers_count(count: int) -> str:
 async def edit_followers_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает меню редактирования количества подписчиков"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     telegram_id = query.from_user.id
     user = db.get_user(telegram_id)
@@ -4866,7 +5004,10 @@ async def edit_followers_start(update: Update, context: ContextTypes.DEFAULT_TYP
 async def edit_followers_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора платформы для редактирования подписчиков"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     platform_map = {
         "edit_fl_instagram": ("instagram_followers", "Instagram", "📸"),
@@ -4942,7 +5083,10 @@ async def edit_followers_save(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def advertiser_my_campaigns(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает выбор категории заказов (активные/завершённые)"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         # Получаем профиль клиента
@@ -5043,7 +5187,10 @@ async def advertiser_my_campaigns(update: Update, context: ContextTypes.DEFAULT_
 async def advertiser_waiting_campaigns(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает кампании в ожидании блогеров (без выбранного блогера)"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         user = db.get_user(query.from_user.id)
@@ -5143,7 +5290,10 @@ async def advertiser_waiting_campaigns(update: Update, context: ContextTypes.DEF
 async def advertiser_in_progress_campaigns(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает кампании в работе (есть выбранные блогеры)"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         user = db.get_user(query.from_user.id)
@@ -5241,7 +5391,10 @@ async def advertiser_in_progress_campaigns(update: Update, context: ContextTypes
 async def advertiser_completed_campaigns(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает завершённые кампании клиента"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         user = db.get_user(query.from_user.id)
@@ -5350,7 +5503,10 @@ async def cancel_campaign_handler(update: Update, context: ContextTypes.DEFAULT_
     НОВОЕ: Обработчик отмены кампания клиентом.
     """
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         # Извлекаем campaign_id из callback_data
@@ -5425,7 +5581,10 @@ async def complete_campaign_handler(update: Update, context: ContextTypes.DEFAUL
     Клиент оценивает блогера, блогер оценивает клиента.
     """
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         # Извлекаем campaign_id из callback_data
@@ -5565,7 +5724,10 @@ async def submit_campaign_rating(update: Update, context: ContextTypes.DEFAULT_T
     role: 'advertiser' (клиент оценивает блогера) или 'blogger' (блогер оценивает клиента)
     """
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         # Извлекаем campaign_id, rating и role из callback_data
@@ -5759,7 +5921,10 @@ async def submit_campaign_rating(update: Update, context: ContextTypes.DEFAULT_T
 async def add_comment_to_review(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик кнопки 'Оставить комментарий' после завершения кампания"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         # Извлекаем campaign_id из callback_data
@@ -5869,7 +6034,10 @@ async def blogger_upload_work_photo_start(update: Update, context: ContextTypes.
     НОВОЕ: Начало загрузки фото завершённого контента блогером.
     """
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         # Извлекаем campaign_id из callback_data
@@ -5923,7 +6091,10 @@ async def blogger_skip_work_photo(update: Update, context: ContextTypes.DEFAULT_
     НОВОЕ: Пропуск загрузки фото контента.
     """
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         campaign_id = int(query.data.replace("skip_work_photo_", ""))
@@ -6008,7 +6179,10 @@ async def blogger_finish_work_photos(update: Update, context: ContextTypes.DEFAU
     НОВОЕ: Завершение загрузки фото контента и сохранение в БД.
     """
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         campaign_id = int(query.data.replace("finish_work_photos_", ""))
@@ -6155,7 +6329,10 @@ async def blogger_cancel_work_photos(update: Update, context: ContextTypes.DEFAU
     НОВОЕ: Отмена загрузки фото контента.
     """
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         # Очищаем context
@@ -6179,7 +6356,10 @@ async def manage_completed_photos(update: Update, context: ContextTypes.DEFAULT_
     Позволяет просматривать и удалять старые фото.
     """
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         user_id = query.from_user.id
@@ -6276,7 +6456,10 @@ async def photo_page_navigation(update: Update, context: ContextTypes.DEFAULT_TY
     НОВОЕ: Навигация между страницами фотографий.
     """
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         direction = query.data.replace("photo_page_", "")
@@ -6299,7 +6482,10 @@ async def view_work_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     НОВОЕ: Просмотр отдельного фото контента с возможностью удаления.
     """
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         photo_db_id = int(query.data.replace("view_work_photo_", ""))
@@ -6371,7 +6557,10 @@ async def confirm_delete_work_photo(update: Update, context: ContextTypes.DEFAUL
     НОВОЕ: Подтверждение удаления фото контента.
     """
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         photo_db_id = int(query.data.replace("confirm_delete_photo_", ""))
@@ -6416,7 +6605,10 @@ async def advertiser_check_work_photos(update: Update, context: ContextTypes.DEF
     НОВОЕ: Просмотр фото контента клиентом для подтверждения.
     """
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         campaign_id = int(query.data.replace("check_work_photos_", ""))
@@ -6559,7 +6751,10 @@ def _get_photos_word(count):
 async def view_campaign_offers(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Просмотр откликов на кампанию клиента с навигацией"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         # Извлекаем campaign_id из callback_data или из user_data (если вызвано из sort_offers_handler)
@@ -6644,7 +6839,10 @@ async def view_campaign_offers(update: Update, context: ContextTypes.DEFAULT_TYP
 async def sort_offers_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик сортировки откликов"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         # Извлекаем campaign_id и тип сортировки из callback_data
@@ -6669,7 +6867,10 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
     """Показывает карточку предложения с информацией о блогере"""
     if not query:
         query = update.callback_query
-        await query.answer()
+        try:
+            await query.answer()
+        except Exception:
+            pass
 
     try:
         bid_data = context.user_data.get('viewing_bids')
@@ -6889,7 +7090,10 @@ async def show_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE, qu
 async def offer_navigate(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Навигация между откликами"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         bid_data = context.user_data.get('viewing_bids')
@@ -6916,7 +7120,10 @@ async def offer_navigate(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def reject_blogger_from_offer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Отказ от блогера - отклоняет предложение и показывает следующего"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         # Извлекаем offer_id из callback_data
@@ -6970,7 +7177,10 @@ async def reject_blogger_from_offer(update: Update, context: ContextTypes.DEFAUL
 async def view_blogger_profile_from_offer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Просмотр профиля блогера из карточки отклика"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         # Извлекаем blogger_id из callback_data
@@ -7065,7 +7275,10 @@ async def view_blogger_profile_from_offer(update: Update, context: ContextTypes.
 async def back_to_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Возврат к карточке предложения из просмотра портфолио"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         # Проверяем, что у нас есть данные об откликах
@@ -7099,7 +7312,10 @@ async def back_to_offer_card(update: Update, context: ContextTypes.DEFAULT_TYPE)
 async def select_blogger(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора блогера клиентом - сразу открывает чат"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         # Извлекаем offer_id из callback_data
@@ -7337,7 +7553,10 @@ async def test_payment_success(update: Update, context: ContextTypes.DEFAULT_TYP
     query = update.callback_query
     # Не вызываем answer() здесь, т.к. уже вызван в thank_platform
     if not query.message:
-        await query.answer()
+        try:
+            await query.answer()
+        except Exception:
+            pass
 
     try:
         if '_payment_offer_id' in context.user_data:
@@ -7367,7 +7586,10 @@ async def test_payment_success(update: Update, context: ContextTypes.DEFAULT_TYP
 async def open_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Открывает чат между клиентом и мастером"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         chat_id = int(query.data.replace("open_chat_", ""))
@@ -7691,7 +7913,10 @@ async def noop_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     Необходим чтобы не было эффекта "зависания" когда пользователь нажимает такую кнопку.
     """
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
 
 async def cancel_edit_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -7731,7 +7956,10 @@ async def cancel_from_callback(update: Update, context: ContextTypes.DEFAULT_TYP
     Исправляет баг, когда бот зависал после ошибки при загрузке фото.
     """
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     context.user_data.clear()
     logger.info(f"User {query.from_user.id} cancelled conversation via callback: {query.data}")
@@ -7956,7 +8184,10 @@ async def add_test_offers_command(update: Update, context: ContextTypes.DEFAULT_
 async def blogger_view_campaigns(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Просмотр доступных заказов для блогера"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         # Получаем профиль блогера
@@ -8259,7 +8490,10 @@ async def blogger_view_campaign_details(update: Update, context: ContextTypes.DE
 async def blogger_decline_campaign_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """НОВОЕ: Подтверждение отказа от кампания (шаг 1)"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         # Извлекаем campaign_id из callback_data: "decline_campaign_123"
@@ -8309,7 +8543,10 @@ async def blogger_decline_campaign_confirm(update: Update, context: ContextTypes
 async def blogger_decline_campaign_yes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """НОВОЕ: Подтверждение отказа - ДА (шаг 2)"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         # Извлекаем campaign_id из callback_data: "decline_campaign_yes_123"
@@ -8363,7 +8600,10 @@ async def blogger_decline_campaign_yes(update: Update, context: ContextTypes.DEF
 async def blogger_decline_campaign_no(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """НОВОЕ: Отмена отказа - НЕТ, вернуться к кампаниу"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         # Извлекаем campaign_id из callback_data: "decline_campaign_no_123"
@@ -8386,7 +8626,10 @@ async def blogger_decline_campaign_no(update: Update, context: ContextTypes.DEFA
 async def blogger_campaign_photo_nav(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Навигация по фото кампания"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
     
     try:
         photo_ids = context.user_data.get('order_photos', [])
@@ -8491,7 +8734,10 @@ async def blogger_campaign_photo_nav(update: Update, context: ContextTypes.DEFAU
 async def advertiser_browse_bloggers(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало просмотра мастеров - выбор фильтров"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
     
     # Сбрасываем фильтры
     context.user_data.pop("browse_city", None)
@@ -8515,7 +8761,10 @@ async def advertiser_browse_bloggers(update: Update, context: ContextTypes.DEFAU
 async def browse_start_viewing(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало просмотра карточек мастеров"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
     
     # Получаем фильтры из context (если есть)
     city_filter = context.user_data.get("browse_city")
@@ -8681,7 +8930,10 @@ async def show_blogger_card(query_or_message, context: ContextTypes.DEFAULT_TYPE
 async def browse_next_blogger(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Переключение на следующего блогера"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
     
     context.user_data["current_worker_index"] = context.user_data.get("current_worker_index", 0) + 1
     context.user_data["current_photo_index"] = 0  # Сбрасываем индекс фото
@@ -8692,7 +8944,10 @@ async def browse_next_blogger(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def browse_photo_prev(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Предыдущее фото блогера"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
     
     context.user_data["current_photo_index"] = max(0, context.user_data.get("current_photo_index", 0) - 1)
     
@@ -8702,7 +8957,10 @@ async def browse_photo_prev(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def browse_photo_next(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Следующее фото блогера"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
     
     workers_list = context.user_data.get("workers_list", [])
     worker_index = context.user_data.get("current_worker_index", 0)
@@ -8720,7 +8978,10 @@ async def browse_photo_next(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def browse_restart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начать просмотр мастеров сначала"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
     
     context.user_data["current_worker_index"] = 0
     context.user_data["current_photo_index"] = 0
@@ -8733,7 +8994,10 @@ async def browse_restart(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def blogger_offer_on_campaign(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало создания предложения - зависит от payment_type"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Извлекаем campaign_id
     campaign_id = int(query.data.replace("offer_on_campaign_", ""))
@@ -8903,7 +9167,10 @@ async def blogger_offer_on_campaign(update: Update, context: ContextTypes.DEFAUL
 async def blogger_offer_select_paid(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Блогер выбрал работать за деньги (в случае payment_type = "both")"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Извлекаем campaign_id из callback_data
     campaign_id = int(query.data.replace("offer_paid_", ""))
@@ -8953,7 +9220,10 @@ async def blogger_offer_select_paid(update: Update, context: ContextTypes.DEFAUL
 async def blogger_offer_select_barter(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Блогер выбрал работать за бартер (в случае payment_type = "both")"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Извлекаем campaign_id из callback_data
     campaign_id = int(query.data.replace("offer_barter_", ""))
@@ -9040,7 +9310,10 @@ async def blogger_offer_enter_price(update: Update, context: ContextTypes.DEFAUL
 async def blogger_offer_select_currency(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора валюты - переход к вводу цены"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     currency = query.data.replace("offer_currency_", "")
     context.user_data['bid_currency'] = currency
@@ -9085,7 +9358,10 @@ async def blogger_offer_select_currency(update: Update, context: ContextTypes.DE
 async def blogger_offer_select_ready_days(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора срока готовности - переход к комментарию"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Извлекаем количество дней из callback_data
     ready_days = int(query.data.replace("ready_days_", ""))
@@ -9145,7 +9421,10 @@ async def blogger_offer_enter_comment(update: Update, context: ContextTypes.DEFA
 async def blogger_offer_skip_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Пропуск комментария"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     context.user_data['bid_comment'] = ""
 
@@ -9263,7 +9542,10 @@ async def blogger_offer_publish(update: Update, context: ContextTypes.DEFAULT_TY
 async def blogger_offer_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Отмена создания предложения"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     await safe_edit_message(
         query,
@@ -9282,7 +9564,10 @@ async def blogger_offer_cancel(update: Update, context: ContextTypes.DEFAULT_TYP
 async def go_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Возврат в главное меню с выбором роли"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
     
     user_telegram_id = query.from_user.id
     user = db.get_user(user_telegram_id)
@@ -9343,7 +9628,10 @@ async def go_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def add_second_role_blogger(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Добавление роли блогера к существующему аккаунту"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
     
     # Запускаем регистрацию блогера
     await query.edit_message_text(
@@ -9359,7 +9647,10 @@ async def add_second_role_blogger(update: Update, context: ContextTypes.DEFAULT_
 async def add_second_role_advertiser(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Добавление роли рекламодатела к существующему аккаунту"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
     
     # Запускаем регистрацию рекламодатела
     await query.edit_message_text(
@@ -9377,7 +9668,10 @@ async def add_second_role_advertiser(update: Update, context: ContextTypes.DEFAU
 async def advertiser_create_campaign(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало создания кампания - выбор региона"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Получаем профиль клиента
     user = db.get_user(query.from_user.id)
@@ -9413,7 +9707,10 @@ async def advertiser_create_campaign(update: Update, context: ContextTypes.DEFAU
 async def create_campaign_region_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора региона для кампания"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     region = query.data.replace("campaignregion_", "")
     region_data = BELARUS_REGIONS.get(region)
@@ -9501,7 +9798,10 @@ async def create_campaign_region_select(update: Update, context: ContextTypes.DE
 async def create_campaign_city_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора города для кампания"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     city = query.data.replace("campaigncity_", "")
 
@@ -9552,7 +9852,10 @@ async def create_campaign_city_select(update: Update, context: ContextTypes.DEFA
 async def create_campaign_main_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора/отмены категории (множественный выбор)"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Проверяем, это нажатие на "Готово" или выбор категории
     if query.data == "order_categories_done":
@@ -9661,7 +9964,10 @@ async def create_campaign_main_category(update: Update, context: ContextTypes.DE
 async def create_campaign_subcategory_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора типов оплаты (бартер и/или цена) - множественный выбор"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Проверяем, это нажатие на "Готово" или toggle типа оплаты
     if query.data == "payment_types_done":
@@ -10000,7 +10306,10 @@ async def create_campaign_done_uploading(update: Update, context: ContextTypes.D
 async def create_campaign_skip_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Пропуск загрузки фото и видео"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     context.user_data["order_photos"] = []
     context.user_data["order_videos"] = []
@@ -10012,7 +10321,10 @@ async def create_campaign_confirm(update: Update, context: ContextTypes.DEFAULT_
     """Экран подтверждения перед публикацией кампании"""
     if update.callback_query:
         query = update.callback_query
-        await query.answer()
+        try:
+            await query.answer()
+        except Exception:
+            pass
         message = query.message
         is_callback = True
     else:
@@ -10083,7 +10395,10 @@ async def create_campaign_confirm(update: Update, context: ContextTypes.DEFAULT_
 async def create_campaign_back_to_region(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Возврат к выбору региона"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Показываем регионы Беларуси
     keyboard = []
@@ -10105,7 +10420,10 @@ async def create_campaign_back_to_region(update: Update, context: ContextTypes.D
 async def create_campaign_back_to_city(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Возврат к выбору города"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     region = context.user_data.get("order_region")
     if not region:
@@ -10150,7 +10468,10 @@ async def create_campaign_back_to_city(update: Update, context: ContextTypes.DEF
 async def create_campaign_back_to_maincat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Возврат к выбору основной категории"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     city = context.user_data.get("order_city", "")
 
@@ -10231,7 +10552,10 @@ async def create_campaign_publish(update: Update, context: ContextTypes.DEFAULT_
 
     if update.callback_query:
         query = update.callback_query
-        await query.answer()
+        try:
+            await query.answer()
+        except Exception:
+            pass
         message = query.message
     else:
         message = update.message
@@ -10404,7 +10728,10 @@ async def advertiser_complete_campaign(update: Update, context: ContextTypes.DEF
     Кампания сразу получает статус 'completed', обе стороны могут оставить отзыв.
     """
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     campaign_id = int(query.data.replace("complete_campaign_", ""))
 
@@ -10460,7 +10787,10 @@ async def blogger_complete_campaign(update: Update, context: ContextTypes.DEFAUL
     Кампания сразу получает статус 'completed', обе стороны могут оставить отзыв.
     """
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     campaign_id = int(query.data.replace("blogger_complete_campaign_", ""))
 
@@ -10511,7 +10841,10 @@ async def blogger_complete_campaign(update: Update, context: ContextTypes.DEFAUL
 async def start_review(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало процесса оставления отзыва"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     campaign_id = int(query.data.replace("leave_review_", ""))
     user_telegram_id = update.effective_user.id
@@ -10680,7 +11013,10 @@ async def start_review(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def review_select_rating(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора оценки"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     rating = int(query.data.replace("review_rating_", ""))
     context.user_data['review_rating'] = rating
@@ -10723,7 +11059,10 @@ async def review_enter_comment(update: Update, context: ContextTypes.DEFAULT_TYP
 async def review_skip_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Пропуск комментария - только оценка"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     context.user_data['review_comment'] = ""
 
@@ -10799,7 +11138,10 @@ async def save_review(update: Update, context: ContextTypes.DEFAULT_TYPE, query=
 async def cancel_review(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Отмена оставления отзыва"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     context.user_data.clear()
 
@@ -10816,7 +11158,10 @@ async def cancel_review(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def show_reviews(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает все отзывы о пользователе"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         # Извлекаем user_id из callback_data (формат: show_reviews_worker_123 или show_reviews_client_123)
@@ -11654,7 +11999,10 @@ SUGGESTION_TEXT = 50  # ИСПРАВЛЕНО: Уникальное значен�
 async def show_news_and_ads(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает ВСЕ активные рекламы/новости пользователю"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     logger.info(f"[ADS] show_news_and_ads вызван пользователем {update.effective_user.id}")
 
@@ -11765,7 +12113,10 @@ async def show_news_and_ads(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def send_suggestion_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало процесса отправки предложения"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     logger.info(f"🔍 send_suggestion_start вызван пользователем {update.effective_user.id}")
 
@@ -11890,7 +12241,10 @@ async def receive_suggestion_text(update: Update, context: ContextTypes.DEFAULT_
 async def cancel_suggestion(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Отмена отправки предложения"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Очищаем флаг
     context.user_data.pop('suggestion_active', None)
@@ -11954,7 +12308,10 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Отправляем ответ в зависимости от типа запроса
     if update.callback_query:
         query = update.callback_query
-        await query.answer()
+        try:
+            await query.answer()
+        except Exception:
+            pass
         await query.edit_message_text(
             text,
             parse_mode="HTML",
@@ -11974,7 +12331,10 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def admin_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Возврат в главное меню админ-панели (для callback query)"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     telegram_id = update.effective_user.id
 
@@ -12006,7 +12366,10 @@ async def admin_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def admin_broadcast_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало создания broadcast"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     telegram_id = update.effective_user.id
     logger.info(f"[ADMIN] admin_broadcast_start вызвана пользователем {telegram_id}")
@@ -12036,7 +12399,10 @@ async def admin_broadcast_start(update: Update, context: ContextTypes.DEFAULT_TY
 async def admin_broadcast_select_audience(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Выбор аудитории для broadcast"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     logger.info(f"[ADMIN] admin_broadcast_select_audience вызвана пользователем {update.effective_user.id}, callback_data: {query.data}")
 
@@ -12165,7 +12531,10 @@ async def admin_broadcast_send(update: Update, context: ContextTypes.DEFAULT_TYP
 async def admin_create_ad_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало пошагового создания рекламы"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     logger.info(f"[ADMIN] admin_create_ad_start вызвана пользователем {update.effective_user.id}")
 
@@ -12321,7 +12690,10 @@ async def admin_ad_button_text(update: Update, context: ContextTypes.DEFAULT_TYP
 async def admin_ad_audience(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора целевой аудитории"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     logger.info(f"[ADMIN] admin_ad_audience вызвана пользователем {update.effective_user.id}, callback_data: {query.data}")
 
@@ -12372,7 +12744,10 @@ async def admin_ad_audience(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def admin_ad_duration(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора продолжительности рекламы"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     logger.info(f"[ADMIN] admin_ad_duration вызвана пользователем {update.effective_user.id}, callback_data: {query.data}")
 
@@ -12436,7 +12811,10 @@ async def admin_ad_duration(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def admin_ad_start_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора даты начала и показ превью"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     logger.info(f"[ADMIN] admin_ad_start_date вызвана пользователем {update.effective_user.id}, callback_data: {query.data}")
 
@@ -12536,7 +12914,10 @@ async def admin_ad_start_date(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def admin_ad_placement(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Выбор размещения рекламы"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     logger.info(f"[ADMIN] admin_ad_placement вызвана пользователем {update.effective_user.id}, callback_data: {query.data}")
 
@@ -12588,7 +12969,10 @@ async def admin_ad_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"[AD_CONFIRM] ✅ ФУНКЦИЯ ВЫЗВАНА! Пользователь: {update.effective_user.id}")
 
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     logger.info(f"[AD_CONFIRM] Callback data: {query.data}")
     logger.info(f"[AD_CONFIRM] Context user_data: {context.user_data}")
@@ -12699,7 +13083,10 @@ async def admin_ad_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def admin_manage_ads(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает меню управления рекламами с разделением на категории"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     logger.info(f"[ADMIN] admin_manage_ads вызвана пользователем {update.effective_user.id}")
 
@@ -12731,7 +13118,10 @@ async def admin_manage_ads(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def admin_list_ads_by_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает список реклам по выбранному статусу"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     logger.info(f"[ADMIN] admin_list_ads_by_status вызвана, callback: {query.data}")
 
@@ -12806,7 +13196,10 @@ async def admin_list_ads_by_status(update: Update, context: ContextTypes.DEFAULT
 async def admin_view_ad_detail(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает детальную информацию о рекламе"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Извлекаем ID рекламы из callback_data
     ad_id = int(query.data.split('_')[-1])
@@ -12881,7 +13274,10 @@ async def admin_view_ad_detail(update: Update, context: ContextTypes.DEFAULT_TYP
 async def admin_toggle_ad_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Переключает активность рекламы"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Извлекаем ID рекламы
     ad_id = int(query.data.split('_')[-1])
@@ -12906,7 +13302,10 @@ async def admin_toggle_ad_status(update: Update, context: ContextTypes.DEFAULT_T
 async def admin_edit_ad_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает меню редактирования рекламы"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Извлекаем ID рекламы
     ad_id = int(query.data.split('_')[-1])
@@ -12952,7 +13351,10 @@ async def admin_edit_ad_menu(update: Update, context: ContextTypes.DEFAULT_TYPE)
 async def admin_edit_ad_field(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начинает редактирование конкретного поля рекламы"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Парсим callback_data: admin_edit_field_{field}_{ad_id}
     parts = query.data.split('_')
@@ -12992,7 +13394,10 @@ async def admin_edit_ad_field(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def admin_delete_ad_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Подтверждение удаления рекламы"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Извлекаем ID рекламы
     ad_id = int(query.data.split('_')[-1])
@@ -13033,7 +13438,10 @@ async def admin_delete_ad_confirm(update: Update, context: ContextTypes.DEFAULT_
 async def admin_delete_ad_yes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Удаляет рекламу"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Извлекаем ID рекламы
     ad_id = int(query.data.split('_')[-1])
@@ -13206,7 +13614,10 @@ async def admin_process_ad_edit(update: Update, context: ContextTypes.DEFAULT_TY
 async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Подробная статистика системы"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     telegram_id = update.effective_user.id
     logger.info(f"[ADMIN] admin_stats вызвана пользователем {telegram_id}")
@@ -13282,7 +13693,10 @@ async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def admin_export_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Меню экспорта данных"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     text = "📥 <b>ЭКСПОРТ ДАННЫХ</b>\n\n"
     text += "Выберите, какие данные экспортировать в CSV:"
@@ -13476,7 +13890,10 @@ async def admin_export_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def admin_category_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает подробные отчеты по категориям, городам и специализациям"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     telegram_id = update.effective_user.id
     logger.info(f"[ADMIN] admin_category_reports вызвана пользователем {telegram_id}")
@@ -13552,7 +13969,10 @@ async def admin_category_reports(update: Update, context: ContextTypes.DEFAULT_T
 async def admin_city_activity(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Детальная активность по городам"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         reports = db.get_category_reports()
@@ -13595,7 +14015,10 @@ async def admin_city_activity(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def admin_avg_prices(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Средние цены по категориям"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         reports = db.get_category_reports()
@@ -13638,7 +14061,10 @@ async def admin_avg_prices(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def admin_category_statuses(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Статусы заказов по категориям"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     try:
         reports = db.get_category_reports()
@@ -13684,7 +14110,10 @@ async def admin_category_statuses(update: Update, context: ContextTypes.DEFAULT_
 async def admin_users_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Меню управления пользователями"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     telegram_id = update.effective_user.id
     logger.info(f"[ADMIN] admin_users_menu вызвана пользователем {telegram_id}")
@@ -13720,7 +14149,10 @@ async def admin_users_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def admin_users_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает список пользователей с выбранным фильтром"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Парсим фильтр из callback_data или из user_data (если вызвано из admin_users_page)
     if 'admin_users_filter' in context.user_data and not query.data.startswith("admin_users_list_"):
@@ -13799,7 +14231,10 @@ async def admin_users_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def admin_users_page(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик пагинации списка пользователей"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Парсим callback_data: admin_users_page_{filter}_{page}
     parts = query.data.split("_")
@@ -13818,7 +14253,10 @@ async def admin_users_page(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def admin_user_view(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает детальную информацию о пользователе"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     telegram_id = int(query.data.replace("admin_user_view_", ""))
     details = db.get_user_details_for_admin(telegram_id)
@@ -13891,7 +14329,10 @@ async def admin_user_view(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def admin_user_ban_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало процесса бана пользователя"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     telegram_id = int(query.data.replace("admin_user_ban_start_", ""))
     context.user_data['admin_ban_user_id'] = telegram_id
@@ -13944,7 +14385,10 @@ async def admin_user_ban_execute(update: Update, context: ContextTypes.DEFAULT_T
 async def admin_user_unban(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Разбанивает пользователя"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     telegram_id = int(query.data.replace("admin_user_unban_", ""))
 
@@ -13972,7 +14416,10 @@ async def admin_user_unban(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def admin_user_search_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало поиска пользователя"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     text = "🔍 <b>ПОИСК ПОЛЬЗОВАТЕЛЯ</b>\n\n"
     text += "Введите для поиска:\n"
@@ -14052,7 +14499,10 @@ async def admin_user_search_execute(update: Update, context: ContextTypes.DEFAUL
 async def admin_suggestions(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Просмотр предложений пользователей"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Получаем предложения
     suggestions = db.get_all_suggestions()
@@ -14129,7 +14579,10 @@ async def admin_suggestions(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def admin_suggestions_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Просмотр предложений с фильтром по статусу"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     logger.info(f"[ADMIN] admin_suggestions_filter вызвана пользователем {update.effective_user.id}, callback_data: {query.data}")
 
@@ -14217,7 +14670,10 @@ async def admin_suggestions_filter(update: Update, context: ContextTypes.DEFAULT
 async def admin_suggestion_view(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Просмотр полного текста предложения"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # callback_data: admin_suggestion_view_{id}_{status}
     parts = query.data.split("_")
@@ -14274,7 +14730,10 @@ async def admin_suggestion_view(update: Update, context: ContextTypes.DEFAULT_TY
 async def admin_close(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Закрыть админ-панель"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     # Определяем роль пользователя
     user = db.get_user(update.effective_user.id)
