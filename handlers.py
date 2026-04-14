@@ -1818,7 +1818,10 @@ async def register_advertiser_city_other(update: Update, context: ContextTypes.D
 
 async def show_blogger_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass  # query устарел или уже отвечен — продолжаем
 
     # ИСПРАВЛЕНИЕ БАГА: Очищаем активный чат при возврате в меню
     # Это предотвращает открытие неправильного чата при нажатии "Обновить чат"
@@ -1888,7 +1891,10 @@ async def show_blogger_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def blogger_view_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Просмотр доступных кампаний для блогера"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass  # query устарел (нажата старая кнопка из уведомления) — продолжаем
 
     # Сбрасываем страницу при входе в список
     context.user_data['campaigns_page'] = 0
@@ -2588,7 +2594,10 @@ def _get_order_status_text(status):
 
 async def show_advertiser_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass  # query устарел или уже отвечен — продолжаем
 
     # ИСПРАВЛЕНИЕ БАГА: Очищаем активный чат при возврате в меню
     # Это предотвращает открытие неправильного чата при нажатии "Обновить чат"
@@ -14276,14 +14285,10 @@ async def admin_close(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         context.user_data.clear()
 
-        # Возвращаем в соответствующее меню
+        # Возвращаем в соответствующее меню (show_*_menu сам обновит сообщение)
         if worker_profile:
-            await query.edit_message_text("✅ Админ-панель закрыта.")
-            # Вызываем меню блогера
             await show_blogger_menu(update, context)
         elif client_profile:
-            await query.edit_message_text("✅ Админ-панель закрыта.")
-            # Вызываем меню клиента
             await show_advertiser_menu(update, context)
         else:
             await query.edit_message_text("✅ Админ-панель закрыта.")
