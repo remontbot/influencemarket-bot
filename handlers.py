@@ -8340,9 +8340,9 @@ async def blogger_view_campaign_details(update: Update, context: ContextTypes.DE
         
         # Проверяем есть ли уже предложение от этого блогера
         user = db.get_user(query.from_user.id)
-        worker_profile = db.get_worker_profile(user["id"])
+        worker_profile = db.get_worker_profile(user["id"]) if user else None
 
-        already_bid = db.check_worker_bid_exists(campaign_id, worker_profile["id"])
+        already_bid = db.check_worker_bid_exists(campaign_id, worker_profile["id"]) if worker_profile else False
 
         # ПРОВЕРКА: Блогер не может откликаться на свою кампанию
         advertiser = db.get_client_by_id(campaign_dict['advertiser_id'])
@@ -8397,7 +8397,7 @@ async def blogger_view_campaign_details(update: Update, context: ContextTypes.DE
             text += f"⭐ {advertiser_rating:.1f} ({advertiser_rating_count} отзывов)\n"
         
         # Получаем фото
-        photos = campaign_dict.get('photos', '')
+        photos = campaign_dict.get('photos') or ''
         photo_ids = [p.strip() for p in photos.split(',') if p.strip()]
         
         if photo_ids:
